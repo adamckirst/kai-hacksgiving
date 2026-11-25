@@ -23,9 +23,14 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null)" || fail "not inside a git chec
 work="$(mktemp -d)" || fail "cannot make a temporary folder"
 trap 'rm -rf "$work"' EXIT
 
-gh pr view "$pr" --json title,body,state,headRefOid,baseRefName,comments >"$work/pr.json" \
-  || fail "cannot read PR #$pr"
-head="$(jq -r .headRefOid "$work/pr.json")"
+# GitHub can take a few seconds to show a head that was just pushed.
+for _ in 1 2 3 4 5; do
+  gh pr view "$pr" --json title,body,state,headRefOid,baseRefName,comments >"$work/pr.json" \
+    || fail "cannot read PR #$pr"
+  head="$(jq -r .headRefOid "$work/pr.json")"
+  [[ "$(git rev-parse HEAD)" == "$head" ]] && break
+  sleep 3
+done
 base="$(jq -r .baseRefName "$work/pr.json")"
 [[ "$(jq -r .state "$work/pr.json")" == OPEN ]] || fail "PR #$pr is not open"
 [[ "$(git rev-parse HEAD)" == "$head" ]] \
