@@ -12,7 +12,7 @@ export function HomeScreen({readOnly}:{readOnly:boolean}) {
   const queue=useQueue(!readOnly),today=new Date().toISOString().slice(0,10);
   const activity=queue.map(item=>item.id+item.status+item.awaiting_person).join('|');
   useEffect(()=>{let alive=true;const started=revision.current;fetch('/api/home').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>{if(alive && started===revision.current)setHome(data);}).catch(()=>{if(alive)setError('Your notebook could not load. Reload this page to try again.');});return()=>{alive=false;};},[activity]);
-  useEffect(()=>{const incoming=queue.find(q=>q.awaiting_person && !sessionStorage.getItem('kai-upload-'+q.id));if(incoming){sessionStorage.setItem('kai-upload-'+incoming.id,'seen');location.assign('/upload/'+encodeURIComponent(incoming.id));}},[queue]);
+  useEffect(()=>{const incoming=queue.find(q=>q.awaiting_person && !sessionStorage.getItem('kai-upload-'+q.id));if(incoming){location.assign('/upload/'+encodeURIComponent(incoming.id));}},[queue]);
   async function finish(id:string) {
     revision.current++;setPending(ids=>[...ids,id]);setError('');
     try {const r=await fetch('/api/todos/'+encodeURIComponent(id)+'/done',{method:'POST'});if(!r.ok)throw new Error();setHome(h=>h ? {...h,todos:h.todos.filter(t=>t.id!==id)}:h);}
