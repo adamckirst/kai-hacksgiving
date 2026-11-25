@@ -21,6 +21,7 @@ export async function* events(body:ReadableStream<Uint8Array>) {
 }
 export const claudeReader:Reader=async(input,call,signal)=> {
   const {anthropic}=await discoverGateways();
+  let described=false;
   const messages:{role:string;content:unknown}[]=[{role:'user',content:JSON.stringify(input)}];
   const tools=Object.entries(toolSchemas).map(([name,schema])=>({name,description:name==='describe_recording' ? 'Give the recording a short title and a two-line summary.' : 'Save one proposed item for the person to decide. Quote the exact supporting words.',input_schema:z.toJSONSchema(schema,{unrepresentable:'any'})}));
   for(let turn=0;turn<12;turn++) {
@@ -42,6 +43,7 @@ export const claudeReader:Reader=async(input,call,signal)=> {
         if(block?.type==='tool_use') {
           block.input=JSON.parse(partials.get(event.index)||'{}');
           const result=call(block.name!,block.input);
+          if(block.name==='describe_recording' && result.ok) described=true;
           results.push({type:'tool_result',tool_use_id:block.id,is_error:!result.ok,content:JSON.stringify(result)});
         }
       }
@@ -49,7 +51,12 @@ export const claudeReader:Reader=async(input,call,signal)=> {
       if(event.type==='message_stop') finished=true;
     }
     if(!finished || !['end_turn','tool_use'].includes(stop)) throw new Error('KAI did not finish.');
-    if(stop==='end_turn' && !results.length) return;
+    if(stop==='end_turn' && !results.length) {
+      if(described) return;
+      if(blocks.length) messages.push({role:'assistant',content:blocks});
+      messages.push({role:'user',content:'The required title and summary have not been saved. Call describe_recording with a short title and exactly two nonempty summary lines separated by a newline before finishing.'});
+      continue;
+    }
     if(!results.length) throw new Error('Missing suggestions.');
     messages.push({role:'assistant',content:blocks},{role:'user',content:results});
   }
