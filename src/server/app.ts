@@ -12,7 +12,7 @@ import { listTodos,finishTodo } from './todos';
 import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
 import { mountWaitlist } from './waitlist';
-export type AppOptions = {judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
+export type AppOptions = {judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
   const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber);
@@ -23,7 +23,8 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
   mountMcp(app,db);
   mountWaitlist(app,db,options);
-  app.use(express.json({limit:'32kb'}));
+  // A 20,000-character transcript can need 120 KB when JSON escapes it.
+  app.use(express.json({limit:'128kb'}));
   app.use((req,res,next) => {
     res.locals.workspace = workspaceFor(db,req);
     if (!['GET','HEAD','OPTIONS'].includes(req.method)) {
@@ -105,6 +106,10 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     if(!row) {res.status(404).json({error:'Recording not found.'});return;}
     const suggestions=db.prepare('SELECT id,kind,payload,quote,status FROM suggestions WHERE conversation_id=? AND workspace_id=? ORDER BY rowid').all(req.params.id,res.locals.workspace);
     res.json({...row,suggestions});
+  });
+  app.get('/demo.mp4',(_req,res)=> {
+    if(!options.videoFile){res.status(404).end();return;}
+    res.sendFile(options.videoFile,{dotfiles:'allow'},error=>{if(error && !res.headersSent)res.status(404).end();});
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));

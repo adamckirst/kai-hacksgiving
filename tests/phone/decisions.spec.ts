@@ -32,3 +32,20 @@ test('accepted changes through real routes stay private to one judge browser',as
     await expect(a.locator('.everyone')).toContainText('Sora Bell');await expect(b.locator('.everyone')).not.toContainText('Sora Bell');
   }finally{await first.close();await second.close();}
 });
+
+test('a delayed poll cannot put an accepted suggestion back on screen',async({page,kai})=> {
+  await sample(page,kai.secret);
+  let delayed!:()=>void,release!:()=>void;
+  const arrived=new Promise<void>(resolve=>delayed=resolve),released=new Promise<void>(resolve=>release=resolve);
+  let held=false;
+  await page.route('**/api/readings/*',async route=> {
+    if(route.request().method()!=='GET' || held){await route.continue();return;}
+    held=true;const response=await route.fetch();const old=await response.json();delayed();await released;await route.fulfill({json:old});
+  });
+  await arrived;
+  await page.getByRole('button',{name:'Accept all',exact:true}).click();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);
+  const delivered=page.waitForResponse(async response=>response.request().method()==='GET' && response.url().includes('/api/readings/') && (await response.json()).suggestions?.some((s:{status:string})=>s.status==='proposed'));
+  release();await (await delivered).finished();await page.unrouteAll({behavior:'wait'});
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);await expect(page.getByRole('button',{name:'Accept all',exact:true})).toHaveCount(0);
+});

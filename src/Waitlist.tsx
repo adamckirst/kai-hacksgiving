@@ -6,6 +6,7 @@ export function Waitlist() {
   async function submit() {
     setBusy(true);setError('');
     try {
+      const visitor=await fetch('/api/waitlist');if(!visitor.ok)throw new Error('The list is busy. Please try again later.');
       const response=await fetch('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});const data=await response.json();
       if(!response.ok)throw new Error(data.error);setEmail('');setSaved(true);
     }catch(e){setError(e instanceof Error ? e.message:'Please try again.');}finally{setBusy(false);}

@@ -28,9 +28,13 @@ export function mountWaitlist(app:Express,db:KaiDatabase,options:Options) {
   app.get('/api/waitlist',(req,res)=> {
     const id=db.transaction(()=> {
       const at=now(),all=visitors(db,at);let id=cookie(req);
-      if(!id || !all[id])id=randomBytes(32).toString('hex');
+      if(!id || !all[id]) {
+        if(Object.keys(all).length>=2000)return null;
+        id=randomBytes(32).toString('hex');
+      }
       all[id]={seen:at,attempts:all[id]?.attempts ?? []};saveVisitors(db,all);return id;
     })();
+    if(!id){res.status(429).json({error:'The list is busy. Please try again later.'});return;}
     res.cookie(cookieName,id,{httpOnly:true,secure:options.secureCookies ?? true,sameSite:'strict',path:'/',maxAge:14*24*hour});
     res.json({xPostUrl:xPost(options.xPostUrl)});
   });

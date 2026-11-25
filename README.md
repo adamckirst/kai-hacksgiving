@@ -7,7 +7,7 @@ it, each with the quote it heard. You accept, edit or reject. An assistant
 such as Claude can then read what you accepted, over MCP.
 
 KAI is an entry in [Fly.io Hacksgiving 2026](https://fly.io/hacksgiving).
-It runs on one Fly.io Sprite and uses two Sprites connectors: Anthropic,
+It is built for one Fly.io Sprite and two Sprites connectors: Anthropic,
 to read, and AssemblyAI, to listen.
 
 The idea had been brewing in my mind for a while, and Hacksgiving inspired
@@ -34,11 +34,11 @@ here as the build reaches them.
 
 The code written for KAI is under the [MIT licence](LICENSE).
 
-`src/catalyst/`, once it exists, holds the Catalyst UI kit by Tailwind
+`src/catalyst/` holds the Catalyst UI kit by Tailwind
 Labs. It is **not** covered by MIT: it is used here under the Tailwind Plus
 licence and may not be copied out of this project or reused on its own.
 
-## Run the skeleton locally
+## Run locally
 
 Use Node 24 or later. Run `npm ci`,
 `PLAYWRIGHT_BROWSERS_PATH=.playwright npx playwright install chromium`,
@@ -62,7 +62,7 @@ With no configured secret, new judge sessions are refused.
 `VIDEO_URL` enables the Welcome video; without it there is no video player.
 `NODE_ENV=production` enables Secure cookies; the deployed service requires
 HTTPS. `HOST`, `PORT`, and `KAI_COMMIT` configure the service address
-and health response. No provider is called by this step.
+and health response. Local mode calls no providers. Production uses the configured Sprites connectors.
 
 ## Deploy to the existing Sprite (step 3)
 
@@ -113,8 +113,7 @@ and [transcription](https://www.assemblyai.com/docs/pre-recorded-audio/api-refer
 In a judge copy, Home accepts up to 20,000 characters and a conversation
 date, or one of three invented samples. A Recording page polls each second,
 shows suggestions as each tool call finishes, and highlights a supporting
-quote when tapped. Suggestions stay out of People and To-dos until the
-decision step is built. Home links to earlier recordings.
+quote when tapped. Suggestions stay out of People and To-dos until you accept them. Home links to earlier recordings.
 
 Local runs use a scripted reader (`KAI_MODEL=fake`). It produces the expected
 suggestions for the three samples; other local text receives a title and
@@ -133,8 +132,10 @@ persist the current UTC day’s usage; there are still seven tables.
 
 Local checks cover every sample, invented quotes, impossible dates, foreign
 people, reading limits, retry accounting, incremental tool handling, and the
-375 px sample flow through quote highlighting. U3 still requires three timed
-runs on the Sprite; local fake-reader speed is not that measurement.
+375 px sample flow through quote highlighting. On step 4's reviewed head
+`37a9051`, three real-connector browser runs measured U3 at a median 6.85
+seconds to the first suggestion and 10.68 seconds to all suggestions.
+Final-product measurements must be repeated on its own deployed head.
 
 ## Add recordings (step 5)
 
@@ -163,9 +164,11 @@ folders and are removed when the tests finish. The restart test closes and
 reopens a disk-backed database while keeping all access credentials out of
 that database. The phone test uploads a generated WAV and sees the words.
 
-U2 is not established by these checks: Copal must record
-[`samples/memo-script.md`](samples/memo-script.md), then the deployed app’s
-first-suggestion time must be measured over three runs.
+Copal recorded [`samples/memo-script.md`](samples/memo-script.md). On step
+5's reviewed head `6f85365`, three browser uploads measured U2 at a median
+15.98 seconds to the first suggestion. A temporary copy added trailing
+silence to reach 60 seconds; it was removed after the check. Each run
+confirmed that the words persisted and uploaded audio was removed.
 
 ## Decide what to keep (step 6)
 
@@ -306,7 +309,9 @@ workspace's `waitlist_visitors` JSON field and survive service restarts.
 No address, IP, device information or judge-workspace association is stored
 there. Clearing cookies creates a new anonymous visitor; this is a browser
 limit, not proof of a person's identity. Inactive counters expire after an
-hour. The global 2,000-row ceiling holds regardless of visitor identity.
+hour; the form renews an expired visit before submitting. At most 2,000
+active visitor entries are kept, so anonymous GETs cannot grow this field
+without bound. The global 2,000-row ceiling holds regardless of visitor identity.
 
 Waitlist and operator routes run before provider queue wake middleware.
 The signup address goes only to the waitlist insert; neither workspace
@@ -329,6 +334,45 @@ run `scripts/save-links.sh <public Sprite URL>` on kosmoslab. It reads the
 invitation and creates/reuses the independent download secret on the
 Sprite, then writes both links only to `~/kai-links.txt` with mode 600.
 It does not change URL access. Do not print or open that file as the agent.
-The helper has been syntax-checked only; it has not run without a Sprite.
+The helper has been syntax-checked only; link delivery remains on hold
+while Copal keeps the Sprite private.
 Copal alone opens the file and downloads the list. His Saturday download
 check and the later X post remain manual PRD §9 steps.
+
+## Final phone polish and live checks (step 12)
+
+Copy feedback appears beside the button used. Completing suggestions cannot
+be visually reverted by an older polling response, and a retry starts with
+fresh progress text. To-dos waits for access to resolve before saying the
+copy is read-only. The phone checks include a delayed-poll regression and
+an urgency case where the overdue person comes last alphabetically.
+The HTTP body limit accommodates 20,000 Unicode characters even when JSON
+escapes every character; the transcript's character limit still applies.
+
+Copal wants to approve the final product, including step 13's look, before
+any video work. After that approval and when he supplies the recording, run
+`scripts/upload-demo.sh <video-file>`, then deploy the reviewed commit.
+The helper converts to H.264/AAC MP4 in an ignored temporary directory,
+streams the file to `/home/sprite/kai-state/demo.mp4`, and removes its local
+copy. The service startup sets `VIDEO_URL=/demo.mp4` when that file exists;
+the app serves byte ranges for seeking. Until then Welcome has no player.
+The actual video link belongs here once the Sprite URL is public. The unit
+check serves a generated gray test clip; that is not Copal's video and is
+never committed or shown as the demo.
+
+After Copal supplies the X post, keep its public address in
+`/home/sprite/kai-state/x-post-url.txt` and deploy the reviewed commit.
+Startup sets `X_POST_URL` from that non-secret file. Neither video nor post
+configuration is erased when the code is redeployed.
+
+Earlier steps' live measurements are recorded in their PRs; they do not
+establish the final product's performance. The step-12 PR lists every
+C1–C4, D1–D4 and U1–U8 requirement with evidence or “not run”.
+In step 13, on its final deployed head, record three runs for each U1–U5
+check and the median. Step 12 lists each criterion’s status; it does not deploy
+an older build over the approved private preview for those measurements. For U5, close polling tabs, verify sleep through the Sprite control
+plane before each run, and measure navigation to the first visible Welcome
+action; an already-awake response is not cold-start evidence. Record the
+actual video, phone notes, demo URL, post URL and submission confirmation
+only when Copal supplies them. The goal is not complete while any required
+live check or deployment remains pending.

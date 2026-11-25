@@ -61,7 +61,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber)
     if(job.attempts>=2) {db.prepare("UPDATE conversations SET status='failed',error='KAI could not finish. Try again.' WHERE id=?").run(job.id);return;}
     try {db.transaction(()=> {
       reserveReading(db,job.workspace_id);if(job.audio_path && !job.transcribed) reserveRecording(db,job.workspace_id);
-      db.prepare("UPDATE conversations SET status='waiting' WHERE id=?").run(job.id);
+      db.prepare("UPDATE conversations SET status='waiting',progress=NULL WHERE id=?").run(job.id);
     })();} catch {db.prepare("UPDATE conversations SET status='failed',error='KAI has reached today’s limit. Try tomorrow.' WHERE id=?").run(job.id);}
   }
   // One server owns this database. A new process means these leases were interrupted.

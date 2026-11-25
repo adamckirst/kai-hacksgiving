@@ -54,6 +54,11 @@ test('waitlist fences public writes, attempts, capacity, privacy and operator do
     const insert=db.prepare('INSERT INTO waitlist(email,created_at) VALUES (?,?)');db.transaction(()=>{for(let i=2;i<2000;i++)insert.run(inventedAddress(),new Date(now).toISOString());})();
     assert.equal((await post(second,inventedAddress())).status,409);assert.equal(count(),2000);
     assert.equal((await post(second,email)).status,200);assert.equal(count(),2000);
+    const state=JSON.parse((db.prepare("SELECT waitlist_visitors FROM workspaces WHERE id='public'").get() as {waitlist_visitors:string}).waitlist_visitors);
+    while(Object.keys(state).length<2000)state[randomBytes(32).toString('hex')]={seen:now,attempts:[]};
+    db.prepare("UPDATE workspaces SET waitlist_visitors=? WHERE id='public'").run(JSON.stringify(state));
+    assert.equal((await fetch(base+'/api/waitlist')).status,429);
+    assert.equal((await fetch(base+'/api/waitlist',{headers:{Cookie:second}})).status,200);
     assert.equal(providerCalls,0);assert.equal(logs.length,0);
   }finally{console.log=previous.log;console.error=previous.error;console.warn=previous.warn;await client.close();await app.locals.queue.stop();await new Promise<void>(resolve=>server.close(()=>resolve()));db.close();}
 });
