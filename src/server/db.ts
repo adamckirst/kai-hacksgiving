@@ -43,8 +43,14 @@ export function openDatabase(path = ':memory:') {
     );
     CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created_at TEXT NOT NULL);
   `);
+  db.transaction(()=> {
   const columns=db.prepare('PRAGMA table_info(workspaces)').all() as {name:string}[];
   if (!columns.some(c=>c.name==='reading_day')) db.exec("ALTER TABLE workspaces ADD COLUMN reading_day TEXT; ALTER TABLE workspaces ADD COLUMN readings_today INTEGER NOT NULL DEFAULT 0;");
+  if (!columns.some(c=>c.name==='recording_day')) db.exec("ALTER TABLE workspaces ADD COLUMN recording_day TEXT; ALTER TABLE workspaces ADD COLUMN recordings_today INTEGER NOT NULL DEFAULT 0;");
+  const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
+  if(!conversations.some(c=>c.name==='audio_path')) db.exec("ALTER TABLE conversations ADD COLUMN audio_path TEXT; ALTER TABLE conversations ADD COLUMN happened_at INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN transcribed INTEGER NOT NULL DEFAULT 0;");
+  if(!conversations.some(c=>c.name==='batch_id')) db.exec('ALTER TABLE conversations ADD COLUMN batch_id TEXT');
+  })();
   return db;
 }
 export type KaiDatabase = ReturnType<typeof openDatabase>;
@@ -58,7 +64,7 @@ export function seed(db: KaiDatabase, now = new Date(), workspace = 'public') {
     person.run(id('dana'),workspace,'Dana Whitfield','Willow Dental','Operations lead');
     person.run(id('ellis'),workspace,'Ellis Rowan','Harbour Dental','Clinic owner');
     person.run(id('nia'),workspace,'Nia Calder','Loomwork','Product lead');
-    const conversation = db.prepare('INSERT INTO conversations VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)');
+    const conversation = db.prepare('INSERT INTO conversations (id,workspace_id,title,summary,source,text,happened_on,status,error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)');
     conversation.run(id('dana-call'),workspace,'First call with Dana','Dana wants pricing for three clinics.\nHer team needs simpler scheduling.','paste','Dana Whitfield at Willow Dental wants pricing for three clinics. I promised to send Dana the pricing. She wants fewer gaps between appointments.',day(-4),'ready');
     conversation.run(id('ellis-call'),workspace,'A trial with Ellis','Ellis will ask the team about a trial.\nWe will talk again next week.','paste','Ellis Rowan at Harbour Dental will ask the team about a trial. Ellis promised to send the trial dates.',day(-2),'ready');
     db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?, ?)').run(id('dana-note'),workspace,id('dana'),id('dana-call'),'Wants fewer gaps between appointments.','She wants fewer gaps between appointments.');
