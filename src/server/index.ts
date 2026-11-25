@@ -1,0 +1,10 @@
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { createApp } from './app';
+import { openDatabase, seed } from './db';
+const file = process.env.KAI_DB ?? '.data/kai.sqlite';
+if (file !== ':memory:') mkdirSync(dirname(file), {recursive:true});
+const db = openDatabase(file);
+seed(db);
+const server = createApp(db).listen(Number(process.env.PORT ?? 18500), process.env.HOST ?? '127.0.0.1', () => console.log('KAI is ready'));
+for (const signal of ['SIGTERM','SIGINT']) process.on(signal, () => server.close(() => {db.close(); process.exit(0);}));
