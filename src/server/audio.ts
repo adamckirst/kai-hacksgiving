@@ -23,7 +23,7 @@ export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[
   mkdirSync(directory,{recursive:true,mode:0o700});
   const written:string[]=[];const batch=randomUUID();
   try {
-    return db.transaction(()=>files.map(file=> {
+    return db.transaction(()=>files.slice().sort((a,b)=>a.date-b.date).map(file=> {
       reserveRecording(db,workspace);reserveReading(db,workspace);
       const id=randomUUID(),audioPath=path.resolve(directory,id+'.audio');
       writeFileSync(audioPath,file.buffer,{mode:0o600,flag:'wx'});written.push(audioPath);
