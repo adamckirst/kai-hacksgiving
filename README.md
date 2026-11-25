@@ -132,8 +132,10 @@ persist the current UTC day’s usage; there are still seven tables.
 
 Local checks cover every sample, invented quotes, impossible dates, foreign
 people, reading limits, retry accounting, incremental tool handling, and the
-375 px sample flow through quote highlighting. U3 still requires three timed
-runs on the Sprite; local fake-reader speed is not that measurement.
+375 px sample flow through quote highlighting. On step 4's reviewed head
+`37a9051`, three real-connector browser runs measured U3 at a median 6.85
+seconds to the first suggestion and 10.68 seconds to all suggestions.
+Final-product measurements must be repeated on its own deployed head.
 
 ## Add recordings (step 5)
 
@@ -162,9 +164,11 @@ folders and are removed when the tests finish. The restart test closes and
 reopens a disk-backed database while keeping all access credentials out of
 that database. The phone test uploads a generated WAV and sees the words.
 
-U2 is not established by these checks: Copal must record
-[`samples/memo-script.md`](samples/memo-script.md), then the deployed app’s
-first-suggestion time must be measured over three runs.
+Copal recorded [`samples/memo-script.md`](samples/memo-script.md). On step
+5's reviewed head `6f85365`, three browser uploads measured U2 at a median
+15.98 seconds to the first suggestion. A temporary copy added trailing
+silence to reach 60 seconds; it was removed after the check. Each run
+confirmed that the words persisted and uploaded audio was removed.
 
 ## Decide what to keep (step 6)
 
@@ -330,7 +334,8 @@ run `scripts/save-links.sh <public Sprite URL>` on kosmoslab. It reads the
 invitation and creates/reuses the independent download secret on the
 Sprite, then writes both links only to `~/kai-links.txt` with mode 600.
 It does not change URL access. Do not print or open that file as the agent.
-The helper has been syntax-checked only; it has not run without a Sprite.
+The helper has been syntax-checked only; link delivery remains on hold
+while Copal keeps the Sprite private.
 Copal alone opens the file and downloads the list. His Saturday download
 check and the later X post remain manual PRD §9 steps.
 
@@ -341,8 +346,11 @@ be visually reverted by an older polling response, and a retry starts with
 fresh progress text. To-dos waits for access to resolve before saying the
 copy is read-only. The phone checks include a delayed-poll regression and
 an urgency case where the overdue person comes last alphabetically.
+The HTTP body limit accommodates 20,000 Unicode characters even when JSON
+escapes every character; the transcript's character limit still applies.
 
-When Copal provides his invented screen recording, run
+Copal wants to approve the final product, including step 13's look, before
+any video work. After that approval and when he supplies the recording, run
 `scripts/upload-demo.sh <video-file>`, then deploy the reviewed commit.
 The helper converts to H.264/AAC MP4 in an ignored temporary directory,
 streams the file to `/home/sprite/kai-state/demo.mp4`, and removes its local
@@ -357,9 +365,10 @@ After Copal supplies the X post, keep its public address in
 Startup sets `X_POST_URL` from that non-secret file. Neither video nor post
 configuration is erased when the code is redeployed.
 
-No Sprite measurements or manual checks have been claimed. The step-12 PR
-lists every C1–C4, D1–D4 and U1–U8 requirement with its evidence or “not run”.
-On the live Sprite, record three runs for each speed-of-use check and the
+Earlier steps' live measurements are recorded in their PRs; they do not
+establish the final product's performance. The step-12 PR lists every
+C1–C4, D1–D4 and U1–U8 requirement with evidence or “not run”.
+On the final deployed head, record three runs for each speed-of-use check and the
 median. For U5, close polling tabs, verify sleep through the Sprite control
 plane before each run, and measure navigation to the first visible Welcome
 action; an already-awake response is not cold-start evidence. Record the

@@ -23,7 +23,8 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
   mountMcp(app,db);
   mountWaitlist(app,db,options);
-  app.use(express.json({limit:'32kb'}));
+  // A 20,000-character transcript can need 120 KB when JSON escapes it.
+  app.use(express.json({limit:'128kb'}));
   app.use((req,res,next) => {
     res.locals.workspace = workspaceFor(db,req);
     if (!['GET','HEAD','OPTIONS'].includes(req.method)) {
