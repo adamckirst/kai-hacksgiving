@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { Dialog, DialogActions, DialogBody, DialogTitle } from '../../src/catalyst/dialog'
+import { Dialog, DialogActions, DialogBody, DialogTitle } from '../../catalyst/dialog'
 import { Icon, type IconName } from '../icons'
 import type { Payload, Recording as RecordingData, Source, Suggestion } from '../types'
-import { Area, Button, Card, Chip, dueWords, Field, Notice, PushedPage, Quote, SectionLabel, Segmented, shortDay, Working } from '../ui'
+import { Area, Button, Card, Chip, dueWords, Field, Notice, PushedPage, Quote, SectionLabel, Segmented, shortDay, Working, TextLink } from '../ui'
 
 const SOURCE: Record<Source, { label: string; icon: IconName }> = {
   recording: { label: 'Recording', icon: 'mic' },
@@ -94,11 +94,13 @@ function SuggestionRow({
 export function SuggestionEditor({
   suggestion,
   busy,
+  error,
   onSave,
   onCancel,
 }: {
   suggestion: Suggestion
   busy?: boolean
+  error?: string
   onSave: (edits: Payload) => void
   onCancel: () => void
 }) {
@@ -114,6 +116,7 @@ export function SuggestionEditor({
       >
         <DialogTitle className="!text-xl !font-extrabold">Edit suggestion</DialogTitle>
         <DialogBody className="space-y-4">
+          {error && <Notice tone="error">{error}</Notice>}
           {suggestion.kind === 'person' ? (
             <>
               <Field label="Name" id="edit-name" required value={value.name ?? ''} onChange={(event) => set({ name: event.target.value })} />
@@ -260,7 +263,9 @@ export function Recording({
             </p>
           )}
           {recording.status === 'failed' && <Notice tone="error">{recording.error ?? 'KAI could not read this recording.'}</Notice>}
-          {actionError && <Notice tone="error">{actionError}</Notice>}
+          {actionError && !edited && <Notice tone="error">{actionError}</Notice>}
+
+          {recording.person && <Card className="p-5"><p className="text-base font-semibold text-zinc-600">Linked to</p><TextLink href={'/people/'+recording.person.id}>{recording.person.name}</TextLink></Card>}
 
           {recording.summary && (
             <Card className="p-5">
@@ -301,15 +306,15 @@ export function Recording({
           {recording.status === 'ready' && proposed.length === 0 && waitlist}
 
           {recording.text && (
-            <div>
+            <section aria-labelledby="recording-words">
               <SectionLabel id="recording-words">The words</SectionLabel>
               <Words text={recording.text} quote={quote} />
-            </div>
+            </section>
           )}
         </>
       )}
 
-      {edited && <SuggestionEditor key={edited.id} suggestion={edited} busy={busy} onCancel={onCancelEdit} onSave={(edits) => onSaveEdit(edited.id, edits)} />}
+      {edited && <SuggestionEditor key={edited.id} suggestion={edited} busy={busy} error={actionError} onCancel={onCancelEdit} onSave={(edits) => onSaveEdit(edited.id, edits)} />}
     </PushedPage>
   )
 }

@@ -517,17 +517,21 @@ export function Footer() {
  * "Add recordings": the action of every tab page in your own copy. The file
  * field lies over the pill, so one tap opens the phone's own picker.
  */
-export function AddRecordings({ onFiles, busy }: { onFiles: (files: File[]) => void; busy?: boolean }) {
+export function AddRecordings({ personId }: { onFiles?: (files: File[]) => void; busy?: boolean; personId?: string }) {
+  return <Button variant="primary" wide icon="plus" href={'/upload/new'+(personId ? '?person='+encodeURIComponent(personId) : '')}>Add recordings</Button>
+}
+
+export function RecordingPicker({ onFiles, busy, disabled }: { onFiles: (files: File[]) => void; busy?: boolean; disabled?: boolean }) {
   return (
     <div className="relative">
-      <button type="button" tabIndex={-1} aria-hidden="true" disabled={busy} className={clsx(PILL, VARIANT.primary, 'h-14 w-full text-lg')}>
+      <button type="button" tabIndex={-1} aria-hidden="true" disabled={busy || disabled} className={clsx(PILL, VARIANT.primary, 'h-14 w-full text-lg')}>
         <Icon name="plus" />
         {busy ? 'Adding…' : 'Add recordings'}
       </button>
       <input
         type="file"
         multiple
-        disabled={busy}
+        disabled={busy || disabled}
         accept=".m4a,.opus,.ogg,.mp3,.wav"
         aria-label="Add recordings: choose up to five audio files"
         onChange={(event) => {

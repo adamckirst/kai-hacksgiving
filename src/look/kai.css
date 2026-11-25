@@ -7,7 +7,7 @@
 
 /* Tailwind reads its class names from the screens, here and in src/. */
 @source './';
-@source '../src/catalyst';
+@source '../catalyst';
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*

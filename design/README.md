@@ -25,32 +25,38 @@ first.
 
 | File | Holds |
 |---|---|
-| `kai.css` | The look in one place: font, page colour, shadows, motion |
-| `ui.tsx` | The pieces: `TabPage`, `PushedPage`, `Dock`, `Card`, `Rows`, `SectionLabel`, `Button`, `Avatar`, `CountBadge`, `DueChip`, `Segmented`, `Quote`, `Tick`, `Field`, `AddRecordings` |
-| `icons.tsx` | KAI's own icons. There is no icon library |
-| `types.ts` | What each screen is given: the shapes the server answers with today |
-| `screens/` | `Welcome`, `Home`, `Recording`, `People` and `Person`, `Todos`, `Connect`, `Waitlist` and `Operator` |
+| `../src/look/kai.css` | The look in one place: font, page colour, shadows, motion |
+| `../src/look/ui.tsx` | The pieces: `TabPage`, `PushedPage`, `Dock`, `Card`, `Rows`, `SectionLabel`, `Button`, `Avatar`, `CountBadge`, `DueChip`, `Segmented`, `Quote`, `Tick`, `Field`, `AddRecordings` |
+| `../src/look/icons.tsx` | KAI's own icons. There is no icon library |
+| `../src/look/types.ts` | What each screen is given: the shapes the server answers with today |
+| `../src/look/screens/` | `Welcome`, `Home`, `Recording`, `People` and `Person`, `Todos`, `Connect`, `Upload`, `Opening`, `Waitlist` and `Operator` |
 | `fixtures.ts`, `gallery.tsx` | Mara's made-up data, and the page that shows each state |
 | `check.mjs`, `shots/` | The measurement and its pictures |
 
 A screen here fetches nothing and keeps no server state: it takes data and
 callbacks. `gallery.tsx` shows how each is called.
 
-## Building the app to it (PRD §7, step 13)
+## Shared with the app (PRD §7, step 13)
 
-1. Move `kai.css`, `ui.tsx`, `icons.tsx`, `types.ts` and `screens/` into
-   `src/look/`, and point `gallery.tsx` at them. One copy, so the gallery and
-   the app cannot drift.
-2. In each app screen keep the fetching, the polling and the actions, and
-   render the screen from `src/look/` with them. `src/style.css` goes: its
-   rules for `h1`, `nav`, `label` and the rest would fight these.
-3. In `kai.css`, change the two `@source` lines to where the files now are.
-4. In `tests/phone/usability.ts` (it arrives with the open step PRs), read
-   the filled violet as
-   `--color-violet-600`, and leave out elements with
-   `data-headlessui-focus-guard`: the kit's dialog adds two unseen buttons.
-5. Keep every behaviour. This step changes how KAI looks and where its one
-   action sits, not what it does.
+`src/look/` now holds `kai.css`, `ui.tsx`, `icons.tsx`, `types.ts` and
+`screens/`. The gallery and app import that one copy. The app controllers
+keep fetching, polling, uploads and decisions; the shared screens take data
+and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
+unchanged, including the dialog used for the editing sheet.
+
+The gallery includes loading and failure states needed by the live app.
+`check.mjs` checks all 57 states. The phone suite checks all public and judge
+routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
+highlighting. It checks the filled violet's resting, hover and active colours,
+and waits for finite layout transitions to settle through retried assertions.
+
+`app-shots/` holds phone pictures from the real app with local invented data.
+Connection addresses are intercepted with invalid layout examples before
+capture. To refresh them, run `KAI_SCREENSHOTS=1 npm run test:phone`; the
+pictures go to ignored `.data/app-shots/` for inspection before copying here.
+Ordinary checks do not rewrite the committed pictures. `shots/` remains the
+gallery reference. Different people counts and dates reflect the fixtures,
+not a second implementation of the look.
 
 ### Each screen's one action
 
@@ -59,9 +65,10 @@ The dock at the foot of the screen holds it, except where noted.
 | Screen | Your own copy | Read-only copy |
 |---|---|---|
 | Welcome | "Try it yourself", in the page | "Look around", in the page |
-| Home, People, To-dos | "Add recordings": one tap opens the phone's file picker, and the upload starts when files are chosen | "What is KAI?", to Welcome |
+| Home, People, To-dos | "Add recordings": opens the upload page to choose a person, then files | "What is KAI?", to Welcome |
 | Recording | "Accept all · n"; "Try again" when it failed; "See people" when all is decided. Hidden while a suggestion is edited: "Save and accept" is then the one | "Back to Home" |
 | Person | "Review suggestions" when some wait; otherwise "Add recordings" | "Back to People" |
+| Upload | "Choose recordings"; "Let KAI read" for a shared recording | "What is KAI?" |
 | Connect | "Copy your address", in the first card | "What is KAI?" |
 
 ### What the look shows that the server does not send yet

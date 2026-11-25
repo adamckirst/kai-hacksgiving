@@ -1,5 +1,5 @@
-import type { Connection, HomeData, Person, PersonPage, QueueItem, Recording, Sample, Suggestion, Todo } from './types'
-import { addDays } from './ui'
+import type { Connection, HomeData, Person, PersonPage, QueueItem, Recording, Sample, Suggestion, Todo } from '../src/look/types'
+import { addDays } from '../src/look/ui'
 
 /*
  * Made-up data for the gallery: Mara Lindqvist, founder of Loomwork, and the
@@ -128,5 +128,5 @@ export const danaPending: PersonPage = {
 export const connection: Connection = {
   uploadAddress: 'https://kai-demo.sprites.app/in/made-up-address-for-the-design-0000',
   assistantAddress: 'https://kai-demo.sprites.app/mcp/made-up-address-for-the-design-0000',
-  homeAddress: 'https://kai-demo.sprites.app/home',
+  homeAddress: 'https://kai-demo.sprites.app/upload',
 }

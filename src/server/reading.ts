@@ -14,7 +14,7 @@ export const toolSchemas={
 };
 export type ToolName=keyof typeof toolSchemas;
 export type ToolResult={ok:boolean;id?:string;error?:string;person?:NonNullable<ReturnType<typeof personPage>>};
-export type ReadInput={text:string;happened_on:string;people:{id:string;name:string;company:string;role:string}[]};
+export type ReadInput={sender?:{kind:'person'|'owner'|'unknown';person?:{id:string;name:string;company:string;role:string}};text:string;happened_on:string;people:{id:string;name:string;company:string;role:string}[]};
 export type Reader=(input:ReadInput,call:(name:string,input:unknown)=>ToolResult,signal?:AbortSignal)=>Promise<void>;
 export class ReadingError extends Error {constructor(message:string,public status=400){super(message);}}
 export function reserveReading(db:KaiDatabase,workspace:string,now=new Date()) {
@@ -56,13 +56,15 @@ export function retryReading(db:KaiDatabase,workspace:string,id:string) {
   })();
 }
 export async function readConversation(db:KaiDatabase,id:string,reader:Reader,signal?:AbortSignal) {
-  const row=db.prepare('SELECT workspace_id,text,happened_on FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string};
+  const row=db.prepare('SELECT workspace_id,text,happened_on,source,person_id FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string;source:string;person_id:string|null};
   db.prepare("UPDATE conversations SET status='reading',error=NULL,progress=NULL WHERE id=?").run(id);
   let described=false, calls=0;const readPeople=new Set<string>();
   const personExists=(person:string) => !!db.prepare('SELECT id FROM people WHERE workspace_id=? AND id=?').get(row.workspace_id,person) || !!db.prepare("SELECT id FROM suggestions WHERE workspace_id=? AND conversation_id=? AND kind='person' AND status='proposed' AND id=?").get(row.workspace_id,id,person);
   try {
     const people=db.prepare('SELECT id,name,company,role FROM people WHERE workspace_id=?').all(row.workspace_id) as ReadInput['people'];
-    await reader({...row,people},(name,input)=> {
+    const person=people.find(p=>p.id===row.person_id);
+    const sender:ReadInput['sender']=person ? {kind:'person',person}:row.source==='sample' ? {kind:'owner'}:{kind:'unknown'};
+    await reader({...row,people,sender},(name,input)=> {
       signal?.throwIfAborted();
       if(++calls>50) throw new Error('Too many calls.');
       if(!(name in toolSchemas)) return {ok:false,error:'Unknown tool.'};

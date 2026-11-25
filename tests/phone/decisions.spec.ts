@@ -1,23 +1,24 @@
+import { photograph } from './photos';
 import { test,expect } from './fixture';
 import { assertPhone } from './usability';
 import type { Page } from '@playwright/test';
 async function sample(page:Page,secret:string,title='Meeting Sora') {
   await page.goto('/');await page.evaluate(value=>{history.replaceState(null,'',`/#judge=${value}`);location.reload();},secret);
-  await page.getByRole('link',{name:'Try it yourself'}).click();await page.getByRole('button',{name:title,exact:true}).click();await expect(page.getByText('KAI has finished reading.')).toBeVisible();
+  await page.getByRole('link',{name:'Try it yourself'}).click();await page.getByRole('button',{name:title,exact:true}).click();await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();
 }
 test('U4: one tap accepts all; People and Person pass U6–U8',async({page,kai})=> {
-  await sample(page,kai.secret);await page.getByRole('button',{name:'Accept all',exact:true}).click();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);
-  await page.getByRole('link',{name:'See people'}).click();await expect(page.locator('.everyone')).toContainText('Sora Bell');await assertPhone(page);
-  await page.locator('.everyone').getByRole('link',{name:/Sora Bell/}).click();await expect(page.getByRole('heading',{name:'Sora Bell',exact:true})).toBeVisible();await expect(page.getByText('Send Sora a short overview',{exact:true})).toBeVisible();await assertPhone(page);
+  await sample(page,kai.secret);await page.getByRole('button',{name:/^Accept all/}).click();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);
+  await page.getByRole('link',{name:'See people'}).click();await expect(page.getByRole('main')).toContainText('Sora Bell');await assertPhone(page);
+  await page.getByRole('link',{name:/Sora Bell/}).click();await expect(page.getByRole('heading',{name:'Sora Bell',exact:true})).toBeVisible();await expect(page.getByText('Send Sora a short overview',{exact:true})).toBeVisible();await assertPhone(page);
 });
 test('U4: one tap accepts one suggestion and one tap rejects a person and their pending items',async({page,kai})=> {
   await sample(page,kai.secret,'A follow-up with Dana');await page.getByRole('button',{name:'Accept',exact:true}).first().click();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(1);
-  await page.goto('/home');await page.getByRole('button',{name:'Meeting Sora',exact:true}).click();await expect(page.getByText('KAI has finished reading.')).toBeVisible();
+  await page.goto('/home');await page.getByRole('button',{name:'Meeting Sora',exact:true}).click();await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();
   await page.getByRole('button',{name:'Reject',exact:true}).first().click();await expect(page.getByText('Rejected',{exact:true})).toHaveCount(3);
 });
 test('edit and accept preserves the quote and uses one violet action',async({page,kai})=> {
   await sample(page,kai.secret);await page.getByRole('button',{name:'Edit',exact:true}).last().click();
-  await page.getByLabel('Words to keep').fill('Send Sora the short overview');await assertPhone(page);
+  await page.getByLabel('Words to keep').fill('Send Sora the short overview');await assertPhone(page);await photograph(page,'recording-editing');
   await page.getByRole('button',{name:'Save and accept',exact:true}).click();await expect(page.getByRole('heading',{name:'Send Sora the short overview',exact:true})).toBeVisible();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(2);
 });
 test('accepted changes through real routes stay private to one judge browser',async({browser,kai})=> {
@@ -27,9 +28,9 @@ test('accepted changes through real routes stay private to one judge browser',as
     await sample(a,kai.secret);await sample(b,kai.secret,'A follow-up with Dana');
     const recording=new URL(a.url()).pathname.split('/').pop();
     expect((await b.request.get('/api/readings/'+recording)).status()).toBe(404);
-    await a.getByRole('button',{name:'Accept all',exact:true}).click();await expect(a.getByText('Accepted',{exact:true})).toHaveCount(3);
+    await a.getByRole('button',{name:/^Accept all/}).click();await expect(a.getByText('Accepted',{exact:true})).toHaveCount(3);
     await a.goto('/people');await b.goto('/people');
-    await expect(a.locator('.everyone')).toContainText('Sora Bell');await expect(b.locator('.everyone')).not.toContainText('Sora Bell');
+    await expect(a.getByRole('main')).toContainText('Sora Bell');await expect(b.getByRole('main')).not.toContainText('Sora Bell');
   }finally{await first.close();await second.close();}
 });
 
@@ -43,9 +44,9 @@ test('a delayed poll cannot put an accepted suggestion back on screen',async({pa
     held=true;const response=await route.fetch();const old=await response.json();delayed();await released;await route.fulfill({json:old});
   });
   await arrived;
-  await page.getByRole('button',{name:'Accept all',exact:true}).click();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);
+  await page.getByRole('button',{name:/^Accept all/}).click();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);
   const delivered=page.waitForResponse(async response=>response.request().method()==='GET' && response.url().includes('/api/readings/') && (await response.json()).suggestions?.some((s:{status:string})=>s.status==='proposed'));
   release();await (await delivered).finished();await page.unrouteAll({behavior:'wait'});
   await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
-  await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);await expect(page.getByRole('button',{name:'Accept all',exact:true})).toHaveCount(0);
+  await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);await expect(page.getByRole('button',{name:/^Accept all/})).toHaveCount(0);
 });

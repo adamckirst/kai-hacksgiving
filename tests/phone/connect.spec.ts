@@ -13,8 +13,8 @@ test('Connect explains the shortcut at 375 px and copies an address without show
   await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async(value:string)=>{document.body.dataset.copied=value;}}}));
   await page.getByRole('button',{name:'Copy your address',exact:true}).click();await expect(page.getByRole('status')).toHaveText('Copied.');
   expect(await page.evaluate(path=>document.body.dataset.copied===location.origin+path,placeholder)).toBe(true);
-  await page.getByRole('button',{name:'Copy home address',exact:true}).click();
-  expect(await page.evaluate(()=>document.body.dataset.copied===location.origin+'/home')).toBe(true);
+  await page.getByRole('button',{name:'Copy upload address',exact:true}).click();
+  expect(await page.evaluate(()=>document.body.dataset.copied===location.origin+'/upload')).toBe(true);
   await page.getByRole('button',{name:'Copy assistant address',exact:true}).click();
   expect(await page.evaluate(()=>document.body.dataset.copied===location.origin+'/mcp/'+('layout-example-'.repeat(5)))).toBe(true);
   await expect(page.getByRole('status')).toBeVisible();

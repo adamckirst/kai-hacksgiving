@@ -44,7 +44,7 @@ export function People({
   due?: 'overdue' | 'soon'
   adding?: boolean
   error?: string
-  onFiles: (files: File[]) => void
+  onFiles?: (files: File[]) => void
 }) {
   const needs = (people ?? []).filter(needsYou).sort((a, b) => urgency(a) - urgency(b) || b.overdue - a.overdue || byName(a, b))
   const rest = (people ?? []).filter((person) => !needsYou(person)).sort(byName)
@@ -60,24 +60,24 @@ export function People({
       {error && <Notice tone="error">{error}</Notice>}
       {!people && !error && <Notice>Loading people…</Notice>}
       {needs.length > 0 && (
-        <div>
+        <section aria-label="Needs you">
           <SectionLabel count={needs.length}>Needs you</SectionLabel>
           <Rows>
             {needs.map((person) => (
               <PersonLine key={person.id} person={person} />
             ))}
           </Rows>
-        </div>
+        </section>
       )}
       {rest.length > 0 && (
-        <div>
+        <section aria-label={needs.length ? 'Everyone else' : 'Everyone'}>
           <SectionLabel>{needs.length ? 'Everyone else' : 'Everyone'}</SectionLabel>
           <Rows>
             {rest.map((person) => (
               <PersonLine key={person.id} person={person} />
             ))}
           </Rows>
-        </div>
+        </section>
       )}
       {people?.length === 0 && <Card className="p-5 text-base font-medium text-zinc-600">People appear here once KAI hears about them in a recording.</Card>}
     </TabPage>
@@ -106,7 +106,7 @@ export function Person({
   /** The ids of to-dos being marked done. */
   pendingTodo?: string[]
   onTick?: (id: string) => void
-  onFiles: (files: File[]) => void
+  onFiles?: (files: File[]) => void
 }) {
   const to = useHref()
   const first = person?.name.split(' ')[0]
@@ -121,7 +121,7 @@ export function Person({
       Review suggestions{person.pendingCount ? ` · ${person.pendingCount}` : ''}
     </Button>
   ) : (
-    <AddRecordings onFiles={onFiles} busy={adding} />
+    <AddRecordings onFiles={onFiles} busy={adding} personId={person?.id} />
   )
 
   const todoRows = (todos: PersonPage['todos'], who: string) => (

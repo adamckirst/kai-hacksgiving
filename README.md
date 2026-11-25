@@ -139,7 +139,8 @@ Final-product measurements must be repeated on its own deployed head.
 
 ## Add recordings (step 5)
 
-Home accepts one to five `.m4a`, `.opus`, `.ogg`, `.mp3` or `.wav` files.
+Add recordings opens an upload page. Choose an existing person, add a person,
+or continue without one, then choose one to five `.m4a`, `.opus`, `.ogg`, `.mp3` or `.wav` files.
 Each must be at most 10 MB and five minutes. The server parses the audio’s
 duration, validates the whole batch, and reserves both recording and reading
 allowances before enqueueing it. File dates come from the file picker;
@@ -225,8 +226,10 @@ read the input file's Creation Date, format it as ISO 8601 including time,
 and POST a Form with a File named `recordings` (Shortcut Input) and a Text
 named `date` (Formatted Date). Read the response dictionary's `error`: if
 it has a value, Show Alert and Stop This Shortcut. After End If, Open URLs
-opens this site's Home in
-Safari, where the judge's existing cookie selects their copy. If the source
+opens this site's `/upload` page in Safari, where the judge's existing cookie
+selects their copy. The shared recording waits there until they choose a person
+or continue without one and tap Let KAI read. Older shortcuts that open Home
+are taken to the waiting upload automatically. If the source
 app provides no original date, Ask for Input can supply Date and Time for
 Format Date instead. The shortcut is tried on Copal's iPhone before this
 step can merge; the browser tests are not a substitute for that check.
@@ -376,3 +379,22 @@ action; an already-awake response is not cold-start evidence. Record the
 actual video, phone notes, demo URL, post URL and submission confirmation
 only when Copal supplies them. The goal is not complete while any required
 live check or deployment remains pending.
+
+## The look (step 13)
+
+The app and [gallery](design/README.md) use the same screens in `src/look/`.
+Home, People and To-dos open the upload page, where the person is chosen
+before transcription starts. A person’s page preselects that person. Suggestions are edited in a bottom sheet;
+errors stay inside it. People shows each person once, with Needs you first.
+Shared audio stays in the database queue without calling a provider until
+the person confirms. This survives restarts and rechecks daily allowances
+if confirmation happens on a later day. KAI receives the selected speaker;
+without a choice it is told the speaker is unknown, never assumed to be Mara.
+Home keeps current and newly completed recordings first, followed by your
+to-dos with completion checkboxes. Sample prompts disappear after an audio
+upload; upload limits appear only on the upload page. Loading a private route
+keeps that page’s loading screen instead of showing Welcome.
+
+[App pictures](design/app-shots/) use invented local data; [gallery pictures](design/shots/)
+show the reference. No usable connection address appears in those pictures.
+The Sprite remains private and video work waits for Copal’s product approval.

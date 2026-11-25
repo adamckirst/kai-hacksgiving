@@ -35,7 +35,7 @@ export function Todos({
   /** The ids of to-dos being marked done. */
   pending?: string[]
   onTick: (id: string) => void
-  onFiles: (files: File[]) => void
+  onFiles?: (files: File[]) => void
 }) {
   const [view, setView] = useState(firstView)
   const waiting = view === 'waiting'

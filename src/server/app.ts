@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'node:path';
 import type { KaiDatabase } from './db';
-import { addReading, retryReading, ReadingError, type Reader } from './reading';
+import { addReading, retryReading, reserveReading, reserveRecording, ReadingError, type Reader } from './reading';
 import { fakeReader } from './fake-reader';
 import { samples } from '../samples';
 import { decide,acceptAll,peopleList,personPage } from './decisions';
@@ -12,12 +12,13 @@ import { listTodos,finishTodo } from './todos';
 import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
 import { mountWaitlist } from './waitlist';
+import { linkRecordingPerson } from './recording-person';
 export type AppOptions = {judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
   const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber);
   const work=queue.kick;app.locals.queue=queue;void work();
-  const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:5,fields:1,fieldSize:1024,parts:6}}).array('recordings',5);
+  const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:5,fields:2,fieldSize:2048,parts:7}}).array('recordings',5);
   app.disable('x-powered-by');
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
@@ -71,8 +72,9 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
   });
   app.get('/api/home',(_req,res) => res.json({
-    todos:db.prepare("SELECT id,text,due_on FROM todos WHERE workspace_id = ? AND status = 'open' ORDER BY due_on").all(res.locals.workspace),
-    conversations:db.prepare('SELECT id,title,summary FROM conversations WHERE workspace_id = ? ORDER BY happened_on DESC').all(res.locals.workspace),
+    todos:db.prepare("SELECT t.id,t.text,t.due_on,p.name AS person_name FROM todos t LEFT JOIN people p ON p.id=t.person_id AND p.workspace_id=t.workspace_id WHERE t.workspace_id = ? AND t.status = 'open' AND t.owner_person_id IS NULL ORDER BY t.due_on IS NULL,t.due_on").all(res.locals.workspace),
+    conversations:db.prepare('SELECT id,title,summary,happened_on FROM conversations WHERE workspace_id = ? ORDER BY happened_on DESC').all(res.locals.workspace),
+    hasRecordings:Boolean(db.prepare("SELECT 1 FROM conversations WHERE workspace_id=? AND source IN ('recording','shared') LIMIT 1").get(res.locals.workspace)),
     peopleCount:(db.prepare('SELECT count(*) AS n FROM people WHERE workspace_id = ?').get(res.locals.workspace) as {n:number}).n,
   }));
   app.post('/api/recordings',upload,async(req,res) => {
@@ -80,14 +82,21 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
       const files=req.files as Express.Multer.File[]|undefined;
       const dates=JSON.parse(req.body?.dates ?? '[]');
       if(!files || !Array.isArray(dates) || dates.length!==files.length) throw new ReadingError('Choose recordings with their dates.');
-      const ids=await addAudio(db,res.locals.workspace,files.map((f,i)=>({name:f.originalname,buffer:f.buffer,date:dates[i]})),options.audioDirectory ?? '.data/audio');
+      const ids=await addAudio(db,res.locals.workspace,files.map((f,i)=>({name:f.originalname,buffer:f.buffer,date:dates[i]})),options.audioDirectory ?? '.data/audio','recording',{person:req.body?.person ? JSON.parse(req.body.person):undefined});
       res.status(202).json({ids});void work();
     } catch(error) {
       if(error instanceof ReadingError) res.status(error.status).json({error:error.message});
       else if(error instanceof SyntaxError) res.status(400).json({error:'The recording dates could not be read.'});else throw error;
     }
   });
-  app.get('/api/queue',(_req,res)=>res.json(db.prepare("SELECT id,title,status,error FROM conversations WHERE workspace_id=? AND (status IN ('waiting','listening','reading','failed') OR batch_id IN (SELECT batch_id FROM conversations WHERE status IN ('waiting','listening','reading'))) ORDER BY happened_at,rowid").all(res.locals.workspace)));
+  app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.status,c.error,c.progress,c.awaiting_person,
+    (SELECT count(*) FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed') AS suggestion_count
+    FROM conversations c WHERE c.workspace_id=? AND (c.status IN ('waiting','listening','reading','failed')
+      OR c.batch_id IN (SELECT batch_id FROM conversations WHERE workspace_id=c.workspace_id AND status IN ('waiting','listening','reading'))
+      OR (c.status='ready' AND (EXISTS(SELECT 1 FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed')
+        OR c.rowid=(SELECT max(rowid) FROM conversations WHERE workspace_id=c.workspace_id AND source IN ('recording','shared')))))
+    ORDER BY CASE c.status WHEN 'ready' THEN 1 ELSE 0 END,c.happened_at,c.rowid`).all(res.locals.workspace)));
+
   app.post('/api/readings',(req,res) => {
     try {
       const sample=samples.find(s=>s.id===req.body?.sample_id);
@@ -101,11 +110,28 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     try {retryReading(db,res.locals.workspace,req.params.id);res.status(202).json({ok:true});void work();}
     catch(error) {if(error instanceof ReadingError) res.status(error.status).json({error:error.message});else throw error;}
   });
+  app.get('/api/uploads',(_req,res)=>res.json(db.prepare('SELECT id,title,happened_on FROM conversations WHERE workspace_id=? AND awaiting_person=1 ORDER BY rowid DESC').all(res.locals.workspace)));
+  app.post('/api/uploads/:id/start',(req,res) => {
+    try {
+      db.transaction(()=> {
+        const row=db.prepare('SELECT awaiting_person,reserved_on FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace) as {awaiting_person:number;reserved_on:string|null}|undefined;
+        if(!row)throw new ReadingError('Recording not found.',404);
+        if(!row.awaiting_person)return;
+        const day=new Date().toISOString().slice(0,10);
+        if(row.reserved_on && row.reserved_on!==day) {reserveRecording(db,res.locals.workspace);reserveReading(db,res.locals.workspace);}
+        linkRecordingPerson(db,res.locals.workspace,req.params.id,req.body);
+        db.prepare('UPDATE conversations SET awaiting_person=0,reserved_on=? WHERE id=? AND workspace_id=?').run(day,req.params.id,res.locals.workspace);
+      })();
+      res.json({id:req.params.id});void work();
+    }
+    catch(error) {if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
+  });
   app.get('/api/readings/:id',(req,res) => {
-    const row=db.prepare('SELECT id,title,summary,text,happened_on,status,error,progress FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace);
+    const row=db.prepare('SELECT id,title,summary,text,happened_on,source,status,error,progress,person_id,awaiting_person FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace) as {person_id:string|null}|undefined;
     if(!row) {res.status(404).json({error:'Recording not found.'});return;}
     const suggestions=db.prepare('SELECT id,kind,payload,quote,status FROM suggestions WHERE conversation_id=? AND workspace_id=? ORDER BY rowid').all(req.params.id,res.locals.workspace);
-    res.json({...row,suggestions});
+    const person=row.person_id ? db.prepare('SELECT id,name,company,role FROM people WHERE id=? AND workspace_id=?').get(row.person_id,res.locals.workspace) ?? null:null;
+    res.json({...row,person,suggestions});
   });
   app.get('/demo.mp4',(_req,res)=> {
     if(!options.videoFile){res.status(404).end();return;}
@@ -113,7 +139,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/home', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get(['/', '/home', '/upload', '/upload/:id', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose up to five recordings, each up to 10 MB.'});return;}
     res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});

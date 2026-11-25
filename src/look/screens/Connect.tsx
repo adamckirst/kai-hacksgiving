@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { Icon, type IconName } from '../icons'
 import type { Connection } from '../types'
 import { Button, Card, Notice, TabPage, WhatIsKai } from '../ui'
-import { RECORDING_NOTICE } from './Home'
 
 /** An address to copy: shown whole, selectable, never a field you type in. */
 function Address({ label, id, value }: { label: string; id: string; value: string }) {
@@ -57,6 +56,7 @@ export function Connect({
   due,
   copied,
   error,
+  copyError,
   onCopy,
 }: {
   connection: Connection | null
@@ -64,9 +64,10 @@ export function Connect({
   due?: 'overdue' | 'soon'
   copied?: 'upload' | 'home' | 'assistant' | null
   error?: string
+  copyError?: { at: 'upload' | 'home' | 'assistant'; text: string } | null
   onCopy: (which: 'upload' | 'home' | 'assistant', value: string) => void
 }) {
-  const feedback = (which: 'upload' | 'home' | 'assistant') => copied === which && <Notice tone="good">Copied.</Notice>
+  const feedback = (which: 'upload' | 'home' | 'assistant') => copyError?.at === which ? <Notice tone="error">{copyError.text}</Notice> : copied === which && <Notice tone="good">Copied.</Notice>
   return (
     <TabPage current="/connect" title="Connect" subtitle="Send recordings in from your phone, and let your assistant read what you kept." readOnly={readOnly} due={due} dock={readOnly ? <WhatIsKai /> : undefined}>
       {error && <Notice tone="error">{error}</Notice>}
@@ -78,7 +79,10 @@ export function Connect({
             In your own copy, you add “Send to KAI” to your iPhone’s share sheet. Then a voice note goes in from WhatsApp or Voice Memos without opening KAI, and you decide what to keep.
           </p>
         ) : !connection ? (
-          <Notice>Opening your notebook…</Notice>
+          <>
+            {!error && <Notice>Opening your notebook…</Notice>}
+            <Button variant="primary" wide icon="copy" disabled>Copy your address</Button>
+          </>
         ) : (
           <>
             <p className="text-base/7 font-medium text-zinc-700">Set this up once in Apple Shortcuts. Keep the address private: anyone with it can add recordings to your copy.</p>
@@ -89,6 +93,9 @@ export function Connect({
             {feedback('upload')}
 
             <h3 className="pt-2 text-lg font-extrabold">Add “Send to KAI”</h3>
+            <Button variant="outline" wide href="https://www.icloud.com/shortcuts/5d7d8a29c386458bb5c95b14c35ac6ab">Add the shortcut</Button>
+            <p className="text-base/7 font-medium text-zinc-700">Copy your private address above, open the shortcut link and tap Add Shortcut. In its editor, replace the URL field with your private address. Replace the final Open URLs field with the KAI upload address below. Tap Done.</p>
+            <h3 className="pt-2 text-lg font-extrabold">Or build it yourself</h3>
             <Steps>
               {[
                 <>
@@ -107,21 +114,21 @@ export function Connect({
                   Add <B>Get Dictionary Value</B> with the key <B>error</B>. Add <B>If</B> it has any value: Show Alert with it, then Stop This Shortcut.
                 </>,
                 <>
-                  After End If, add <B>Open URLs</B> with the KAI home address below. Tap Done.
+                  After End If, add <B>Open URLs</B> with the KAI upload address below. Tap Done.
                 </>,
               ]}
             </Steps>
-            <Address label="KAI home address" id="home-address" value={connection.homeAddress} />
+            <Address label="KAI upload address" id="home-address" value={connection.homeAddress} />
             <Button variant="outline" wide icon="copy" onClick={() => onCopy('home', connection.homeAddress)}>
-              Copy home address
+              Copy upload address
             </Button>
             {feedback('home')}
 
             <h3 className="pt-2 text-lg font-extrabold">Try it</h3>
             <p className="text-base/7 font-medium text-zinc-700">
-              In WhatsApp, hold a voice note, choose Forward, then Share and <B>Send to KAI</B>. In Voice Memos, choose a recording, then Share. KAI opens Home; tap the recording to see its suggestions.
+              In WhatsApp, hold a voice note, choose Forward, then Share and <B>Send to KAI</B>. In Voice Memos, choose a recording, then Share. KAI opens the upload page with your recording attached. Choose a person, or add someone new, then tap Let KAI read.
             </p>
-            <p className="text-base/7 font-medium text-zinc-500">One audio file at a time, up to 10 MB and five minutes. {RECORDING_NOTICE}</p>
+            <p className="text-base/7 font-medium text-zinc-500">One audio file at a time, up to 10 MB and five minutes.</p>
           </>
         )}
       </Card>
