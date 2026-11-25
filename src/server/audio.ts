@@ -10,7 +10,7 @@ export const maxAudioBytes=10_000_000;
 export type AudioInput={name:string;buffer:Buffer;date:number};
 export type Transcriber=(audio:Buffer,signal:AbortSignal)=>Promise<string>;
 export const fakeTranscriber:Transcriber=async()=>samples[0].text;
-export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[],directory:string) {
+export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[],directory:string,source:'recording'|'shared'='recording') {
   if(files.length<1 || files.length>5) throw new ReadingError('Choose between one and five recordings.');
   for(const file of files) {
     if(!/\.(m4a|opus|ogg|mp3|wav)$/i.test(file.name) || !file.buffer.length || file.buffer.length>maxAudioBytes) throw new ReadingError('Use m4a, opus, ogg, mp3 or wav files, each up to 10 MB.');
@@ -27,7 +27,7 @@ export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[
       reserveRecording(db,workspace);reserveReading(db,workspace);
       const id=randomUUID(),audioPath=path.resolve(directory,id+'.audio');
       writeFileSync(audioPath,file.buffer,{mode:0o600,flag:'wx'});written.push(audioPath);
-      db.prepare('INSERT INTO conversations (id,workspace_id,title,summary,source,text,happened_on,status,audio_path,happened_at,batch_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(id,workspace,'New recording','','recording','',new Date(file.date).toISOString().slice(0,10),'waiting',audioPath,file.date,batch);
+      db.prepare('INSERT INTO conversations (id,workspace_id,title,summary,source,text,happened_on,status,audio_path,happened_at,batch_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(id,workspace,'New recording','',source,'',new Date(file.date).toISOString().slice(0,10),'waiting',audioPath,file.date,batch);
       return id;
     }))();
   } catch(error) {for(const file of written) if(existsSync(file)) unlinkSync(file);throw error;}

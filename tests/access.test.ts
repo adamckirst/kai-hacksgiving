@@ -17,7 +17,7 @@ test('every registered route refuses public writes; access requires the judge se
     for (const route of routes) {
       for (const method of ['POST','PUT','PATCH','DELETE']) {
         const response=await fetch(base+route,{method,headers:{'Content-Type':'application/json'},body:'{}'});
-        assert.equal(response.status,403,`${method} ${route} refuses the public copy`);
+        assert.equal(response.status,route==='/in/:address' ? 404:403,`${method} ${route} refuses the public copy`);
       }
     }
     assert.equal((db.prepare("SELECT count(*) AS n FROM workspaces WHERE kind='judge'").get() as {n:number}).n,0);

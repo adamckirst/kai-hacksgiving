@@ -52,3 +52,7 @@ main { overflow-wrap:anywhere; }
 .todo-tick:focus-visible { outline:2px solid #6d28d9; outline-offset:3px; }
 .todo-tick:disabled { opacity:.5; cursor:wait; }
 .todo-empty { margin:24px 0; }
+.connect-address { display:block; width:100%; min-width:0; padding:12px; margin-bottom:12px; border:1px solid #dedce6; border-radius:8px; background:white; font:inherit; resize:vertical; overflow-wrap:anywhere; }
+.connect-steps { padding-left:24px; line-height:1.65; }
+.connect-steps li { margin:16px 0; }
+.connect-copy { min-height:44px; font-size:16px; }
