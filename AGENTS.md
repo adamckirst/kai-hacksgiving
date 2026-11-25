@@ -135,6 +135,15 @@ The full text is PRD §10. What they mean for your actions:
   `AGENTS.md`, `scripts/review-pr.sh` and `scripts/review-prompt.md` are
   edited only when he asks, with his words quoted in the PR body.
 
+## The look
+
+`design/` holds every screen of KAI as Copal wants it to look, on made-up
+data. Start with `design/README.md` and the pictures in `design/shots/`.
+The app's screens are built to it: the same pieces, the same words, the
+same one action per screen. The look changes only on Copal's words. When
+the app needs a state the gallery does not draw, add it to the gallery in
+the same pull request.
+
 ## Reports to Copal
 
 After each merge, and whenever you stop, write at most ten short lines in

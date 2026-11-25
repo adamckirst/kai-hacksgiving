@@ -155,7 +155,9 @@ two-line summary, keeps its words, and deletes its audio once transcribed.
 
 **The look** is written new, in the spirit of Kopal's design: cards, the
 Manrope font, violet for KAI and the main action, red for overdue, amber
-for due today or tomorrow. One layout, centred on wide screens.
+for due today or tomorrow. One layout, centred on wide screens. `design/`
+holds every screen in that look, on made-up data **(Copal)**; the app's
+screens are built to it in step 13.
 
 ## 5 · Data model
 
@@ -317,7 +319,14 @@ Codex takes the next step that does not need them and comes back.
     the README, U5 measured. *Checks:* every number in §1 measured and listed in the
     PR body.
 
-Stretch steps follow only when step 12 is merged.
+13. **The look.** The app's screens are the ones in `design/`, as its
+    README describes, with every behaviour kept. *Checks:* `design/check.mjs`
+    passes on the gallery; the phone test of U6 to U8 passes on every route
+    in a judge's copy and in the read-only copy; every earlier test passes;
+    the PR body shows each app screen beside its picture in `design/shots/`.
+
+Stretch steps follow only when steps 12 and 13 are merged. The video (§9)
+is recorded after step 13.
 
 ## 8 · Review and merge
 
