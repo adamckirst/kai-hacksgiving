@@ -29,7 +29,7 @@ first.
 | `../src/look/ui.tsx` | The pieces: `TabPage`, `PushedPage`, `Dock`, `Card`, `Rows`, `SectionLabel`, `Button`, `Avatar`, `CountBadge`, `DueChip`, `Segmented`, `Quote`, `Tick`, `Field`, `AddRecordings` |
 | `../src/look/icons.tsx` | KAI's own icons. There is no icon library |
 | `../src/look/types.ts` | What each screen is given: the shapes the server answers with today |
-| `../src/look/screens/` | `Welcome`, `Home`, `Recording`, `People` and `Person`, `Todos`, `Connect`, `Waitlist` and `Operator` |
+| `../src/look/screens/` | `Welcome`, `Home`, `Recording`, `People` and `Person`, `Todos`, `Connect`, `Upload`, `Opening`, `Waitlist` and `Operator` |
 | `fixtures.ts`, `gallery.tsx` | Mara's made-up data, and the page that shows each state |
 | `check.mjs`, `shots/` | The measurement and its pictures |
 
@@ -45,8 +45,8 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 44 states. The phone suite checks all public and judge
-routes, the one-tap file picker, decisions, editing, errors and quote
+`check.mjs` checks all 57 states. The phone suite checks all public and judge
+routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
 
@@ -65,9 +65,10 @@ The dock at the foot of the screen holds it, except where noted.
 | Screen | Your own copy | Read-only copy |
 |---|---|---|
 | Welcome | "Try it yourself", in the page | "Look around", in the page |
-| Home, People, To-dos | "Add recordings": one tap opens the phone's file picker, and the upload starts when files are chosen | "What is KAI?", to Welcome |
+| Home, People, To-dos | "Add recordings": opens the upload page to choose a person, then files | "What is KAI?", to Welcome |
 | Recording | "Accept all · n"; "Try again" when it failed; "See people" when all is decided. Hidden while a suggestion is edited: "Save and accept" is then the one | "Back to Home" |
 | Person | "Review suggestions" when some wait; otherwise "Add recordings" | "Back to People" |
+| Upload | "Choose recordings"; "Let KAI read" for a shared recording | "What is KAI?" |
 | Connect | "Copy your address", in the first card | "What is KAI?" |
 
 ### What the look shows that the server does not send yet

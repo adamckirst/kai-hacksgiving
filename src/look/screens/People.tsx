@@ -44,7 +44,7 @@ export function People({
   due?: 'overdue' | 'soon'
   adding?: boolean
   error?: string
-  onFiles: (files: File[]) => void
+  onFiles?: (files: File[]) => void
 }) {
   const needs = (people ?? []).filter(needsYou).sort((a, b) => urgency(a) - urgency(b) || b.overdue - a.overdue || byName(a, b))
   const rest = (people ?? []).filter((person) => !needsYou(person)).sort(byName)
@@ -106,7 +106,7 @@ export function Person({
   /** The ids of to-dos being marked done. */
   pendingTodo?: string[]
   onTick?: (id: string) => void
-  onFiles: (files: File[]) => void
+  onFiles?: (files: File[]) => void
 }) {
   const to = useHref()
   const first = person?.name.split(' ')[0]
@@ -121,7 +121,7 @@ export function Person({
       Review suggestions{person.pendingCount ? ` · ${person.pendingCount}` : ''}
     </Button>
   ) : (
-    <AddRecordings onFiles={onFiles} busy={adding} />
+    <AddRecordings onFiles={onFiles} busy={adding} personId={person?.id} />
   )
 
   const todoRows = (todos: PersonPage['todos'], who: string) => (

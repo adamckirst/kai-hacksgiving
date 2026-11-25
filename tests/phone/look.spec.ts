@@ -2,16 +2,20 @@ import { test,expect } from './fixture';
 import { assertPhone } from './usability';
 import { testTone } from '../../src/server/gateway';
 for(const route of ['/people','/todos','/people/dana']) {
-  test(`one picker tap on ${route} starts an upload without a second submit`,async({page,kai})=> {
+  test(`${route} opens person choice before the file picker`,async({page,kai})=> {
     await page.goto('/');await page.evaluate(secret=>{history.replaceState(null,'',`/#judge=${secret}`);location.reload();},kai.secret);
     await page.getByRole('link',{name:'Try it yourself'}).click();
     const workspace=(await page.context().cookies()).find(c=>c.name==='kai_session')!.value.split('.')[0];
     await page.goto(route==='/people/dana' ? '/people/'+workspace+':dana':route);
+    await page.getByRole('link',{name:'Add recordings',exact:true}).click();
+    await expect(page.getByLabel('Person for this recording')).toBeVisible();
+    await page.getByLabel('Person for this recording').selectOption(workspace+':dana');
     const chooser=page.waitForEvent('filechooser');
     await page.getByLabel('Add recordings: choose up to five audio files').click();
     await (await chooser).setFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
     await expect(page).toHaveURL(/\/recordings\//);
     await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();
+    await expect(page.getByRole('link',{name:'Dana Whitfield',exact:true})).toBeVisible();
     await assertPhone(page);
   });
 }

@@ -5,7 +5,7 @@ export function ConnectScreen({readOnly}:{readOnly:boolean}) {
   const [connection,setConnection]=useState<Connection|null>(null),[error,setError]=useState('');
   const [copied,setCopied]=useState<'upload'|'home'|'assistant'|null>(null),[copyError,setCopyError]=useState<{at:'upload'|'home'|'assistant';text:string}|null>(null);
   useEffect(()=>{if(readOnly)return;let alive=true;
-    fetch('/api/connect').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>{if(alive)setConnection({uploadAddress:location.origin+data.uploadPath,assistantAddress:location.origin+data.mcpPath,homeAddress:location.origin+'/home'});}).catch(()=>{if(alive)setError('Your address could not load. Reload this page to try again.');});return()=>{alive=false;};
+    fetch('/api/connect').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>{if(alive)setConnection({uploadAddress:location.origin+data.uploadPath,assistantAddress:location.origin+data.mcpPath,homeAddress:location.origin+'/upload'});}).catch(()=>{if(alive)setError('Your address could not load. Reload this page to try again.');});return()=>{alive=false;};
   },[readOnly]);
   async function copy(which:'upload'|'home'|'assistant',value:string) {
     setCopied(null);setCopyError(null);

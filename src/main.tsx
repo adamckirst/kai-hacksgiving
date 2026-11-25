@@ -1,7 +1,9 @@
 import React,{useEffect,useState} from 'react';
 import { createRoot } from 'react-dom/client';
 import './look/kai.css';
+import { Opening } from './look/screens/Opening';
 import { Welcome } from './look/screens/Welcome';
+import { UploadPage } from './UploadPage';
 import { HomeScreen } from './Home';
 import { RecordingScreen } from './Reading';
 import { PeopleScreen,PersonScreen } from './People';
@@ -27,8 +29,13 @@ function App() {
   useEffect(()=>{accessRequest.then(setAccess).catch(()=>setFailed(true));},[]);
   const route=location.pathname;
   if(route==='/operator')return <Operator secret={downloadSecret}/>;
-  if(route==='/' || !access)return <Welcome access={access} failed={failed}/>;
+  if(route==='/')return <Welcome access={access} failed={failed}/>;
+  if(!access) {
+    const page=route.startsWith('/upload') ? 'Add recordings':route.startsWith('/recordings/') ? 'Recording':route.startsWith('/people/') ? 'Person':route==='/people' ? 'People':route==='/todos' ? 'To-dos':route==='/connect' ? 'Connect':'Home';
+    return <Opening page={page} failed={failed} onRetry={()=>location.reload()}/>;
+  }
   const readOnly=access.kind==='public';
+  if(route==='/upload' || route.startsWith('/upload/'))return <UploadPage readOnly={readOnly}/>;
   if(route==='/home')return <HomeScreen readOnly={readOnly}/>;
   if(route==='/people')return <PeopleScreen readOnly={readOnly}/>;
   if(route.startsWith('/people/'))return <PersonScreen readOnly={readOnly}/>;

@@ -34,6 +34,7 @@ export type Todo = {
 }
 
 export type PersonPage = {
+  id?: string
   name: string
   company: string
   role: string
@@ -70,7 +71,12 @@ export type Payload = {
 export type RecordingStatus = 'waiting' | 'listening' | 'reading' | 'ready' | 'failed'
 export type Source = 'recording' | 'shared' | 'paste' | 'sample'
 
+export type LinkedPerson = { id: string; name: string; company: string; role: string }
+export type PersonChoice = { person_id: string | null } | { new_person: LinkedPerson }
+
 export type Recording = {
+  person?: LinkedPerson | null
+  awaiting_person?: number
   title: string
   summary: string
   text: string
@@ -82,9 +88,10 @@ export type Recording = {
   source?: Source
 }
 
-export type QueueItem = { id: string; title: string; status: RecordingStatus; error: string | null }
+export type QueueItem = { id: string; title: string; status: RecordingStatus; error: string | null; progress?: string | null; awaiting_person?: number; suggestion_count?: number }
 
 export type HomeData = {
+  hasRecordings?: boolean
   peopleCount: number
   todos: { id: string; text: string; due_on?: string | null; person_name?: string | null }[]
   conversations: { id: string; title: string; summary: string; happened_on?: string }[]

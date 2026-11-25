@@ -9,6 +9,6 @@ export async function photograph(page:Page,name:string) {
   await page.mouse.move(0,0);
   const height=await page.evaluate(()=>document.documentElement.scrollHeight);
   await page.setViewportSize({width:375,height:Math.max(812,height)});
-  await page.screenshot({path:'.data/app-shots/'+name+'.png',animations:'disabled'});
+  await page.screenshot({path:'.data/app-shots/'+name.replaceAll('/','-')+'.png',animations:'disabled'});
   await page.setViewportSize({width:375,height:812});
 }

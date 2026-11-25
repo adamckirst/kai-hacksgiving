@@ -23,8 +23,8 @@ export function mountSharing(app:Express,db:KaiDatabase,upload:RequestHandler,di
       } else dates=JSON.parse(req.body?.dates ?? '[]');
       if(!files || !Array.isArray(dates) || dates.length!==files.length)throw new ReadingError('Share recordings with their original dates.');
       const timestamps=dates;
-      const ids=await addAudio(db,res.locals.sharingWorkspace,files.map((f,i)=>({name:f.originalname,buffer:f.buffer,date:timestamps[i]})),directory,'shared');
-      res.status(202).json({ids});void work();
+      const ids=await addAudio(db,res.locals.sharingWorkspace,files.map((f,i)=>({name:f.originalname,buffer:f.buffer,date:timestamps[i]})),directory,'shared',{awaitingPerson:true});
+      res.status(202).json({ids,openPath:'/upload/'+ids[0]});void work();
     }catch(error) {
       if(error instanceof ReadingError)res.status(error.status).json({error:error.message});
       else if(error instanceof SyntaxError)res.status(400).json({error:'The recording dates could not be read.'});else throw error;

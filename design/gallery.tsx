@@ -2,6 +2,8 @@ import { StrictMode, useEffect, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '../src/look/kai.css'
 import * as data from './fixtures'
+import { Opening } from '../src/look/screens/Opening'
+import { Upload } from '../src/look/screens/Upload'
 import { Connect } from '../src/look/screens/Connect'
 import { Home } from '../src/look/screens/Home'
 import { People, Person } from '../src/look/screens/People'
@@ -87,6 +89,19 @@ const homeProps = { home: data.home, samples: data.samples, today, due: 'overdue
 
 /** Every state, by its address. The first word is the screen. */
 const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
+  'opening/page': { title: 'Page · opening', screen: () => <Opening page="People" onRetry={nothing}/> },
+  'opening/failed': { title: 'Page · could not open', screen: () => <Opening page="People" failed onRetry={nothing}/> },
+  upload: { title: 'Upload · choose a person', screen: () => <Upload people={data.people} readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/new-person': { title: 'Upload · add a person', screen: () => <Upload people={data.people} readOnly={false} presetPerson="new" onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/shared': { title: 'Upload · a WhatsApp voice note', screen: () => <Upload people={data.people} readOnly={false} incoming={{id:'shared',title:'New recording'}} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/loading': { title: 'Upload · opening', screen: () => <Upload people={null} readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/failed': { title: 'Upload · could not open', screen: () => <Upload people={null} readOnly={false} loadError="Your upload could not open. Try again." onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/save-failed': { title: 'Upload · could not start', screen: () => <Upload people={data.people} readOnly={false} incoming={{id:'shared',title:'New recording'}} error="KAI could not start. Try again." onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/public': { title: 'Upload · read-only', screen: () => <Upload people={null} readOnly onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'home/after-upload': { title: 'Home · recording ready to review', screen: () => <Home {...homeProps} home={{...data.home,hasRecordings:true}} readOnly={false} onTick={nothing} queue={[{id:'fresh',title:'A new recording',status:'ready',error:null,suggestion_count:3}]}/> },
+  'home/empty-todos': { title: 'Home · no open to-dos', screen: () => <Home {...homeProps} home={{...data.home,todos:[]}} readOnly={false}/> },
+  'home/shared': { title: 'Home · recording ready to add', screen: () => <Home {...homeProps} readOnly={false} queue={[{id:'shared',title:'New recording',status:'waiting',error:null,awaiting_person:1}]}/> },
+  'recording/linked': { title: 'Recording · linked to a person', screen: () => <LiveRecording first={{...data.recordings.ready,person:data.people[0]}}/> },
   welcome: { title: 'Welcome · with the judge link', screen: () => <Welcome access={{ kind: 'judge', videoUrl: null }} /> },
   'welcome/public': { title: 'Welcome · without the link', screen: () => <Welcome access={{ kind: 'public', videoUrl: null }} /> },
   'welcome/video': { title: 'Welcome · once the video exists', screen: () => <Welcome access={{ kind: 'judge', videoUrl: 'about:blank' }} /> },
@@ -136,6 +151,7 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
 /** The app's paths, as the gallery's addresses. A read-only state stays read-only. */
 function galleryHref(path: string, readOnly: boolean) {
   const tail = readOnly ? '/public' : ''
+  if (path.startsWith('/upload')) return '#/upload' + tail
   if (path === '/') return '#/welcome' + tail
   if (path.startsWith('/people/')) return '#/person' + tail
   if (path.startsWith('/recordings/')) return '#/recording' + tail

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Dialog, DialogActions, DialogBody, DialogTitle } from '../../catalyst/dialog'
 import { Icon, type IconName } from '../icons'
 import type { Payload, Recording as RecordingData, Source, Suggestion } from '../types'
-import { Area, Button, Card, Chip, dueWords, Field, Notice, PushedPage, Quote, SectionLabel, Segmented, shortDay, Working } from '../ui'
+import { Area, Button, Card, Chip, dueWords, Field, Notice, PushedPage, Quote, SectionLabel, Segmented, shortDay, Working, TextLink } from '../ui'
 
 const SOURCE: Record<Source, { label: string; icon: IconName }> = {
   recording: { label: 'Recording', icon: 'mic' },
@@ -264,6 +264,8 @@ export function Recording({
           )}
           {recording.status === 'failed' && <Notice tone="error">{recording.error ?? 'KAI could not read this recording.'}</Notice>}
           {actionError && !edited && <Notice tone="error">{actionError}</Notice>}
+
+          {recording.person && <Card className="p-5"><p className="text-base font-semibold text-zinc-600">Linked to</p><TextLink href={'/people/'+recording.person.id}>{recording.person.name}</TextLink></Card>}
 
           {recording.summary && (
             <Card className="p-5">

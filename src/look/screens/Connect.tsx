@@ -93,6 +93,9 @@ export function Connect({
             {feedback('upload')}
 
             <h3 className="pt-2 text-lg font-extrabold">Add “Send to KAI”</h3>
+            <Button variant="outline" wide href="https://www.icloud.com/shortcuts/5d7d8a29c386458bb5c95b14c35ac6ab">Add the shortcut</Button>
+            <p className="text-base/7 font-medium text-zinc-700">Copy your private address above, open the shortcut link and tap Add Shortcut. In its editor, replace the URL field with your private address. Replace the final Open URLs field with the KAI upload address below. Tap Done.</p>
+            <h3 className="pt-2 text-lg font-extrabold">Or build it yourself</h3>
             <Steps>
               {[
                 <>
@@ -111,19 +114,19 @@ export function Connect({
                   Add <B>Get Dictionary Value</B> with the key <B>error</B>. Add <B>If</B> it has any value: Show Alert with it, then Stop This Shortcut.
                 </>,
                 <>
-                  After End If, add <B>Open URLs</B> with the KAI home address below. Tap Done.
+                  After End If, add <B>Open URLs</B> with the KAI upload address below. Tap Done.
                 </>,
               ]}
             </Steps>
-            <Address label="KAI home address" id="home-address" value={connection.homeAddress} />
+            <Address label="KAI upload address" id="home-address" value={connection.homeAddress} />
             <Button variant="outline" wide icon="copy" onClick={() => onCopy('home', connection.homeAddress)}>
-              Copy home address
+              Copy upload address
             </Button>
             {feedback('home')}
 
             <h3 className="pt-2 text-lg font-extrabold">Try it</h3>
             <p className="text-base/7 font-medium text-zinc-700">
-              In WhatsApp, hold a voice note, choose Forward, then Share and <B>Send to KAI</B>. In Voice Memos, choose a recording, then Share. KAI opens Home; tap the recording to see its suggestions.
+              In WhatsApp, hold a voice note, choose Forward, then Share and <B>Send to KAI</B>. In Voice Memos, choose a recording, then Share. KAI opens the upload page with your recording attached. Choose a person, or add someone new, then tap Let KAI read.
             </p>
             <p className="text-base/7 font-medium text-zinc-500">One audio file at a time, up to 10 MB and five minutes.</p>
           </>

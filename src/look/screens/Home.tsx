@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Icon } from '../icons'
 import type { HomeData, QueueItem, Sample } from '../types'
-import { AddRecordings, Area, Button, Card, DueChip, Field, FOCUS, Notice, Rows, SectionLabel, TabPage, TextLink, useHref, WhatIsKai, Working } from '../ui'
+import { AddRecordings, Area, Button, Card, DueChip, Field, FOCUS, Notice, Rows, SectionLabel, TabPage, TextLink, useHref, WhatIsKai, Working, Tick } from '../ui'
 
 export const RECORDING_NOTICE =
   'Your recording is transcribed by AssemblyAI and read by Claude. It stays in your own copy of this demo, which is deleted on 8 December.'
@@ -25,11 +25,11 @@ function Queue({ items }: { items: QueueItem[] }) {
       <Rows kai>
         {items.map((item) => (
           <li key={item.id}>
-            <a href={to('/recordings/' + item.id)} className={`${FOCUS} flex min-h-16 items-center gap-3 px-4 py-3`}>
+            <a href={to((item.awaiting_person ? '/upload/' : '/recordings/') + item.id)} className={`${FOCUS} flex min-h-16 items-center gap-3 px-4 py-3`}>
               <span className="min-w-0 flex-1">
                 <span className="block text-base font-bold text-zinc-900">{item.title}</span>
                 <span className={`block text-base font-medium ${item.status === 'failed' ? 'text-rose-700' : 'text-zinc-600'}`}>
-                  {item.status === 'failed' ? (item.error ?? STATUS.failed) : STATUS[item.status]}
+                  {item.awaiting_person ? 'Choose a person and start' : item.status === 'failed' ? (item.error ?? STATUS.failed) : item.status === 'reading' ? (item.progress ?? STATUS.reading) : item.status === 'ready' && item.suggestion_count ? `${item.suggestion_count} suggestions to review` : STATUS[item.status]}
                 </span>
               </span>
               {item.status === 'listening' || item.status === 'reading' ? (
@@ -141,6 +141,8 @@ export function Home({
   onFiles,
   onRead,
   onSample,
+  onTick,
+  pending = [],
 }: {
   home: HomeData | null
   queue?: QueueItem[]
@@ -155,7 +157,9 @@ export function Home({
   pasteError?: string
   loadError?: string
   waitlist?: ReactNode
-  onFiles: (files: File[]) => void
+  onTick?: (id: string) => void
+  pending?: string[]
+  onFiles?: (files: File[]) => void
   onRead: (text: string, day: string) => void
   onSample: (id: string) => void
 }) {
@@ -169,46 +173,35 @@ export function Home({
       due={due}
       dock={readOnly ? <WhatIsKai /> : <AddRecordings onFiles={onFiles} busy={adding} />}
     >
-      {!readOnly && (
-        <Card className="flex gap-4 p-5">
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-violet-600 text-white">
-            <Icon name="mic" className="size-6" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-lg font-extrabold tracking-tight">Up to five recordings at once</h2>
-            <p className="mt-1 text-base font-medium text-zinc-600">Voice Memos, WhatsApp voice notes, recorded calls. 10 MB and five minutes each.</p>
-            <p className="mt-3 text-base font-medium text-zinc-500">{RECORDING_NOTICE}</p>
-          </div>
-        </Card>
-      )}
-      {addError && <Notice tone="error">{addError}</Notice>}
       {queue.length > 0 && <Queue items={queue} />}
-      {!readOnly && <Paste samples={samples} busy={pasteBusy} error={pasteError} open={pasteOpen} today={today} onRead={onRead} onSample={onSample} />}
-
+      {addError && <Notice tone="error">{addError}</Notice>}
       {loadError && <Notice tone="error">{loadError}</Notice>}
       {!home && !loadError && <Notice>Loading your notebook…</Notice>}
       {home && (
+        <section aria-label="My to-dos">
+          <SectionLabel action={<TextLink href="/todos">All to-dos</TextLink>}>My to-dos</SectionLabel>
+          {home.todos.length ? <Rows>
+            {home.todos.map(todo => (
+              <li key={todo.id} className="flex gap-1 py-2 pr-4 pl-2">
+                <Tick label={`Mark ${todo.text} done`} busy={pending.includes(todo.id)} onTick={readOnly || !onTick ? undefined : ()=>onTick(todo.id)}/><div className="min-w-0 flex-1 pt-2">
+                <p className="text-base font-bold text-zinc-900">{todo.text}</p>
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium text-zinc-600">
+                  {todo.person_name}<DueChip day={todo.due_on ?? null} today={today} />
+                </p></div>
+              </li>
+            ))}
+          </Rows> : <Card className="p-5 text-base font-medium text-zinc-600">No open to-dos. You’re caught up.</Card>}
+        </section>
+      )}
+      {!readOnly && !home?.hasRecordings && <Paste samples={samples} busy={pasteBusy} error={pasteError} open={pasteOpen} today={today} onRead={onRead} onSample={onSample} />}
+      {!readOnly && <p className="px-1 text-base/7 font-medium text-zinc-500">{RECORDING_NOTICE}</p>}
+
+      {home && (
         <>
-          {home.todos.length > 0 && (
-            <div>
-              <SectionLabel action={<TextLink href="/todos">All to-dos</TextLink>}>Open to-dos</SectionLabel>
-              <Rows>
-                {home.todos.map((todo) => (
-                  <li key={todo.id} className="px-4 py-3">
-                    <p className="text-base font-bold text-zinc-900">{todo.text}</p>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium text-zinc-600">
-                      {todo.person_name}
-                      <DueChip day={todo.due_on ?? null} today={today} />
-                    </p>
-                  </li>
-                ))}
-              </Rows>
-            </div>
-          )}
           <div>
             <SectionLabel action={<TextLink href="/people">{home.peopleCount} people</TextLink>}>Past recordings</SectionLabel>
             <Rows>
-              {home.conversations.map((recording) => (
+              {home.conversations.filter(r=>!queue.some(q=>q.id===r.id)).map((recording) => (
                 <li key={recording.id}>
                   <a href={to('/recordings/' + recording.id)} className={`${FOCUS} flex min-h-16 items-center gap-3 px-4 py-3`}>
                     <span className="min-w-0 flex-1">

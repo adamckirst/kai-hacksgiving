@@ -128,5 +128,5 @@ export const danaPending: PersonPage = {
 export const connection: Connection = {
   uploadAddress: 'https://kai-demo.sprites.app/in/made-up-address-for-the-design-0000',
   assistantAddress: 'https://kai-demo.sprites.app/mcp/made-up-address-for-the-design-0000',
-  homeAddress: 'https://kai-demo.sprites.app/home',
+  homeAddress: 'https://kai-demo.sprites.app/upload',
 }
