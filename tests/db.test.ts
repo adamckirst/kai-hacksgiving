@@ -2,6 +2,28 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { openDatabase, seed } from '../src/server/db';
 import { createApp } from '../src/server/app';
+test('reopening restores old seed links even after the person column already exists',()=> {
+  const db=openDatabase();let reopened:ReturnType<typeof openDatabase>|undefined;
+  try {
+    seed(db);seed(db,new Date(),'invented-judge');
+    db.exec("UPDATE todos SET person_id=NULL; UPDATE todos SET status='done' WHERE id='invented-judge:pricing'");
+    const before=db.prepare('SELECT id,text,quote,due_on,status FROM todos ORDER BY id').all();
+    reopened=openDatabase(db.serialize());
+    assert.deepEqual(reopened.prepare('SELECT id,text,quote,due_on,status FROM todos ORDER BY id').all(),before);
+    assert.deepEqual(reopened.prepare('SELECT person_id FROM todos ORDER BY id').all(),[{person_id:'invented-judge:dana'},{person_id:'invented-judge:ellis'},{person_id:'dana'},{person_id:'ellis'}]);
+    assert.equal((reopened.pragma('foreign_key_check') as unknown[]).length,0);
+  }finally{reopened?.close();db.close();}
+});
+test('fresh judge seeding tolerates optional columns added by a later step',()=> {
+  const db=openDatabase();
+  try {
+    seed(db);db.exec('ALTER TABLE todos ADD COLUMN future_optional TEXT');
+    seed(db,new Date(),'invented-judge');
+    assert.equal((db.prepare("SELECT count(*) AS n FROM todos WHERE workspace_id='invented-judge'").get() as {n:number}).n,2);
+    assert.equal((db.prepare("SELECT count(*) AS n FROM todos WHERE workspace_id='public'").get() as {n:number}).n,2);
+    assert.equal((db.pragma('foreign_key_check') as unknown[]).length,0);
+  }finally{db.close();}
+});
 test('seven tables, Mara’s accepted data, relative dates, and safe reseeding', () => {
   const db = openDatabase();
   try {
