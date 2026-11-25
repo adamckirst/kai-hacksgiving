@@ -26,6 +26,8 @@ here as the build reaches them.
   builds one step per pull request, and a second, read-only agent (Claude)
   reviews each one with [`scripts/review-pr.sh`](scripts/review-pr.sh)
   before it merges.
+- The review ends with a line `Blockers: <n>`. A pull request merges only
+  at zero.
 - Every person, company and conversation in this repository is invented.
 
 ## Licence
