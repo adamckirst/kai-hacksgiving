@@ -203,3 +203,13 @@ so they count toward daily limits. Only counts and timings are printed;
 the invitation and browser cookies stay in process memory. The real check
 refuses to run outside a Sprite. Its timing output describes HTTP polling;
 it is not a claim about a phone or cold-start performance.
+
+## Finish a to-do (step 8)
+
+To-dos separates Mine from Waiting on. Each view groups open promises into
+Overdue, Due soon (today or tomorrow), Later and No date, using the same UTC
+calendar as People. A judge ticks a promise once to finish it; the original
+words and quote remain stored. Public visitors can browse both views but
+cannot finish anything. Completing a promise removes it from open lists
+and from the person's urgency count. The checks cover year boundaries,
+private completion, repeated requests, failed requests, and both phone views.

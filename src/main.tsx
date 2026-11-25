@@ -8,6 +8,7 @@ import './style.css';
 import { AddTranscript,RecordingScreen } from './Reading';
 import { Upload,Queue } from './Upload';
 import { PeopleList,PersonScreen,type Person } from './People';
+import { TodosScreen } from './Todos';
 type Access = {kind:'public'|'judge';videoUrl:string|null};
 async function openAccess(): Promise<Access> {
   const secret = new URLSearchParams(location.hash.slice(1)).get('judge');
@@ -45,7 +46,7 @@ function App() {
     {!access && !accessFailed ? <Button color="violet" className="primary welcome-action" disabled>Opening…</Button> : <Button color="violet" className="primary welcome-action" href="/home">{access?.kind === 'judge' ? 'Try it yourself' : 'Look around'}</Button>}
     </main><footer>KAI, by Kopal</footer></div>;
   return <div className="shell"><header><span className="brand">KAI</span><span>Mara’s notebook</span></header>
-    {route.startsWith('/people/') ? <PersonScreen readOnly={access?.kind==='public'}/> : route.startsWith('/recordings/') ? <RecordingScreen readOnly={access?.kind==='public'}/> : <main><h1>{title}</h1><p className="intro">{route === '/people' ? 'The people in Mara’s conversations.' : 'Your conversations, remembered.'}</p>
+    {route === '/todos' ? <TodosScreen readOnly={access?.kind!=='judge'}/> : route.startsWith('/people/') ? <PersonScreen readOnly={access?.kind==='public'}/> : route.startsWith('/recordings/') ? <RecordingScreen readOnly={access?.kind==='public'}/> : <main><h1>{title}</h1><p className="intro">{route === '/people' ? 'The people in Mara’s conversations.' : 'Your conversations, remembered.'}</p>
       {access?.kind === 'public' && <p className="notice">A read-only demo with made-up data.</p>}
       {route === '/home' ? <>
         {access?.kind==='judge' && <><Upload/><Queue/><AddTranscript/></>}
@@ -58,7 +59,7 @@ function App() {
         {state === 'failed' && <p role="alert">People could not load. Reload this page to try again.</p>}
         {state === 'ready' && <PeopleList people={people}/>}
         <Button color="violet" href="/home" className="primary">Go to Home</Button>
-      </> : <><section className="empty"><h2>{title === 'Home' ? 'Start with the people' : title === 'To-dos' ? 'Promises in one place' : 'Bring KAI with you'}</h2><p>{title === 'Home' ? 'Mara’s people are ready to browse. Adding recordings comes next.' : title === 'To-dos' ? 'Mara’s to-dos will appear here in a later step.' : 'Phone sharing and assistant connections come in a later step.'}</p></section><Button color="violet" href="/people" className="primary">See people</Button></>}
+      </> : <><section className="empty"><h2>Bring KAI with you</h2><p>Phone sharing and assistant connections come in a later step.</p></section><Button color="violet" href="/people" className="primary">See people</Button></>}
     </main>}<nav aria-label="Main">{tabs.map(([label,url]) => <a key={url} href={url} aria-current={route === url ? 'page' : undefined}>{label}</a>)}</nav><footer>KAI, by Kopal</footer></div>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);

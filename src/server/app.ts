@@ -8,6 +8,7 @@ import { decide,acceptAll,peopleList,personPage } from './decisions';
 import multer from 'multer';
 import { addAudio, queueWorker, fakeTranscriber, maxAudioBytes, type Transcriber } from './audio';
 import { cookieName, createJudge, equalSecret, workspaceFor } from './access';
+import { listTodos,finishTodo } from './todos';
 export type AppOptions = {judgeSecret?:string; videoUrl?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
@@ -38,6 +39,11 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
   app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null}));
   app.get('/api/people', (_req,res) => res.json(peopleList(db,res.locals.workspace)));
+  app.get('/api/todos',(_req,res)=>res.json(listTodos(db,res.locals.workspace)));
+  app.post('/api/todos/:id/done',(req,res)=> {
+    try {finishTodo(db,res.locals.workspace,req.params.id);res.json({ok:true});}
+    catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
+  });
   app.get('/api/people/:id',(req,res)=> {
     const page=personPage(db,res.locals.workspace,req.params.id);
     if(!page){res.status(404).json({error:'Person not found.'});return;}res.json(page);
