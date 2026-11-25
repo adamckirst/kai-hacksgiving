@@ -1,0 +1,36 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+
+# Data: the database and anything uploaded live outside the repository
+data/
+uploads/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+
+# Recordings and video are never committed; tests make audio in code
+*.m4a
+*.opus
+*.ogg
+*.mp3
+*.wav
+*.aac
+*.mp4
+*.mov
+*.webm
+
+# Secrets and local settings
+.env
+.env.*
+kai-links.txt
+
+# Editors and the system
+.DS_Store
+.vscode/
+.idea/
+*.log
