@@ -34,3 +34,12 @@ kai-links.txt
 .vscode/
 .idea/
 *.log
+
+# Local checks
+.data/
+.playwright/
+.check-output.txt
+.pr-body.md
+*.flac
+*.aiff
+*.avi
