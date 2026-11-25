@@ -9,6 +9,7 @@ import multer from 'multer';
 import { addAudio, queueWorker, fakeTranscriber, maxAudioBytes, type Transcriber } from './audio';
 import { cookieName, createJudge, equalSecret, workspaceFor } from './access';
 import { listTodos,finishTodo } from './todos';
+import { mountSharing } from './sharing';
 export type AppOptions = {judgeSecret?:string; videoUrl?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
@@ -17,6 +18,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:5,fields:1,fieldSize:1024,parts:6}}).array('recordings',5);
   app.disable('x-powered-by');
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
+  mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
   app.use(express.json({limit:'32kb'}));
   app.use((req,res,next) => {
     res.locals.workspace = workspaceFor(db,req);
@@ -38,6 +40,11 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.use((_req,_res,next)=>{void work();next();});
   app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
   app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null}));
+  app.get('/api/connect',(_req,res)=> {
+    const row=db.prepare("SELECT upload_token FROM workspaces WHERE id=? AND kind='judge'").get(res.locals.workspace) as {upload_token:string}|undefined;
+    if(!row){res.status(403).json({error:'Open your own copy to connect your phone.'});return;}
+    res.json({uploadPath:'/in/'+row.upload_token});
+  });
   app.get('/api/people', (_req,res) => res.json(peopleList(db,res.locals.workspace)));
   app.get('/api/todos',(_req,res)=>res.json(listTodos(db,res.locals.workspace)));
   app.post('/api/todos/:id/done',(req,res)=> {

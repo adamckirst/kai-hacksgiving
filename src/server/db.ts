@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { randomBytes } from 'node:crypto';
 
-export function openDatabase(path = ':memory:') {
+export function openDatabase(path:string|Buffer = ':memory:') {
   const db = new Database(path);
   db.pragma('foreign_keys = ON');
   db.pragma('journal_mode = WAL');
@@ -45,6 +45,15 @@ export function openDatabase(path = ':memory:') {
   `);
   db.transaction(()=> {
   const columns=db.prepare('PRAGMA table_info(workspaces)').all() as {name:string}[];
+  if(!columns.some(c=>c.name==='session_secret')) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN session_secret TEXT');
+    // Preserve existing browser cookies, but never expose their signing secret
+    // as the new sharing address. Earlier steps had not exposed upload addresses.
+    const judges=db.prepare("SELECT id,upload_token FROM workspaces WHERE kind='judge'").all() as {id:string;upload_token:string|null}[];
+    for(const judge of judges) {
+      if(judge.upload_token) db.prepare('UPDATE workspaces SET session_secret=?,upload_token=? WHERE id=?').run(judge.upload_token,randomBytes(32).toString('hex'),judge.id);
+    }
+  }
   if (!columns.some(c=>c.name==='reading_day')) db.exec("ALTER TABLE workspaces ADD COLUMN reading_day TEXT; ALTER TABLE workspaces ADD COLUMN readings_today INTEGER NOT NULL DEFAULT 0;");
   if (!columns.some(c=>c.name==='recording_day')) db.exec("ALTER TABLE workspaces ADD COLUMN recording_day TEXT; ALTER TABLE workspaces ADD COLUMN recordings_today INTEGER NOT NULL DEFAULT 0;");
   const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
@@ -66,7 +75,7 @@ export function seed(db: KaiDatabase, now = new Date(), workspace = 'public') {
   const day = (offset: number) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset)).toISOString().slice(0,10);
   db.transaction(() => {
     if (db.prepare('SELECT id FROM workspaces WHERE id = ?').get(workspace)) return;
-    db.prepare('INSERT INTO workspaces (id,workspace_id,kind,mcp_token,upload_token,created_at) VALUES (?, ?, ?, ?, ?, ?)').run(workspace, workspace, workspace === 'public' ? 'public' : 'judge', workspace === 'public' ? null : randomBytes(32).toString('hex'), workspace === 'public' ? null : randomBytes(32).toString('hex'), now.toISOString());
+    db.prepare('INSERT INTO workspaces (id,workspace_id,kind,mcp_token,upload_token,created_at,session_secret) VALUES (?, ?, ?, ?, ?, ?, ?)').run(workspace, workspace, workspace === 'public' ? 'public' : 'judge', workspace === 'public' ? null : randomBytes(32).toString('hex'), workspace === 'public' ? null : randomBytes(32).toString('hex'), now.toISOString(),workspace === 'public' ? null : randomBytes(32).toString('hex'));
     const person = db.prepare('INSERT INTO people VALUES (?, ?, ?, ?, ?)');
     person.run(id('dana'),workspace,'Dana Whitfield','Willow Dental','Operations lead');
     person.run(id('ellis'),workspace,'Ellis Rowan','Harbour Dental','Clinic owner');

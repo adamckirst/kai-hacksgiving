@@ -213,3 +213,38 @@ words and quote remain stored. Public visitors can browse both views but
 cannot finish anything. Completing a promise removes it from open lists
 and from the person's urgency count. The checks cover year boundaries,
 private completion, repeated requests, failed requests, and both phone views.
+
+## Send to KAI from an iPhone (step 9)
+
+A judge's Connect screen shows their private upload address and the actions
+for a “Send to KAI” shortcut. Enable Files and Media in the share sheet,
+read the input file's Creation Date, format it as ISO 8601 including time,
+and POST a Form with a File named `recordings` (Shortcut Input) and a Text
+named `date` (Formatted Date). Then Open URLs opens this site's Home in
+Safari, where the judge's existing cookie selects their copy. If the source
+app provides no original date, Ask for Input can supply Date and Time for
+Format Date instead. The shortcut is tried on Copal's iPhone before this
+step can merge; the browser tests are not a substitute for that check.
+
+`/in/<upload token>` accepts only POST. Invalid addresses return 404 before
+a file is parsed; a valid address grants upload access only, never a browser
+session or read access. An Origin header is refused on this shortcut route.
+It uses the same validation, limits and oldest-first queue as Home and
+records the source as `shared`. For a batch, clients send up to five files
+under `recordings` and a `dates` JSON array of millisecond timestamps, just
+as Home does. The one-file shortcut uses the ISO date field above. Missing
+or invalid dates are refused instead of silently using the upload day.
+
+Browser signing now uses a separate `session_secret` in `workspaces`.
+During upgrade, the previous signing value stays there so existing cookies
+continue to work; a new, independent upload address is made before addresses
+are exposed for the first time. The migration is transactional and runs
+once. Tests exercise it with an in-memory database image; no credentials are
+written to a local test file. The public copy never exposes an upload address.
+Phone layout tests display a deliberately invalid example address, so test
+artifacts cannot contain a usable private address.
+
+Setup references: Apple's [share-sheet guide](https://support.apple.com/guide/shortcuts/apd163eb9f95/ios),
+[HTTP request actions](https://support.apple.com/guide/shortcuts/apd58d46713f/ios),
+[date formats](https://support.apple.com/guide/shortcuts/apdfd459e13d/ios)
+and [Voice Memos sharing](https://support.apple.com/guide/iphone/iph3d6dc359/ios).
