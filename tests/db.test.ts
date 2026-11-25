@@ -2,6 +2,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { openDatabase, seed } from '../src/server/db';
 import { createApp } from '../src/server/app';
+test('fresh judge seeding tolerates optional columns added by a later step',()=> {
+  const db=openDatabase();
+  try {
+    seed(db);db.exec('ALTER TABLE todos ADD COLUMN future_optional TEXT');
+    seed(db,new Date(),'invented-judge');
+    assert.equal((db.prepare("SELECT count(*) AS n FROM todos WHERE workspace_id='invented-judge'").get() as {n:number}).n,2);
+    assert.equal((db.prepare("SELECT count(*) AS n FROM todos WHERE workspace_id='public'").get() as {n:number}).n,2);
+    assert.equal((db.pragma('foreign_key_check') as unknown[]).length,0);
+  }finally{db.close();}
+});
 test('seven tables, Mara’s accepted data, relative dates, and safe reseeding', () => {
   const db = openDatabase();
   try {

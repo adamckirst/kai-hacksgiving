@@ -6,6 +6,7 @@ import '@fontsource/manrope/latin-600.css';
 import '@fontsource/manrope/latin-700.css';
 import './style.css';
 import { AddTranscript,RecordingScreen } from './Reading';
+import { Upload,Queue } from './Upload';
 type Person = {id:string; name:string; company:string; role:string};
 type Access = {kind:'public'|'judge';videoUrl:string|null};
 async function openAccess(): Promise<Access> {
@@ -47,7 +48,7 @@ function App() {
     {route.startsWith('/recordings/') ? <RecordingScreen readOnly={access?.kind==='public'}/> : <main><h1>{title}</h1><p className="intro">{route === '/people' ? 'The people in Mara’s conversations.' : 'Your conversations, remembered.'}</p>
       {access?.kind === 'public' && <p className="notice">A read-only demo with made-up data.</p>}
       {route === '/home' ? <>
-        {access?.kind==='judge' && <AddTranscript/>}
+        {access?.kind==='judge' && <><Upload/><Queue/><AddTranscript/></>}
         {state === 'failed' && <p role="alert">Your notebook could not load. Reload this page to try again.</p>}
         {!home && state !== 'failed' && <p role="status">Loading your notebook…</p>}
         {home && <><h2>Already in your notebook</h2><p>{home.peopleCount} people from Mara’s conversations</p><h2>Open to-dos</h2><ul className="people">{home.todos.map(t => <li key={t.id}>{t.text}</li>)}</ul><h2>Past recordings</h2><ul className="people">{home.conversations.map(c => <li key={c.id}><h3><a className="recording-link" href={"/recordings/"+c.id}>{c.title}</a></h3><p>{c.summary}</p></li>)}</ul></>}

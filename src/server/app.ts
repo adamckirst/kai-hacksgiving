@@ -1,14 +1,18 @@
 import express from 'express';
 import path from 'node:path';
 import type { KaiDatabase } from './db';
-import { addReading, retryReading, readingWorker, ReadingError, type Reader } from './reading';
+import { addReading, retryReading, ReadingError, type Reader } from './reading';
 import { fakeReader } from './fake-reader';
 import { samples } from '../samples';
+import multer from 'multer';
+import { addAudio, queueWorker, fakeTranscriber, maxAudioBytes, type Transcriber } from './audio';
 import { cookieName, createJudge, equalSecret, workspaceFor } from './access';
-export type AppOptions = {judgeSecret?:string; videoUrl?:string; secureCookies?:boolean;reader?:Reader};
+export type AppOptions = {judgeSecret?:string; videoUrl?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
-  const work=readingWorker(db,options.reader ?? fakeReader);
+  const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber);
+  const work=queue.kick;app.locals.queue=queue;void work();
+  const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:5,fields:1,fieldSize:1024,parts:6}}).array('recordings',5);
   app.disable('x-powered-by');
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
   app.use(express.json({limit:'32kb'}));
@@ -29,6 +33,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     }
     res.json({ok:true});
   });
+  app.use((_req,_res,next)=>{void work();next();});
   app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local'}));
   app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null}));
   app.get('/api/people', (_req,res) => res.json(db.prepare('SELECT id,name,company,role FROM people WHERE workspace_id = ? ORDER BY name COLLATE NOCASE').all(res.locals.workspace)));
@@ -37,6 +42,19 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     conversations:db.prepare('SELECT id,title,summary FROM conversations WHERE workspace_id = ? ORDER BY happened_on DESC').all(res.locals.workspace),
     peopleCount:(db.prepare('SELECT count(*) AS n FROM people WHERE workspace_id = ?').get(res.locals.workspace) as {n:number}).n,
   }));
+  app.post('/api/recordings',upload,async(req,res) => {
+    try {
+      const files=req.files as Express.Multer.File[]|undefined;
+      const dates=JSON.parse(req.body?.dates ?? '[]');
+      if(!files || !Array.isArray(dates) || dates.length!==files.length) throw new ReadingError('Choose recordings with their dates.');
+      const ids=await addAudio(db,res.locals.workspace,files.map((f,i)=>({name:f.originalname,buffer:f.buffer,date:dates[i]})),options.audioDirectory ?? '.data/audio');
+      res.status(202).json({ids});void work();
+    } catch(error) {
+      if(error instanceof ReadingError) res.status(error.status).json({error:error.message});
+      else if(error instanceof SyntaxError) res.status(400).json({error:'The recording dates could not be read.'});else throw error;
+    }
+  });
+  app.get('/api/queue',(_req,res)=>res.json(db.prepare("SELECT id,title,status,error FROM conversations WHERE workspace_id=? AND (status IN ('waiting','listening','reading','failed') OR batch_id IN (SELECT batch_id FROM conversations WHERE status IN ('waiting','listening','reading'))) ORDER BY happened_at,rowid").all(res.locals.workspace)));
   app.post('/api/readings',(req,res) => {
     try {
       const sample=samples.find(s=>s.id===req.body?.sample_id);
@@ -60,6 +78,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.use(express.static(path.resolve('dist')));
   app.get(['/', '/home', '/people', '/todos', '/connect', '/recordings/:id'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
+    if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose up to five recordings, each up to 10 MB.'});return;}
     res.status(err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});
   });
   return app;

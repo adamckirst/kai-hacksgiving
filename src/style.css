@@ -33,3 +33,5 @@ form .primary { margin-top:16px; }
 .transcript { white-space:pre-wrap; overflow-wrap:anywhere; margin-bottom:24px; }
 mark { background:#ede9fe; color:#4c1d95; }
 .recording-link { display:flex; align-items:center; min-height:44px; color:#4c1d95; text-decoration:underline; text-underline-offset:4px; }
+.audio-picker { display:block; max-width:100%; width:100%; min-height:48px; font:inherit; margin-bottom:12px; }
+.audio-picker::file-selector-button { min-height:44px; padding:8px; margin-right:8px; border:1px solid #dedce6; border-radius:8px; background:white; font:inherit; }

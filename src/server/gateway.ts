@@ -19,7 +19,7 @@ export async function discoverGateways() {
   return {anthropic:found.anthropic[0],assemblyai:found.assemblyai[0]};
 }
 export async function gatewayRequest(base:string,endpoint:string,init:RequestInit={}) {
-  const response=await fetch(base+endpoint,{...init,redirect:'error',signal:AbortSignal.timeout(30000)});
+  const response=await fetch(base+endpoint,{...init,redirect:'error',signal:init.signal ? AbortSignal.any([init.signal,AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000)});
   if (!response.ok) throw new Error(`Connector request failed (${response.status}).`);
   return response.json();
 }

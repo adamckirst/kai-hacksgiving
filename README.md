@@ -135,3 +135,34 @@ Local checks cover every sample, invented quotes, impossible dates, foreign
 people, reading limits, retry accounting, incremental tool handling, and the
 375 px sample flow through quote highlighting. U3 still requires three timed
 runs on the Sprite; local fake-reader speed is not that measurement.
+
+## Add recordings (step 5)
+
+Home accepts one to five `.m4a`, `.opus`, `.ogg`, `.mp3` or `.wav` files.
+Each must be at most 10 MB and five minutes. The server parses the audio’s
+duration, validates the whole batch, and reserves both recording and reading
+allowances before enqueueing it. File dates come from the file picker;
+within a day, the original timestamps determine the queue order.
+
+Audio is stored alongside the database, outside the production checkout,
+with private file permissions. The database tracks its path, batch, original
+time, attempt count and whether transcription has finished. A single worker
+listens and reads oldest first. It commits the words before deleting local
+audio, so a restart between those operations can finish safely. Identical
+suggestions from an interrupted read are not duplicated. A stuck operation
+is aborted after two minutes and retried once, with another allowance
+reserved. Another interruption ends with Try again. Startup and incoming
+requests resume the queue. The screen polls each second.
+
+Recording limits are 10 per workspace and 60 total per UTC day. The real
+transcriber calls AssemblyAI only through its connector; the fake returns
+invented sample words. Local checks use generated audio only. FFmpeg must
+be installed to generate the `.m4a` and `.opus` test files; it is not needed
+by the deployed app. Files made during tests stay in ignored `.data/`
+folders and are removed when the tests finish. The restart test closes and
+reopens a disk-backed database while keeping all access credentials out of
+that database. The phone test uploads a generated WAV and sees the words.
+
+U2 is not established by these checks: Copal must record
+[`samples/memo-script.md`](samples/memo-script.md), then the deployed app’s
+first-suggestion time must be measured over three runs.
