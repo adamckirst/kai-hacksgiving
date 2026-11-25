@@ -1,0 +1,5 @@
+{
+  "name": "kai",
+  "private": true,
+  "scripts": { "check": "echo this check fails on purpose && exit 1" }
+}
