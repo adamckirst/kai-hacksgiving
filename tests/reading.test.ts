@@ -28,6 +28,8 @@ test('made-up quote, impossible date and cross-workspace person never enter sugg
   try {
     const text='I will send the overview tomorrow.',id=addReading(db,'judge-a',text,'2026-11-24','paste');
     await readConversation(db,id,async(_input,call)=> {
+      const invalidSummary=call('describe_recording',{title:'Overview',summary:'Only one line.'});
+      assert.equal(invalidSummary.ok,false);assert.match(invalidSummary.error!,/summary: Use two lines/);
       call('describe_recording',{title:'Overview',summary:'Mara promised an overview.\nIt is due tomorrow.'});
       assert.equal(call('propose_note',{person_id:'judge-a:dana',text:'A note',quote:'This did not happen.'}).ok,false);
       assert.equal(call('propose_note',{person_id:'dana',text:'A note',quote:text}).ok,false);

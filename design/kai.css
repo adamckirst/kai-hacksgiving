@@ -1,0 +1,64 @@
+@import 'tailwindcss';
+@import '@fontsource/manrope/latin-400.css';
+@import '@fontsource/manrope/latin-500.css';
+@import '@fontsource/manrope/latin-600.css';
+@import '@fontsource/manrope/latin-700.css';
+@import '@fontsource/manrope/latin-800.css';
+
+/* Tailwind reads its class names from the screens, here and in src/. */
+@source './';
+@source '../src/catalyst';
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * The look, in one place: Manrope, a lavender-white page, white cards with a
+ * soft violet shadow, glass bars that float, and violet for KAI and for the
+ * one action of a screen. Red is overdue; amber is due today or tomorrow.
+ */
+@theme {
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --color-page: #f7f5fb;
+  --shadow-card: 0 1px 2px rgb(76 29 149 / 0.04), 0 8px 24px -12px rgb(76 29 149 / 0.14);
+  --shadow-float: 0 10px 30px -10px rgb(46 16 101 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.75);
+  --shadow-action: 0 10px 24px -8px rgb(124 58 237 / 0.55);
+  --animate-kai-pulse: kai-pulse 1.2s ease-in-out infinite;
+  --animate-kai-in: kai-in 0.35s ease-out both;
+}
+
+@keyframes kai-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@keyframes kai-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--color-page);
+}
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-zinc-900);
+  background: var(--color-page);
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: anywhere;
+}
+
+/* The quote KAI heard, shown in the words. */
+mark {
+  background: var(--color-violet-100);
+  color: var(--color-violet-950);
+  border-radius: 6px;
+  padding: 2px 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
