@@ -11,7 +11,8 @@ import { cookieName, createJudge, equalSecret, workspaceFor } from './access';
 import { listTodos,finishTodo } from './todos';
 import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
-export type AppOptions = {judgeSecret?:string; videoUrl?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
+import { mountWaitlist } from './waitlist';
+export type AppOptions = {judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
   const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber);
@@ -21,6 +22,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
   mountMcp(app,db);
+  mountWaitlist(app,db,options);
   app.use(express.json({limit:'32kb'}));
   app.use((req,res,next) => {
     res.locals.workspace = workspaceFor(db,req);
@@ -106,10 +108,10 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/home', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get(['/', '/home', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose up to five recordings, each up to 10 MB.'});return;}
-    res.status(err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});
+    res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});
   });
   return app;
 }

@@ -56,3 +56,7 @@ main { overflow-wrap:anywhere; }
 .connect-steps { padding-left:24px; line-height:1.65; }
 .connect-steps li { margin:16px 0; }
 .connect-copy { min-height:44px; font-size:16px; }
+
+.waitlist { margin-top:32px; padding:20px; background:white; border:1px solid #e4e2eb; border-radius:16px; }
+.waitlist h2 { margin-top:0; }
+.waitlist form button { margin:16px 0; }

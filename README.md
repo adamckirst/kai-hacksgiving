@@ -287,3 +287,48 @@ copy and layout checks, keeping private values out of artifacts.
 SDK references: [server transport](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/packages/middleware/node/src/streamableHttp.ts)
 and [client connection](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/clients/connect.md).
 The live Claude app connection remains Copal's PRD §9 step, once deployed.
+
+## Leave an address, or download the list (step 11)
+
+Home and a Recording whose suggestions are all decided show one quiet
+waitlist card. It asks for one email, promises one note if KAI becomes a
+product, and says “ask me and I delete it”. `X_POST_URL` adds Copal's actual
+X post when he provides it; until then the card says the link is pending.
+The public demo URL will be linked here once Copal authorizes public access.
+
+The waitlist remains exactly two columns: `email` and `created_at`. The
+route accepts one well-formed address up to 254 characters, normalizes case
+and surrounding whitespace, ignores repeats, and refuses row 2,001. It
+never echoes an address. An anonymous HttpOnly, SameSite browser cookie
+identifies a visitor for five attempts in a rolling hour, including invalid
+submissions. The cookie's attempt times live separately in the public
+workspace's `waitlist_visitors` JSON field and survive service restarts.
+No address, IP, device information or judge-workspace association is stored
+there. Clearing cookies creates a new anonymous visitor; this is a browser
+limit, not proof of a person's identity. Inactive counters expire after an
+hour. The global 2,000-row ceiling holds regardless of visitor identity.
+
+Waitlist and operator routes run before provider queue wake middleware.
+The signup address goes only to the waitlist insert; neither workspace
+queries nor MCP select the waitlist. Errors are generic and no request body
+is logged. Tests generate invented addresses at runtime, keep them in
+memory, and check zero console output, zero provider calls, no address in
+any workspace table or MCP answer, capacity, duplicates and restart limits.
+
+Copal's private link opens `/operator#download=…`. The fragment is removed
+before requests, and the browser sends the secret in a header to the count
+and download endpoints. The page shows only the count. Download is a plain
+text attachment with one address per line; addresses are not rendered on
+the page. The operator secret is independent of the judge invitation; the
+judge secret and wrong values get 404. Production keeps it in the public
+workspace's otherwise unused `upload_token`, which sharing never accepts.
+Local tests use only an in-memory database and generated secrets.
+
+After Copal says “make the Sprite's URL public” and public access is set,
+run `scripts/save-links.sh <public Sprite URL>` on kosmoslab. It reads the
+invitation and creates/reuses the independent download secret on the
+Sprite, then writes both links only to `~/kai-links.txt` with mode 600.
+It does not change URL access. Do not print or open that file as the agent.
+The helper has been syntax-checked only; it has not run without a Sprite.
+Copal alone opens the file and downloads the list. His Saturday download
+check and the later X post remain manual PRD §9 steps.
