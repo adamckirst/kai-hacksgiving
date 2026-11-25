@@ -1,7 +1,7 @@
 import { test,expect } from './fixture';
 import { assertPhone } from './usability';
 
-test('yesterday is Overdue, Dana leads Needs you, and ticking finishes her promise',async({page,kai})=> {
+test('yesterday is Overdue, urgency outranks names, and ticking finishes a promise',async({page,kai})=> {
   await page.goto('/');await page.evaluate(value=>{history.replaceState(null,'',`/#judge=${value}`);location.reload();},kai.secret);
   await page.getByRole('link',{name:'Try it yourself'}).click();
   const workspace=(await page.context().cookies()).find(c=>c.name==='kai_session')!.value.split('.')[0];
@@ -10,7 +10,9 @@ test('yesterday is Overdue, Dana leads Needs you, and ticking finishes her promi
   kai.db.prepare("UPDATE todos SET due_on=? WHERE workspace_id=? AND text='Send the trial dates'").run(day(0),workspace);
   const insert=kai.db.prepare("INSERT INTO todos(id,workspace_id,text,owner_person_id,due_on,status,quote,conversation_id,person_id) VALUES (?,?,?,NULL,?,'open','I promised to send Dana the pricing.',?,?)");
   [['Today',day(0)],['Tomorrow',day(1)],['Next week',day(7)],['When ready',null]].forEach(([text,date],i)=>insert.run(workspace+':extra-'+i,workspace,text,date,workspace+':dana-call',workspace+':dana'));
-  await page.goto('/people');await expect(page.locator('.needs-you li').first()).toContainText('Dana Whitfield');
+  // A later-alphabet name ensures urgency wins over alphabetical order.
+  kai.db.prepare("UPDATE people SET name='Zora Whitfield' WHERE workspace_id=? AND name='Dana Whitfield'").run(workspace);
+  await page.goto('/people');await expect(page.locator('.needs-you li').first()).toContainText('Zora Whitfield');
   await expect(page.locator('.needs-you li').first().locator('.overdue')).toHaveText('1 overdue');
   await expect(page.locator('.needs-you li').nth(1).locator('.due-soon')).toHaveText('1 due soon');await assertPhone(page);
   await page.getByRole('link',{name:'To-dos',exact:true}).click();
@@ -30,7 +32,7 @@ test('yesterday is Overdue, Dana leads Needs you, and ticking finishes her promi
   await page.getByRole('checkbox',{name:'Mark Send the trial dates done',exact:true}).click();
   await expect(page.getByText('Nobody owes you anything right now.')).toBeVisible();await assertPhone(page);
   await page.goto('/people');await expect(page.locator('.needs-you')).not.toContainText('overdue');
-  await page.locator('.everyone').getByRole('link',{name:/Dana Whitfield/}).click();await expect(page.getByText('Send Dana the pricing',{exact:true})).toHaveCount(0);
+  await page.locator('.everyone').getByRole('link',{name:/Zora Whitfield/}).click();await expect(page.getByText('Send Dana the pricing',{exact:true})).toHaveCount(0);
 });
 
 test('public To-dos can browse both views but cannot tick a promise',async({page})=> {

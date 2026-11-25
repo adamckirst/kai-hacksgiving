@@ -1,4 +1,4 @@
-import { useEffect,useState } from 'react';
+import { useEffect,useState,useRef } from 'react';
 import { Button } from './catalyst/button';
 import { Textarea } from './catalyst/textarea';
 import { samples } from './samples';
@@ -25,12 +25,14 @@ type Suggestion={id:string;kind:string;payload:string;quote:string;status:string
 type Recording={title:string;summary:string;text:string;status:string;error:string|null;progress:string|null;suggestions:Suggestion[]};
 export function RecordingScreen({readOnly=false}:{readOnly?:boolean}) {
   const id=location.pathname.split('/').pop();
+  const revision=useRef(0),deciding=useRef(false);
   const [recording,setRecording]=useState<Recording|null>(null),[error,setError]=useState(''),[actionError,setActionError]=useState(''),[quote,setQuote]=useState('');
   useEffect(()=> {
     let alive=true;
     async function refresh() {
-      try {const response=await fetch('/api/readings/'+id);if(!response.ok) throw new Error();const data=await response.json();if(alive) {setRecording(data);setError('');}}
-      catch {if(alive) setError('This recording could not load. Go to Home and try again.');}
+      if(deciding.current)return;const started=revision.current;
+      try {const response=await fetch('/api/readings/'+id);if(!response.ok) throw new Error();const data=await response.json();if(alive && !deciding.current && started===revision.current) {setRecording(data);setError('');}}
+      catch {if(alive && !deciding.current && started===revision.current) setError('This recording could not load. Go to Home and try again.');}
     }
     void refresh();const timer=setInterval(()=>void refresh(),1000);return()=>{alive=false;clearInterval(timer);};
   },[id]);
@@ -43,20 +45,20 @@ export function RecordingScreen({readOnly=false}:{readOnly?:boolean}) {
   }
   const [editing,setEditing]=useState<string|null>(null),[busy,setBusy]=useState(false);
   async function decision(suggestion:string,choice:'accept'|'reject',edits?:Record<string,unknown>) {
-    setBusy(true);setActionError('');
+    deciding.current=true;revision.current++;setBusy(true);setActionError('');
     try {
       const response=await fetch('/api/suggestions/'+suggestion+'/decision',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision:choice,edits})});
       const data=await response.json();if(!response.ok)throw new Error(data.error);
       const refreshed=await fetch('/api/readings/'+id);if(!refreshed.ok)throw new Error('The decision was saved. Reload to see it.');
       setRecording(await refreshed.json());setEditing(null);
-    }catch(e){setActionError(e instanceof Error ? e.message:'The decision could not be saved.');}finally{setBusy(false);}
+    }catch(e){setActionError(e instanceof Error ? e.message:'The decision could not be saved.');}finally{revision.current++;deciding.current=false;setBusy(false);}
   }
   async function acceptAll() {
-    setBusy(true);setActionError('');
+    deciding.current=true;revision.current++;setBusy(true);setActionError('');
     try {
       const response=await fetch('/api/readings/'+id+'/accept-all',{method:'POST'});const data=await response.json();if(!response.ok)throw new Error(data.error);
       const refreshed=await fetch('/api/readings/'+id);if(!refreshed.ok)throw new Error('The decisions were saved. Reload to see them.');setRecording(await refreshed.json());
-    }catch(e){setActionError(e instanceof Error ? e.message:'The decisions could not be saved.');}finally{setBusy(false);}
+    }catch(e){setActionError(e instanceof Error ? e.message:'The decisions could not be saved.');}finally{revision.current++;deciding.current=false;setBusy(false);}
   }
   const proposed=recording?.suggestions.filter(s=>s.status==='proposed') ?? [];
   const edit=recording?.suggestions.find(s=>s.id===editing);

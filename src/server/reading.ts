@@ -52,12 +52,12 @@ export function retryReading(db:KaiDatabase,workspace:string,id:string) {
     if(row.status!=='failed') throw new ReadingError('This recording is not ready to retry.',409);
     reserveReading(db,workspace);if(row.audio_path && !row.transcribed) reserveRecording(db,workspace);
     db.prepare("DELETE FROM suggestions WHERE conversation_id=? AND workspace_id=? AND status='proposed'").run(id,workspace);
-    db.prepare("UPDATE conversations SET status='waiting',error=NULL,attempts=0 WHERE id=? AND workspace_id=?").run(id,workspace);
+    db.prepare("UPDATE conversations SET status='waiting',error=NULL,progress=NULL,attempts=0 WHERE id=? AND workspace_id=?").run(id,workspace);
   })();
 }
 export async function readConversation(db:KaiDatabase,id:string,reader:Reader,signal?:AbortSignal) {
   const row=db.prepare('SELECT workspace_id,text,happened_on FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string};
-  db.prepare("UPDATE conversations SET status='reading',error=NULL WHERE id=?").run(id);
+  db.prepare("UPDATE conversations SET status='reading',error=NULL,progress=NULL WHERE id=?").run(id);
   let described=false, calls=0;const readPeople=new Set<string>();
   const personExists=(person:string) => !!db.prepare('SELECT id FROM people WHERE workspace_id=? AND id=?').get(row.workspace_id,person) || !!db.prepare("SELECT id FROM suggestions WHERE workspace_id=? AND conversation_id=? AND kind='person' AND status='proposed' AND id=?").get(row.workspace_id,id,person);
   try {

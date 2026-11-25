@@ -17,6 +17,9 @@ test('Connect explains the shortcut at 375 px and copies an address without show
   expect(await page.evaluate(()=>document.body.dataset.copied===location.origin+'/home')).toBe(true);
   await page.getByRole('button',{name:'Copy assistant address',exact:true}).click();
   expect(await page.evaluate(()=>document.body.dataset.copied===location.origin+'/mcp/'+('layout-example-'.repeat(5)))).toBe(true);
+  await expect(page.getByRole('status')).toBeVisible();
+  const feedback=await page.getByRole('status').boundingBox(),button=await page.getByRole('button',{name:'Copy assistant address',exact:true}).boundingBox();
+  expect(Math.abs(feedback!.y-button!.y)).toBeLessThan(100);
   await assertPhone(page);
 });
 

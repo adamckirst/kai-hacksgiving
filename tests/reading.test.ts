@@ -56,10 +56,12 @@ test('provider error becomes failed and retry is counted',async()=> {
   const db=setup();
   try {
     const id=addReading(db,'judge-a','Words','2026-11-24','paste');
-    await readConversation(db,id,async()=>{throw new Error('Private provider error');});
+    await readConversation(db,id,async(input,call)=>{assert.equal(call('get_person',{person_id:input.people.find(p=>p.name==='Dana Whitfield')!.id}).ok,true);throw new Error('Private provider error');});
     const result=db.prepare('SELECT status,error FROM conversations WHERE id=?').get(id) as {status:string;error:string};
     assert.equal(result.status,'failed');assert.ok(!result.error.includes('Private'));
+    assert.equal((db.prepare('SELECT progress FROM conversations WHERE id=?').get(id) as {progress:string}).progress,'Reading Dana’s page');
     retryReading(db,'judge-a',id);
+    assert.equal((db.prepare('SELECT progress FROM conversations WHERE id=?').get(id) as {progress:string|null}).progress,null);
     assert.equal((db.prepare("SELECT readings_today FROM workspaces WHERE id='judge-a'").get() as {readings_today:number}).readings_today,2);
   } finally {db.close();}
 });

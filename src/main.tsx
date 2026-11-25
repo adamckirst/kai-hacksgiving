@@ -49,7 +49,7 @@ function App() {
     {!access && !accessFailed ? <Button color="violet" className="primary welcome-action" disabled>Opening…</Button> : <Button color="violet" className="primary welcome-action" href="/home">{access?.kind === 'judge' ? 'Try it yourself' : 'Look around'}</Button>}
     </main><footer>KAI, by Kopal</footer></div>;
   return <div className="shell"><header><span className="brand">KAI</span><span>Mara’s notebook</span></header>
-    {route === '/operator' ? <Operator secret={downloadSecret}/> : route === '/connect' ? <ConnectScreen kind={access?.kind}/> : route === '/todos' ? <TodosScreen readOnly={access?.kind!=='judge'}/> : route.startsWith('/people/') ? <PersonScreen readOnly={access?.kind==='public'}/> : route.startsWith('/recordings/') ? <RecordingScreen readOnly={access?.kind==='public'}/> : <main><h1>{title}</h1><p className="intro">{route === '/people' ? 'The people in Mara’s conversations.' : 'Your conversations, remembered.'}</p>
+    {route === '/operator' ? <Operator secret={downloadSecret}/> : route === '/connect' ? <ConnectScreen kind={access?.kind}/> : route === '/todos' ? <TodosScreen readOnly={access ? access.kind==='public':undefined}/> : route.startsWith('/people/') ? <PersonScreen readOnly={access?.kind==='public'}/> : route.startsWith('/recordings/') ? <RecordingScreen readOnly={access?.kind==='public'}/> : <main><h1>{title}</h1><p className="intro">{route === '/people' ? 'The people in Mara’s conversations.' : 'Your conversations, remembered.'}</p>
       {access?.kind === 'public' && <p className="notice">A read-only demo with made-up data.</p>}
       {route === '/home' ? <>
         {access?.kind==='judge' && <><Upload/><Queue/><AddTranscript/></>}
