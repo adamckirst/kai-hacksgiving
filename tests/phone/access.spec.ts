@@ -23,8 +23,8 @@ test('U1: judge Welcome opens a populated Home in one tap; two browsers stay sep
     const id=cookie.value.split('.')[0];
     kai.db.prepare("UPDATE people SET name='Dana Vale' WHERE workspace_id=? AND name='Dana Whitfield'").run(id);
     await a.goto('/people');await b.goto('/people');
-    await expect(a.getByRole('heading',{name:'Dana Vale'})).toBeVisible();
-    await expect(b.getByRole('heading',{name:'Dana Whitfield'})).toBeVisible();
+    await expect(a.getByRole('heading',{name:'Dana Vale'}).first()).toBeVisible();
+    await expect(b.getByRole('heading',{name:'Dana Whitfield'}).first()).toBeVisible();
     await expect(b.getByRole('heading',{name:'Dana Vale'})).toHaveCount(0);
     await openJudge(a,kai.secret);
     expect((kai.db.prepare("SELECT count(*) AS n FROM workspaces WHERE kind='judge'").get() as {n:number}).n).toBe(2);
