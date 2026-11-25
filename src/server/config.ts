@@ -20,3 +20,13 @@ export function persistentJudgeSecret(db:KaiDatabase) {
     return secret;
   })();
 }
+// The public copy cannot upload. Its unused upload field holds only Copal's
+// download secret; sharing lookups always require kind='judge'.
+export function persistentDownloadSecret(db:KaiDatabase) {
+  return db.transaction(()=> {
+    const row=db.prepare("SELECT upload_token FROM workspaces WHERE id='public'").get() as {upload_token:string|null};
+    if(row.upload_token)return row.upload_token;
+    const secret=randomBytes(32).toString('hex');
+    db.prepare("UPDATE workspaces SET upload_token=? WHERE id='public'").run(secret);return secret;
+  })();
+}

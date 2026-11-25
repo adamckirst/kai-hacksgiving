@@ -10,6 +10,8 @@ import { Upload,Queue } from './Upload';
 import { PeopleList,PersonScreen,type Person } from './People';
 import { TodosScreen } from './Todos';
 import { ConnectScreen } from './Connect';
+import { Waitlist,Operator } from './Waitlist';
+const downloadSecret=location.pathname==='/operator' ? new URLSearchParams(location.hash.slice(1)).get('download'):null;
 type Access = {kind:'public'|'judge';videoUrl:string|null};
 async function openAccess(): Promise<Access> {
   const secret = new URLSearchParams(location.hash.slice(1)).get('judge');
@@ -47,14 +49,14 @@ function App() {
     {!access && !accessFailed ? <Button color="violet" className="primary welcome-action" disabled>Opening…</Button> : <Button color="violet" className="primary welcome-action" href="/home">{access?.kind === 'judge' ? 'Try it yourself' : 'Look around'}</Button>}
     </main><footer>KAI, by Kopal</footer></div>;
   return <div className="shell"><header><span className="brand">KAI</span><span>Mara’s notebook</span></header>
-    {route === '/connect' ? <ConnectScreen kind={access?.kind}/> : route === '/todos' ? <TodosScreen readOnly={access?.kind!=='judge'}/> : route.startsWith('/people/') ? <PersonScreen readOnly={access?.kind==='public'}/> : route.startsWith('/recordings/') ? <RecordingScreen readOnly={access?.kind==='public'}/> : <main><h1>{title}</h1><p className="intro">{route === '/people' ? 'The people in Mara’s conversations.' : 'Your conversations, remembered.'}</p>
+    {route === '/operator' ? <Operator secret={downloadSecret}/> : route === '/connect' ? <ConnectScreen kind={access?.kind}/> : route === '/todos' ? <TodosScreen readOnly={access?.kind!=='judge'}/> : route.startsWith('/people/') ? <PersonScreen readOnly={access?.kind==='public'}/> : route.startsWith('/recordings/') ? <RecordingScreen readOnly={access?.kind==='public'}/> : <main><h1>{title}</h1><p className="intro">{route === '/people' ? 'The people in Mara’s conversations.' : 'Your conversations, remembered.'}</p>
       {access?.kind === 'public' && <p className="notice">A read-only demo with made-up data.</p>}
       {route === '/home' ? <>
         {access?.kind==='judge' && <><Upload/><Queue/><AddTranscript/></>}
         {state === 'failed' && <p role="alert">Your notebook could not load. Reload this page to try again.</p>}
         {!home && state !== 'failed' && <p role="status">Loading your notebook…</p>}
         {home && <><h2>Already in your notebook</h2><p>{home.peopleCount} people from Mara’s conversations</p><h2>Open to-dos</h2><ul className="people">{home.todos.map(t => <li key={t.id}>{t.text}</li>)}</ul><h2>Past recordings</h2><ul className="people">{home.conversations.map(c => <li key={c.id}><h3><a className="recording-link" href={"/recordings/"+c.id}>{c.title}</a></h3><p>{c.summary}</p></li>)}</ul></>}
-        {access?.kind!=='judge' && <Button color="violet" href="/people" className="primary">See people</Button>}
+        {access?.kind!=='judge' && <Button color="violet" href="/people" className="primary">See people</Button>}<Waitlist/>
       </> : route === '/people' ? <>
         {state === 'loading' && <p role="status">Loading people…</p>}
         {state === 'failed' && <p role="alert">People could not load. Reload this page to try again.</p>}

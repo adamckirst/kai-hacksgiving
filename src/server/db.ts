@@ -45,6 +45,7 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   `);
   db.transaction(()=> {
   const columns=db.prepare('PRAGMA table_info(workspaces)').all() as {name:string}[];
+  if(!columns.some(c=>c.name==='waitlist_visitors'))db.exec("ALTER TABLE workspaces ADD COLUMN waitlist_visitors TEXT NOT NULL DEFAULT '{}'");
   if(!columns.some(c=>c.name==='session_secret')) {
     db.exec('ALTER TABLE workspaces ADD COLUMN session_secret TEXT');
     // Preserve existing browser cookies, but never expose their signing secret

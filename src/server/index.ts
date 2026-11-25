@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { databasePath, persistentJudgeSecret } from './config';
+import { databasePath, persistentJudgeSecret, persistentDownloadSecret } from './config';
 import { createApp } from './app';
 import { claudeReader } from './claude-reader';
 import { fakeReader } from './fake-reader';
@@ -11,6 +11,6 @@ if (file !== ':memory:') mkdirSync(dirname(file), {recursive:true});
 const db = openDatabase(file);
 seed(db);
 const fake=process.env.KAI_MODEL === 'fake' || process.env.NODE_ENV !== 'production';
-const app=createApp(db,{audioDirectory:file === ':memory:' ? '.data/audio' : dirname(file)+'/audio',transcriber:fake ? fakeTranscriber : assemblyTranscriber,reader:fake ? fakeReader : claudeReader,judgeSecret:process.env.NODE_ENV === 'production' ? persistentJudgeSecret(db) : process.env.KAI_JUDGE_SECRET,videoUrl:process.env.VIDEO_URL,secureCookies:process.env.NODE_ENV === 'production'});
+const app=createApp(db,{downloadSecret:process.env.NODE_ENV === 'production' ? persistentDownloadSecret(db) : process.env.KAI_DOWNLOAD_SECRET,xPostUrl:process.env.X_POST_URL,audioDirectory:file === ':memory:' ? '.data/audio' : dirname(file)+'/audio',transcriber:fake ? fakeTranscriber : assemblyTranscriber,reader:fake ? fakeReader : claudeReader,judgeSecret:process.env.NODE_ENV === 'production' ? persistentJudgeSecret(db) : process.env.KAI_JUDGE_SECRET,videoUrl:process.env.VIDEO_URL,secureCookies:process.env.NODE_ENV === 'production'});
 const server = app.listen(Number(process.env.PORT ?? 18500), process.env.HOST ?? '127.0.0.1', () => console.log('KAI is ready'));
 for (const signal of ['SIGTERM','SIGINT']) process.on(signal, () => server.close(async() => {await app.locals.queue.stop();db.close(); process.exit(0);}));

@@ -3,6 +3,7 @@ import { Button } from './catalyst/button';
 import { Textarea } from './catalyst/textarea';
 import { samples } from './samples';
 import { SuggestionEditor } from './SuggestionEditor';
+import { Waitlist } from './Waitlist';
 export function AddTranscript() {
   const [text,setText]=useState(''),[day,setDay]=useState(new Date().toISOString().slice(0,10)),[error,setError]=useState(''),[busy,setBusy]=useState(false);
   async function submit(sample_id?:string) {
@@ -65,6 +66,7 @@ export function RecordingScreen({readOnly=false}:{readOnly?:boolean}) {
     {recording && <><p className="intro">{recording.summary}</p><p role="status">{recording.status==='ready' ? 'KAI has finished reading.' : recording.status==='failed' ? recording.error : recording.status==='listening' ? 'KAI is listening…' : recording.status==='waiting' ? 'Waiting for KAI…' : recording.progress ?? 'KAI is reading…'}</p>
       <h2>KAI suggests</h2>{edit && <SuggestionEditor key={edit.id} kind={edit.kind} payload={edit.payload} busy={busy} onCancel={()=>setEditing(null)} onSave={edits=>void decision(edit.id,'accept',edits)}/>}<ul className="people">{recording.suggestions.map(s=>{const p=JSON.parse(s.payload);return <li key={s.id}><h3>{s.kind==='done' ? `Mark “${p.text}” done` : p.name ?? p.text}</h3><p>{s.kind==='done' ? 'Kept promise' : s.kind==='person' ? 'New person' : s.kind==='note' ? 'Note' : p.owner_person_id ? 'Waiting on' : 'Your to-do'}{p.due_on ? ` · ${p.due_on}`:''}</p><Button outline className="quote-button" onClick={()=>{setQuote(s.quote);document.getElementById('recording-words')?.scrollIntoView({block:'center'});}}>{s.quote}</Button>{s.status==='proposed' && !readOnly ? <div className="decision-actions"><Button outline disabled={busy || !!editing} onClick={()=>void decision(s.id,'accept')}>Accept</Button>{s.kind!=='done' && <Button outline disabled={busy || !!editing} onClick={()=>setEditing(s.id)}>Edit</Button>}<Button outline disabled={busy || !!editing} onClick={()=>void decision(s.id,'reject')}>Reject</Button></div> : <p className="decision-status">{s.status==='accepted' ? 'Accepted':s.status==='rejected' ? 'Rejected':'For review'}</p>}</li>;})}</ul>
       {recording.status==='ready' && !recording.suggestions.length && <p>KAI found no suggestions in these words.</p>}
+      {recording.status==='ready' && proposed.length===0 && <Waitlist/>}
       <h2 id="recording-words">The words</h2><p className="transcript">{start>=0 ? <>{recording.text.slice(0,start)}<mark>{quote}</mark>{recording.text.slice(start+quote.length)}</> : recording.text}</p>
     </>}
     {!editing && (recording?.status==='failed' ? <Button color="violet" className="primary" onClick={()=>void retry()}>Try again</Button> : !readOnly && proposed.length>0 ? <Button color="violet" className="primary" disabled={busy || recording?.status!=='ready'} onClick={()=>void acceptAll()}>Accept all</Button> : <Button color="violet" className="primary" href={readOnly ? '/home':'/people'}>{readOnly ? 'Back to Home':'See people'}</Button>)}
