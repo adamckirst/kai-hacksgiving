@@ -250,3 +250,40 @@ Setup references: Apple's [share-sheet guide](https://support.apple.com/guide/sh
 [HTTP request actions](https://support.apple.com/guide/shortcuts/apd58d46713f/ios),
 [date formats](https://support.apple.com/guide/shortcuts/apdfd459e13d/ios)
 and [Voice Memos sharing](https://support.apple.com/guide/iphone/iph3d6dc359/ios).
+
+## Connect an assistant (step 10)
+
+Connect gives a judge their private assistant address and three steps for
+adding it in Claude. The public copy has no such address. An assistant can
+read accepted people, notes and promises, and search original recording
+words. It cannot approve a suggestion, tick a promise, upload a recording
+or call a provider. Recording words are identified as source material,
+which may contain claims the person has not accepted.
+
+`/mcp/<mcp token>` uses the official TypeScript SDK's server and Node
+packages. Its compatible Streamable HTTP transport creates a fresh server
+for each POST with `sessionIdGenerator: undefined` and
+`enableJsonResponse: true`. There is no MCP session to persist or recover.
+Invalid addresses—including the public workspace's invitation and an
+upload address—return 404. The endpoint rejects browser Origins, accepts
+at most 32 KB of JSON and supports no GET stream or DELETE session. It is
+mounted before the browser write fence and queue wake middleware: a read
+does not wake a queued provider job.
+
+The four tools are `list_people`, `get_person`, `list_todos` and `search`.
+They select only the address owner's data. Person pages omit pending
+suggestion pointers; notes and promises include supporting quotes. Search
+also reads recording words and can find completed accepted promises. No
+tool reads workspace secrets or the waitlist. All four are marked read-only.
+
+The `tests/mcp.test.ts` scripted client is the official SDK client over real
+HTTP. It lists the tools, reads Dana's open pricing promise and quote,
+searches words, checks cross-copy isolation and wrong-address 404s, and
+rejects a made-up write tool. The database image is unchanged after those
+requests, provider calls stay at zero, and replies are JSON with no MCP
+session header. The Connect phone test uses invalid example addresses for
+copy and layout checks, keeping private values out of artifacts.
+
+SDK references: [server transport](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/packages/middleware/node/src/streamableHttp.ts)
+and [client connection](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/clients/connect.md).
+The live Claude app connection remains Copal's PRD §9 step, once deployed.

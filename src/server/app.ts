@@ -10,6 +10,7 @@ import { addAudio, queueWorker, fakeTranscriber, maxAudioBytes, type Transcriber
 import { cookieName, createJudge, equalSecret, workspaceFor } from './access';
 import { listTodos,finishTodo } from './todos';
 import { mountSharing } from './sharing';
+import { mountMcp } from './mcp';
 export type AppOptions = {judgeSecret?:string; videoUrl?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
@@ -19,6 +20,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.disable('x-powered-by');
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
+  mountMcp(app,db);
   app.use(express.json({limit:'32kb'}));
   app.use((req,res,next) => {
     res.locals.workspace = workspaceFor(db,req);
@@ -41,9 +43,9 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
   app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null}));
   app.get('/api/connect',(_req,res)=> {
-    const row=db.prepare("SELECT upload_token FROM workspaces WHERE id=? AND kind='judge'").get(res.locals.workspace) as {upload_token:string}|undefined;
+    const row=db.prepare("SELECT upload_token,mcp_token FROM workspaces WHERE id=? AND kind='judge'").get(res.locals.workspace) as {upload_token:string;mcp_token:string}|undefined;
     if(!row){res.status(403).json({error:'Open your own copy to connect your phone.'});return;}
-    res.json({uploadPath:'/in/'+row.upload_token});
+    res.json({uploadPath:'/in/'+row.upload_token,mcpPath:'/mcp/'+row.mcp_token});
   });
   app.get('/api/people', (_req,res) => res.json(peopleList(db,res.locals.workspace)));
   app.get('/api/todos',(_req,res)=>res.json(listTodos(db,res.locals.workspace)));

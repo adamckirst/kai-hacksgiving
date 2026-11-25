@@ -4,7 +4,7 @@ import { assertPhone } from './usability';
 test('Connect explains the shortcut at 375 px and copies an address without showing private data in test artifacts',async({page,kai})=> {
   // The layout uses an invalid, non-secret stand-in; real address access is checked by HTTP tests.
   const placeholder='/in/'+('layout-example-'.repeat(5));
-  await page.route('**/api/connect',route=>route.fulfill({json:{uploadPath:placeholder}}));
+  await page.route('**/api/connect',route=>route.fulfill({json:{uploadPath:placeholder,mcpPath:'/mcp/'+('layout-example-'.repeat(5))}}));
   await page.goto('/');await page.evaluate(value=>{history.replaceState(null,'',`/#judge=${value}`);location.reload();},kai.secret);
   await page.getByRole('link',{name:'Try it yourself'}).click();await page.getByRole('link',{name:'Connect',exact:true}).click();
   await expect(page.getByRole('button',{name:'Copy your address',exact:true})).toBeEnabled();
@@ -15,9 +15,12 @@ test('Connect explains the shortcut at 375 px and copies an address without show
   expect(await page.evaluate(path=>document.body.dataset.copied===location.origin+path,placeholder)).toBe(true);
   await page.getByRole('button',{name:'Copy home address',exact:true}).click();
   expect(await page.evaluate(()=>document.body.dataset.copied===location.origin+'/home')).toBe(true);
+  await page.getByRole('button',{name:'Copy assistant address',exact:true}).click();
+  expect(await page.evaluate(()=>document.body.dataset.copied===location.origin+'/mcp/'+('layout-example-'.repeat(5)))).toBe(true);
+  await assertPhone(page);
 });
 
 test('public Connect has no private address or setup controls',async({page})=> {
   await page.goto('/connect');await expect(page.getByText('A read-only demo with made-up data.')).toBeVisible();
-  await expect(page.getByLabel('Your private address')).toHaveCount(0);await expect(page.getByRole('button',{name:'Copy your address'})).toHaveCount(0);await assertPhone(page);
+  await expect(page.getByLabel('Your private address')).toHaveCount(0);await expect(page.getByLabel('Your assistant address')).toHaveCount(0);await expect(page.getByRole('button',{name:'Copy your address'})).toHaveCount(0);await assertPhone(page);
 });
