@@ -71,8 +71,8 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
   });
   app.get('/api/home',(_req,res) => res.json({
-    todos:db.prepare("SELECT id,text,due_on FROM todos WHERE workspace_id = ? AND status = 'open' ORDER BY due_on").all(res.locals.workspace),
-    conversations:db.prepare('SELECT id,title,summary FROM conversations WHERE workspace_id = ? ORDER BY happened_on DESC').all(res.locals.workspace),
+    todos:db.prepare("SELECT t.id,t.text,t.due_on,p.name AS person_name FROM todos t LEFT JOIN people p ON p.id=t.person_id AND p.workspace_id=t.workspace_id WHERE t.workspace_id = ? AND t.status = 'open' ORDER BY t.due_on IS NULL,t.due_on").all(res.locals.workspace),
+    conversations:db.prepare('SELECT id,title,summary,happened_on FROM conversations WHERE workspace_id = ? ORDER BY happened_on DESC').all(res.locals.workspace),
     peopleCount:(db.prepare('SELECT count(*) AS n FROM people WHERE workspace_id = ?').get(res.locals.workspace) as {n:number}).n,
   }));
   app.post('/api/recordings',upload,async(req,res) => {
@@ -102,7 +102,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     catch(error) {if(error instanceof ReadingError) res.status(error.status).json({error:error.message});else throw error;}
   });
   app.get('/api/readings/:id',(req,res) => {
-    const row=db.prepare('SELECT id,title,summary,text,happened_on,status,error,progress FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace);
+    const row=db.prepare('SELECT id,title,summary,text,happened_on,source,status,error,progress FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace);
     if(!row) {res.status(404).json({error:'Recording not found.'});return;}
     const suggestions=db.prepare('SELECT id,kind,payload,quote,status FROM suggestions WHERE conversation_id=? AND workspace_id=? ORDER BY rowid').all(req.params.id,res.locals.workspace);
     res.json({...row,suggestions});

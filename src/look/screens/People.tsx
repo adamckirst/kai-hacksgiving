@@ -60,24 +60,24 @@ export function People({
       {error && <Notice tone="error">{error}</Notice>}
       {!people && !error && <Notice>Loading people…</Notice>}
       {needs.length > 0 && (
-        <div>
+        <section aria-label="Needs you">
           <SectionLabel count={needs.length}>Needs you</SectionLabel>
           <Rows>
             {needs.map((person) => (
               <PersonLine key={person.id} person={person} />
             ))}
           </Rows>
-        </div>
+        </section>
       )}
       {rest.length > 0 && (
-        <div>
+        <section aria-label={needs.length ? 'Everyone else' : 'Everyone'}>
           <SectionLabel>{needs.length ? 'Everyone else' : 'Everyone'}</SectionLabel>
           <Rows>
             {rest.map((person) => (
               <PersonLine key={person.id} person={person} />
             ))}
           </Rows>
-        </div>
+        </section>
       )}
       {people?.length === 0 && <Card className="p-5 text-base font-medium text-zinc-600">People appear here once KAI hears about them in a recording.</Card>}
     </TabPage>

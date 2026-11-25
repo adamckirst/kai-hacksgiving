@@ -57,6 +57,7 @@ export function Connect({
   due,
   copied,
   error,
+  copyError,
   onCopy,
 }: {
   connection: Connection | null
@@ -64,9 +65,10 @@ export function Connect({
   due?: 'overdue' | 'soon'
   copied?: 'upload' | 'home' | 'assistant' | null
   error?: string
+  copyError?: { at: 'upload' | 'home' | 'assistant'; text: string } | null
   onCopy: (which: 'upload' | 'home' | 'assistant', value: string) => void
 }) {
-  const feedback = (which: 'upload' | 'home' | 'assistant') => copied === which && <Notice tone="good">Copied.</Notice>
+  const feedback = (which: 'upload' | 'home' | 'assistant') => copyError?.at === which ? <Notice tone="error">{copyError.text}</Notice> : copied === which && <Notice tone="good">Copied.</Notice>
   return (
     <TabPage current="/connect" title="Connect" subtitle="Send recordings in from your phone, and let your assistant read what you kept." readOnly={readOnly} due={due} dock={readOnly ? <WhatIsKai /> : undefined}>
       {error && <Notice tone="error">{error}</Notice>}
@@ -78,7 +80,10 @@ export function Connect({
             In your own copy, you add “Send to KAI” to your iPhone’s share sheet. Then a voice note goes in from WhatsApp or Voice Memos without opening KAI, and you decide what to keep.
           </p>
         ) : !connection ? (
-          <Notice>Opening your notebook…</Notice>
+          <>
+            {!error && <Notice>Opening your notebook…</Notice>}
+            <Button variant="primary" wide icon="copy" disabled>Copy your address</Button>
+          </>
         ) : (
           <>
             <p className="text-base/7 font-medium text-zinc-700">Set this up once in Apple Shortcuts. Keep the address private: anyone with it can add recordings to your copy.</p>

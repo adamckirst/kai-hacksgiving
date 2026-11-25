@@ -1,3 +1,4 @@
+import { photograph } from './photos';
 import { test,expect } from './fixture';
 import { assertPhone } from './usability';
 import { samples } from '../../src/samples';
@@ -5,14 +6,15 @@ for(const sample of samples) test(`${sample.id}: sample to suggestions, quote hi
   await page.goto('/');
   await page.evaluate(value=>{history.replaceState(null,'',`/#judge=${value}`);location.reload();},kai.secret);
   await page.getByRole('link',{name:'Try it yourself'}).click();
-  await expect(page.getByRole('heading',{name:'Paste a transcript'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Paste a transcript'})).toBeVisible();
   await assertPhone(page);
   await page.getByRole('button',{name:sample.title,exact:true}).click();
-  await expect(page.getByText('KAI has finished reading.')).toBeVisible();
-  await expect(page.locator('.quote-button')).toHaveCount(sample.id==='dana' ? 4:3);
+  await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();
+  await expect(page.getByRole('button',{name:/^Show in the words:/})).toHaveCount(sample.id==='dana' ? 4:3);
   await assertPhone(page);
-  const quote=await page.locator('.quote-button').first().textContent();
-  await page.locator('.quote-button').first().click();
-  await expect(page.locator('mark')).toHaveText(quote!);
+  if(sample.id==='dana')await photograph(page,'recording');
+  const quote=await page.getByRole('button',{name:/^Show in the words:/}).first().getAttribute('aria-label');
+  await page.getByRole('button',{name:/^Show in the words:/}).first().click();
+  await expect(page.locator('mark')).toHaveText(quote!.replace('Show in the words: ',''));
   await expect(page.locator('mark')).toBeInViewport();
 });

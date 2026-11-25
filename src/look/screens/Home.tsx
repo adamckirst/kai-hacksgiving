@@ -74,7 +74,7 @@ function Paste({
         <ul className="divide-y divide-zinc-100">
           {samples.map((sample) => (
             <li key={sample.id}>
-              <button type="button" disabled={busy} onClick={() => onSample(sample.id)} className={`${FOCUS} flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left disabled:opacity-50`}>
+              <button type="button" aria-label={sample.title} disabled={busy} onClick={() => onSample(sample.id)} className={`${FOCUS} flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left disabled:opacity-50`}>
                 <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-700">
                   <Icon name="doc" />
                 </span>

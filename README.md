@@ -375,3 +375,15 @@ action; an already-awake response is not cold-start evidence. Record the
 actual video, phone notes, demo URL, post URL and submission confirmation
 only when Copal supplies them. The goal is not complete while any required
 live check or deployment remains pending.
+
+## The look (step 13)
+
+The app and [gallery](design/README.md) use the same screens in `src/look/`.
+Home, People and To-dos open the file picker in one tap and start uploading
+as soon as files are chosen. Suggestions are edited in a bottom sheet;
+errors stay inside it. People shows each person once, with Needs you first.
+The server, queue, private access and decision transactions are unchanged.
+
+[App pictures](design/app-shots/) use invented local data; [gallery pictures](design/shots/)
+show the reference. No usable connection address appears in those pictures.
+The Sprite remains private and video work waits for Copal’s product approval.

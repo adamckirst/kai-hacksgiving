@@ -1,16 +1,16 @@
 import { StrictMode, useEffect, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './kai.css'
+import '../src/look/kai.css'
 import * as data from './fixtures'
-import { Connect } from './screens/Connect'
-import { Home } from './screens/Home'
-import { People, Person } from './screens/People'
-import { Recording } from './screens/Recording'
-import { Todos } from './screens/Todos'
-import { Operator, Waitlist } from './screens/Waitlist'
-import { Welcome } from './screens/Welcome'
-import type { Payload, Recording as RecordingData } from './types'
-import { HrefProvider } from './ui'
+import { Connect } from '../src/look/screens/Connect'
+import { Home } from '../src/look/screens/Home'
+import { People, Person } from '../src/look/screens/People'
+import { Recording } from '../src/look/screens/Recording'
+import { Todos } from '../src/look/screens/Todos'
+import { Operator, Waitlist } from '../src/look/screens/Waitlist'
+import { Welcome } from '../src/look/screens/Welcome'
+import type { Payload, Recording as RecordingData } from '../src/look/types'
+import { HrefProvider } from '../src/look/ui'
 
 /*
  * The gallery: every screen of KAI in every state worth drawing, on made-up
@@ -22,7 +22,7 @@ const today = data.TODAY
 const nothing = () => {}
 
 /** A recording you can really decide, so the buttons can be tried. */
-function LiveRecording({ first, readOnly = false, editing: firstEditing = null }: { first: RecordingData; readOnly?: boolean; editing?: string | null }) {
+function LiveRecording({ first, readOnly = false, editing: firstEditing = null, error }: { first: RecordingData; readOnly?: boolean; editing?: string | null; error?: string }) {
   const [recording, setRecording] = useState(first)
   const [editing, setEditing] = useState<string | null>(firstEditing)
   const decide = (id: string, decision: 'accept' | 'reject', edits?: Payload) =>
@@ -42,6 +42,7 @@ function LiveRecording({ first, readOnly = false, editing: firstEditing = null }
       waitlist={left ? undefined : <DemoWaitlist />}
       onDecide={decide}
       onAcceptAll={() => setRecording((current) => ({ ...current, suggestions: current.suggestions.map((s) => (s.status === 'proposed' ? { ...s, status: 'accepted' } : s)) }))}
+      actionError={error}
       onEdit={setEditing}
       onSaveEdit={(id, edits) => {
         decide(id, 'accept', edits)
@@ -91,6 +92,20 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'welcome/video': { title: 'Welcome · once the video exists', screen: () => <Welcome access={{ kind: 'judge', videoUrl: 'about:blank' }} /> },
   'welcome/opening': { title: 'Welcome · opening the link', screen: () => <Welcome access={null} /> },
   'welcome/failed': { title: 'Welcome · a link that does not open', screen: () => <Welcome access={{ kind: 'public', videoUrl: null }} failed /> },
+  'home/loading': { title: 'Home · loading', screen: () => <Home {...homeProps} home={null} readOnly={false} /> },
+  'home/failed': { title: 'Home · could not load', screen: () => <Home {...homeProps} home={null} readOnly={false} loadError="Your notebook could not load. Reload this page to try again." /> },
+  'home/upload-failed': { title: 'Home · upload refused', screen: () => <Home {...homeProps} readOnly={false} addError="Choose one to five recordings, each up to 10 MB." /> },
+  'home/paste-failed': { title: 'Home · reading refused', screen: () => <Home {...homeProps} readOnly={false} pasteOpen pasteError="KAI could not start. Try again." /> },
+  'people/loading': { title: 'People · loading', screen: () => <People people={null} readOnly={false} onFiles={nothing} /> },
+  'people/failed': { title: 'People · could not load', screen: () => <People people={null} readOnly={false} error="People could not load. Reload this page to try again." onFiles={nothing} /> },
+  'person/failed': { title: 'Person · could not load', screen: () => <Person person={null} readOnly={false} today={today} error="This person could not load. Go to People and try again." onFiles={nothing} /> },
+  'todos/failed': { title: 'To-dos · could not finish', screen: () => <Todos todos={data.todos} readOnly={false} today={today} error="This to-do could not be finished. Try ticking it again." onFiles={nothing} onTick={nothing} /> },
+  'recording/edit-failed': { title: 'Recording · edit could not save', screen: () => <LiveRecording first={data.recordings.ready} editing="s3" error="Check the words and use a real date." /> },
+  'connect/loading': { title: 'Connect · loading', screen: () => <Connect connection={null} readOnly={false} onCopy={nothing} /> },
+  'connect/failed': { title: 'Connect · could not load', screen: () => <Connect connection={null} readOnly={false} error="Your address could not load. Reload this page to try again." onCopy={nothing} /> },
+  'connect/copy-failed': { title: 'Connect · copy unavailable', screen: () => <Connect connection={data.connection} readOnly={false} copyError={{at:'assistant',text:'Touch and hold the address to copy it.'}} onCopy={nothing} /> },
+  'waitlist/failed': { title: 'Waitlist · could not save', screen: () => <Home {...homeProps} readOnly waitlist={<Waitlist postUrl={null} error="Please wait an hour, then reload this page." onSubmit={nothing}/>} /> },
+  'operator/failed': { title: 'Download · link needed', screen: () => <Operator count={null} error="Open your private download link to see the list." onDownload={nothing}/> },
   home: { title: 'Home', screen: () => <Home {...homeProps} readOnly={false} waitlist={<DemoWaitlist />} /> },
   'home/busy': { title: 'Home · KAI is working', screen: () => <Home {...homeProps} readOnly={false} queue={data.queue} waitlist={<DemoWaitlist />} /> },
   'home/paste': { title: 'Home · pasting a transcript', screen: () => <Home {...homeProps} readOnly={false} pasteOpen waitlist={<DemoWaitlist />} /> },

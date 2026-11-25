@@ -1,5 +1,5 @@
-import type { Connection, HomeData, Person, PersonPage, QueueItem, Recording, Sample, Suggestion, Todo } from './types'
-import { addDays } from './ui'
+import type { Connection, HomeData, Person, PersonPage, QueueItem, Recording, Sample, Suggestion, Todo } from '../src/look/types'
+import { addDays } from '../src/look/ui'
 
 /*
  * Made-up data for the gallery: Mara Lindqvist, founder of Loomwork, and the
