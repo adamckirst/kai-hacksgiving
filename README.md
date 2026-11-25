@@ -52,7 +52,8 @@ Stop the server with Ctrl-C. Local runs use an in-memory database, keeping
 access secrets out of files; all local changes disappear on restart.
 
 On the Sprite, `KAI_DB` selects a database outside the code folder.
-`KAI_JUDGE_SECRET` supplies the secret for a link in the form `/#judge=…`.
+For an in-memory local run, `KAI_JUDGE_SECRET` supplies the secret for a link
+in the form `/#judge=…`; production generates and persists it on the Sprite.
 Do not put that secret in shell history, logs or this repository. Step 3
 will provision it on the Sprite and save the link for Copal. Each browser
 that opens the link receives its own newly seeded workspace and an
@@ -62,3 +63,47 @@ With no configured secret, new judge sessions are refused.
 `NODE_ENV=production` enables Secure cookies; the deployed service requires
 HTTPS. `HOST`, `PORT`, and `KAI_COMMIT` configure the service address
 and health response. No provider is called by this step.
+
+## Deploy to the existing Sprite (step 3)
+
+Copal first completes PRD §9: install and sign in to the Sprites CLI,
+create `kai`, and add the Anthropic and AssemblyAI connectors with access
+restricted to the `kai` prefix. The agent never creates those resources.
+
+Run `scripts/deploy.sh <commit>` from this checkout. It checkpoints `kai`,
+fetches that commit into `/home/sprite/kai`, builds with dev dependencies
+included, and creates/restarts the `kai` HTTP service on port 8080.
+It verifies the commit through `/healthz` inside the Sprite. It refuses a
+dirty remote checkout. It leaves URL access private and never restores a
+checkpoint automatically, because that could discard accepted data.
+A failed build leaves the service stopped; fix the build and redeploy.
+
+The service stores SQLite in `/home/sprite/kai-state/kai.sqlite`. Production
+refuses a missing, in-memory or in-checkout database path. It creates the
+invitation secret once inside the public workspace’s otherwise unused
+`mcp_token` field. That workspace must never expose an MCP endpoint.
+No invitation secret appears in service arguments, output or an env file.
+The link will be saved for Copal when he authorizes public URL access.
+
+Run `sprite exec -s kai --no-port-forward --dir /home/sprite/kai -- npm run connectors:check`
+for the real pings. It discovers the two permitted gateway URLs, calls the
+specified Claude model, and transcribes a generated two-second WAV held
+only in memory. It reports the model name and completion status, never
+provider response bodies. It deletes the test transcript afterwards.
+For the outside refusal check, run:
+
+```sh
+sprite exec -s kai --no-port-forward --dir /home/sprite/kai -- node --import tsx scripts/gateway-addresses.ts | npm run connectors:check -- --outside
+```
+
+The pipe carries gateway addresses, never provider credentials. All calls use the gateway without
+an Authorization header. Neither command runs as part of `npm run check`.
+The deploy’s internal health check does not prove the separate PRD check
+on the Sprite’s HTTPS address; that must be checked with authenticated
+access before merging, without making the URL public early.
+
+References: [Fly services](https://docs.fly.io/sprites/concepts/services),
+[Fly connectors](https://docs.fly.io/sprites/concepts/connectors),
+[Claude Messages](https://platform.claude.com/docs/en/api/messages/create),
+[AssemblyAI upload](https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/files/upload)
+and [transcription](https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/transcripts/submit).
