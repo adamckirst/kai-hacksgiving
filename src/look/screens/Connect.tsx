@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { Icon, type IconName } from '../icons'
 import type { Connection } from '../types'
 import { Button, Card, Notice, TabPage, WhatIsKai } from '../ui'
-import { RECORDING_NOTICE } from './Home'
 
 /** An address to copy: shown whole, selectable, never a field you type in. */
 function Address({ label, id, value }: { label: string; id: string; value: string }) {
@@ -126,7 +125,7 @@ export function Connect({
             <p className="text-base/7 font-medium text-zinc-700">
               In WhatsApp, hold a voice note, choose Forward, then Share and <B>Send to KAI</B>. In Voice Memos, choose a recording, then Share. KAI opens Home; tap the recording to see its suggestions.
             </p>
-            <p className="text-base/7 font-medium text-zinc-500">One audio file at a time, up to 10 MB and five minutes. {RECORDING_NOTICE}</p>
+            <p className="text-base/7 font-medium text-zinc-500">One audio file at a time, up to 10 MB and five minutes.</p>
           </>
         )}
       </Card>
