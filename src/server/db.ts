@@ -64,9 +64,10 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   const todos=db.prepare('PRAGMA table_info(todos)').all() as {name:string}[];
   if(!todos.some(c=>c.name==='person_id')) {
     db.exec('ALTER TABLE todos ADD COLUMN person_id TEXT REFERENCES people(id)');
-    // Backfill only the two invented seed promises, preserving every existing row.
-    db.exec("UPDATE todos SET person_id=(SELECT id FROM people p WHERE p.workspace_id=todos.workspace_id AND p.name='Dana Whitfield') WHERE text='Send Dana the pricing'; UPDATE todos SET person_id=owner_person_id WHERE owner_person_id IS NOT NULL;");
   }
+  // Older deployed steps can seed a new copy after this column already exists.
+  // Fill only missing links on the two known seed rows; preserve all user decisions.
+  db.exec("UPDATE todos SET person_id=CASE WHEN workspace_id='public' THEN 'dana' ELSE workspace_id||':dana' END WHERE person_id IS NULL AND id=CASE WHEN workspace_id='public' THEN 'pricing' ELSE workspace_id||':pricing' END; UPDATE todos SET person_id=owner_person_id WHERE person_id IS NULL AND id=CASE WHEN workspace_id='public' THEN 'trial' ELSE workspace_id||':trial' END;");
   })();
   return db;
 }
