@@ -9,6 +9,7 @@ import { createJudge,workspaceFor } from '../src/server/access';
 import { persistentJudgeSecret } from '../src/server/config';
 import { testTone } from '../src/server/gateway';
 
+// Each fixture gets a new origin so fetch cannot reuse a closed server's socket.
 let nextPort=18528;
 async function setup() {
   mkdirSync('.data',{recursive:true});const directory=mkdtempSync('.data/share-check-');

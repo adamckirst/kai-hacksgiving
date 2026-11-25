@@ -21,7 +21,10 @@ export function ConnectScreen({kind}:{kind:'judge'|'public'|undefined}) {
       <label htmlFor="sharing-address">Your private address</label><textarea id="sharing-address" className="connect-address" readOnly value={address} rows={3}/>
       <Button color="violet" className="primary" disabled={!address} onClick={()=>void copy(address,'upload')}>Copy your address</Button>
       {feedback('upload')}
-      <h2>Add “Send to KAI”</h2><ol className="connect-steps">
+      <h2>Add “Send to KAI”</h2>
+      <Button outline href="https://www.icloud.com/shortcuts/5d7d8a29c386458bb5c95b14c35ac6ab" className="connect-copy">Add the shortcut</Button>
+      <p>Copy your private address above, then open the shortcut link and tap Add Shortcut. In Shortcuts, open its editor and replace the URL field with your private address. Replace the final Open URLs field with the KAI home address below. Tap Done.</p>
+      <h2>Or build it yourself</h2><ol className="connect-steps">
         <li>In Shortcuts, tap + and name the shortcut “Send to KAI”. Open Details, turn on “Show in Share Sheet”, and choose Files and Media as its input.</li>
         <li>Add “Get Details of Files”. Choose Creation Date from Shortcut Input. Add “Format Date”, choose ISO 8601, and include the time.</li>
         <li>Add “URL” and paste your private address above.</li>
