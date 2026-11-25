@@ -1,10 +1,11 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { databasePath, persistentJudgeSecret } from './config';
 import { createApp } from './app';
 import { openDatabase, seed } from './db';
-const file = process.env.KAI_DB ?? ':memory:';
+const file = databasePath(process.env);
 if (file !== ':memory:') mkdirSync(dirname(file), {recursive:true});
 const db = openDatabase(file);
 seed(db);
-const server = createApp(db,{judgeSecret:process.env.KAI_JUDGE_SECRET,videoUrl:process.env.VIDEO_URL,secureCookies:process.env.NODE_ENV === 'production'}).listen(Number(process.env.PORT ?? 18500), process.env.HOST ?? '127.0.0.1', () => console.log('KAI is ready'));
+const server = createApp(db,{judgeSecret:process.env.NODE_ENV === 'production' ? persistentJudgeSecret(db) : process.env.KAI_JUDGE_SECRET,videoUrl:process.env.VIDEO_URL,secureCookies:process.env.NODE_ENV === 'production'}).listen(Number(process.env.PORT ?? 18500), process.env.HOST ?? '127.0.0.1', () => console.log('KAI is ready'));
 for (const signal of ['SIGTERM','SIGINT']) process.on(signal, () => server.close(() => {db.close(); process.exit(0);}));
