@@ -51,6 +51,6 @@ test('invalid edit or dependency rolls back the complete acceptance',async()=> {
 test('Needs you counts overdue promises and pending suggestions for accepted people',async()=> {
   const {db}=await setup(0);try {
     const dana=(peopleList(db,'judge-a') as {name:string;overdue:number;suggestions:number}[]).find(p=>p.name==='Dana Whitfield')!;
-    assert.equal(dana.overdue,1);assert.equal(dana.suggestions,3);
+    assert.equal(dana.overdue,1);assert.equal(dana.suggestions,4);
   }finally{db.close();}
 });

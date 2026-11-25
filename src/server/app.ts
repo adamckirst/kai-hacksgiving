@@ -35,7 +35,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     res.json({ok:true});
   });
   app.use((_req,_res,next)=>{void work();next();});
-  app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local'}));
+  app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
   app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null}));
   app.get('/api/people', (_req,res) => res.json(peopleList(db,res.locals.workspace)));
   app.get('/api/people/:id',(req,res)=> {
@@ -84,7 +84,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     catch(error) {if(error instanceof ReadingError) res.status(error.status).json({error:error.message});else throw error;}
   });
   app.get('/api/readings/:id',(req,res) => {
-    const row=db.prepare('SELECT id,title,summary,text,happened_on,status,error FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace);
+    const row=db.prepare('SELECT id,title,summary,text,happened_on,status,error,progress FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace);
     if(!row) {res.status(404).json({error:'Recording not found.'});return;}
     const suggestions=db.prepare('SELECT id,kind,payload,quote,status FROM suggestions WHERE conversation_id=? AND workspace_id=? ORDER BY rowid').all(req.params.id,res.locals.workspace);
     res.json({...row,suggestions});

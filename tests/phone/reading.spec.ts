@@ -9,7 +9,7 @@ for(const sample of samples) test(`${sample.id}: sample to suggestions, quote hi
   await assertPhone(page);
   await page.getByRole('button',{name:sample.title,exact:true}).click();
   await expect(page.getByText('KAI has finished reading.')).toBeVisible();
-  await expect(page.locator('.quote-button')).toHaveCount(3);
+  await expect(page.locator('.quote-button')).toHaveCount(sample.id==='dana' ? 4:3);
   await assertPhone(page);
   const quote=await page.locator('.quote-button').first().textContent();
   await page.locator('.quote-button').first().click();

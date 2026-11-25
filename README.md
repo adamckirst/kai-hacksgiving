@@ -183,3 +183,23 @@ who a promise concerns from who owes it; the existing seed is backfilled
 without replacing rows. People, notes and to-dos still contain accepted
 items only. Browser checks exercise the real acceptance routes in separate
 judge sessions and verify that the other copy does not receive the change.
+
+## Remember people and promises (step 7)
+
+KAI receives the known people list and must call `get_person` before
+proposing something about a known person. That read contains accepted notes,
+open promises and recordings from the same workspace. Matching names and
+companies reuse a person instead of proposing a duplicate. A kept-promise
+proposal points to an existing open to-do and carries its supporting quote;
+only acceptance marks it done. The Recording screen can show “Reading Dana’s
+page” while this happens.
+
+`KAI_MODEL=fake npm run kai:check` exercises the check harness locally.
+On the Sprite, run `npm run kai:check` from the deployed checkout. It opens
+nine fresh invented copies through the app: three samples, three runs each.
+It verifies each sample, accepts the results, and checks that Dana’s pricing
+promise is done and no second Dana exists. These are normal app requests,
+so they count toward daily limits. Only counts and timings are printed;
+the invitation and browser cookies stay in process memory. The real check
+refuses to run outside a Sprite. Its timing output describes HTTP polling;
+it is not a claim about a phone or cold-start performance.

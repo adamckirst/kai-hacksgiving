@@ -1,16 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { KaiDatabase } from './db';
+import { personPage } from './people-data';
 export const realDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {const d=new Date(value+'T12:00:00Z');return !isNaN(d.getTime()) && d.toISOString().slice(0,10)===value;},'Use a real date.');
 const words=z.string().trim().min(1).max(500);
 export const toolSchemas={
+  get_person:z.object({person_id:words}),
+  propose_done:z.object({person_id:words,todo_id:words,quote:words,text:words.optional()}),
   describe_recording:z.object({title:words.max(100),summary:words.max(500).refine(s=>s.split('\n').length===2 && s.split('\n').every(line=>line.trim()),'Use two lines.')}),
   propose_person:z.object({name:words.max(100),company:words.max(100),role:words.max(100),quote:words}),
   propose_note:z.object({person_id:words,text:words,quote:words}),
   propose_todo:z.object({person_id:words,owner_person_id:words.nullable(),text:words,due_on:realDate.nullable(),quote:words}),
 };
 export type ToolName=keyof typeof toolSchemas;
-export type ToolResult={ok:boolean;id?:string;error?:string};
+export type ToolResult={ok:boolean;id?:string;error?:string;person?:NonNullable<ReturnType<typeof personPage>>};
 export type ReadInput={text:string;happened_on:string;people:{id:string;name:string;company:string;role:string}[]};
 export type Reader=(input:ReadInput,call:(name:string,input:unknown)=>ToolResult,signal?:AbortSignal)=>Promise<void>;
 export class ReadingError extends Error {constructor(message:string,public status=400){super(message);}}
@@ -55,7 +58,7 @@ export function retryReading(db:KaiDatabase,workspace:string,id:string) {
 export async function readConversation(db:KaiDatabase,id:string,reader:Reader,signal?:AbortSignal) {
   const row=db.prepare('SELECT workspace_id,text,happened_on FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string};
   db.prepare("UPDATE conversations SET status='reading',error=NULL WHERE id=?").run(id);
-  let described=false, calls=0;
+  let described=false, calls=0;const readPeople=new Set<string>();
   const personExists=(person:string) => !!db.prepare('SELECT id FROM people WHERE workspace_id=? AND id=?').get(row.workspace_id,person) || !!db.prepare("SELECT id FROM suggestions WHERE workspace_id=? AND conversation_id=? AND kind='person' AND status='proposed' AND id=?").get(row.workspace_id,id,person);
   try {
     const people=db.prepare('SELECT id,name,company,role FROM people WHERE workspace_id=?').all(row.workspace_id) as ReadInput['people'];
@@ -69,10 +72,31 @@ export async function readConversation(db:KaiDatabase,id:string,reader:Reader,si
       if(name==='describe_recording' && 'title' in value) {
         db.prepare('UPDATE conversations SET title=?,summary=? WHERE id=?').run(value.title,value.summary,id);described=true;return {ok:true};
       }
+      if(name==='get_person' && 'person_id' in value) {
+        const person=personPage(db,row.workspace_id,value.person_id);
+        if(!person)return {ok:false,error:'Person not found in this copy.'};
+        readPeople.add(value.person_id);
+        db.prepare('UPDATE conversations SET progress=? WHERE id=?').run(`Reading ${person.name.split(' ')[0]}’s page`,id);
+        return {ok:true,person};
+      }
       if(!('quote' in value) || !row.text.includes(value.quote)) return {ok:false,error:'The quote must appear in the words exactly.'};
-      if('person_id' in value && !personExists(value.person_id)) return {ok:false,error:'Choose a known person or propose the new person first.'};
+      if('person_id' in value && typeof value.person_id==='string' && !personExists(value.person_id)) return {ok:false,error:'Choose a known person or propose the new person first.'};
       if('owner_person_id' in value && typeof value.owner_person_id==='string' && !personExists(value.owner_person_id)) return {ok:false,error:'The owner must be a known or proposed person.'};
+      if('person_id' in value && typeof value.person_id==='string' && people.some(p=>p.id===value.person_id) && !readPeople.has(value.person_id)) return {ok:false,error:'Call get_person before proposing something about a known person.'};
+      if(name==='propose_person' && 'name' in value) {
+        const normalize=(text:string)=>text.normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('en');
+        const known=people.find(p=>normalize(p.name)===normalize(value.name) && normalize(p.company)===normalize(value.company));
+        if(known)return {ok:true,id:known.id};
+      }
+      let doneText:string|undefined;
+      if(name==='propose_done') {
+        const done=toolSchemas.propose_done.parse(value);
+        const todo=db.prepare("SELECT text FROM todos WHERE id=? AND workspace_id=? AND status='open' AND (person_id=? OR owner_person_id=?)").get(done.todo_id,row.workspace_id,done.person_id,done.person_id) as {text:string}|undefined;
+        if(!todo)return {ok:false,error:'Choose an open promise from this person’s page.'};
+        doneText=todo.text;
+      }
       const {quote,...payload}=value;
+      if(doneText)Object.assign(payload,{text:doneText});
       const existing=db.prepare('SELECT id FROM suggestions WHERE workspace_id=? AND conversation_id=? AND kind=? AND payload=? AND quote=?').get(row.workspace_id,id,name.slice('propose_'.length),JSON.stringify(payload),quote) as {id:string}|undefined;
       if(existing) return {ok:true,id:existing.id};
       const suggestion=randomUUID();

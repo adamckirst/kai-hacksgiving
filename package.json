@@ -10,7 +10,8 @@
     "check": "tsc --noEmit && npm run test:unit && npm run build && npm run test:phone",
     "test:unit": "tsx --test tests/*.test.ts",
     "test:phone": "PLAYWRIGHT_BROWSERS_PATH=.playwright playwright test",
-    "connectors:check": "tsx scripts/check-connectors.ts"
+    "connectors:check": "tsx scripts/check-connectors.ts",
+    "kai:check": "tsx scripts/kai-check.ts"
   },
   "dependencies": {
     "@fontsource/manrope": "^5.3.0",
