@@ -220,7 +220,9 @@ A judge's Connect screen shows their private upload address and the actions
 for a “Send to KAI” shortcut. Enable Files and Media in the share sheet,
 read the input file's Creation Date, format it as ISO 8601 including time,
 and POST a Form with a File named `recordings` (Shortcut Input) and a Text
-named `date` (Formatted Date). Then Open URLs opens this site's Home in
+named `date` (Formatted Date). Read the response dictionary's `error`: if
+it has a value, Show Alert and Stop This Shortcut. After End If, Open URLs
+opens this site's Home in
 Safari, where the judge's existing cookie selects their copy. If the source
 app provides no original date, Ask for Input can supply Date and Time for
 Format Date instead. The shortcut is tried on Copal's iPhone before this

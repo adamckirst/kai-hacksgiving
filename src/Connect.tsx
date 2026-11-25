@@ -24,7 +24,8 @@ export function ConnectScreen({kind}:{kind:'judge'|'public'|undefined}) {
         <li>Add “Get Details of Files”. Choose Creation Date from Shortcut Input. Add “Format Date”, choose ISO 8601, and include the time.</li>
         <li>Add “URL” and paste your private address above.</li>
         <li>Add “Get Contents of URL”. Expand its options, choose POST, then Form for Request Body. Add a File field named <strong>recordings</strong> and set it to Shortcut Input. Add a Text field named <strong>date</strong> and set it to Formatted Date.</li>
-        <li>Add “Open URLs” with the KAI home address below. Tap Done. Use the same Safari browser where you opened your own copy.</li>
+        <li>Add “Get Dictionary Value” with key <strong>error</strong> from Contents of URL. Add “If” Dictionary Value has any value: “Show Alert” with Dictionary Value, then “Stop This Shortcut”. Leave Otherwise empty.</li>
+        <li>After End If, add “Open URLs” with the KAI home address below. Tap Done. Use the same Safari browser where you opened your own copy.</li>
       </ol>
       <label htmlFor="home-address">KAI home address</label><textarea id="home-address" className="connect-address" readOnly value={home} rows={2}/><Button outline onClick={()=>void copy(home)} className="connect-copy">Copy home address</Button>
       <h2>Try it</h2><p>In WhatsApp, hold a voice note, choose Forward, then Share and “Send to KAI”. In Voice Memos, choose a recording, then More → Share → Options → Rendered, and “Send to KAI”. Allow Shortcuts to send the file when asked. KAI opens Home; tap the recording to see its progress and suggestions.</p>
