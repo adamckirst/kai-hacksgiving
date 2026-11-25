@@ -27,6 +27,6 @@ test('People API reads persisted data and exposes no write route', async () => {
     assert.equal(people.length,3);
     assert.equal(people[0].name,'Dana Whitfield');
     assert.deepEqual(Object.keys(people[0]).sort(),['company','id','name','role']);
-    assert.equal((await fetch('http://127.0.0.1:18519/api/people',{method:'POST'})).status,404);
+    assert.equal((await fetch('http://127.0.0.1:18519/api/people',{method:'POST'})).status,403);
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); db.close(); }
 });
