@@ -64,7 +64,7 @@ export async function readConversation(db:KaiDatabase,id:string,reader:Reader,si
       if(++calls>50) throw new Error('Too many calls.');
       if(!(name in toolSchemas)) return {ok:false,error:'Unknown tool.'};
       const parsed=toolSchemas[name as ToolName].safeParse(input);
-      if(!parsed.success) return {ok:false,error:'Fields are invalid. Use a real date and nonempty words.'};
+      if(!parsed.success) return {ok:false,error:parsed.error.issues.map(issue=>`${issue.path.join('.')}: ${issue.message}`).join('; ')};
       const value=parsed.data;
       if(name==='describe_recording' && 'title' in value) {
         db.prepare('UPDATE conversations SET title=?,summary=? WHERE id=?').run(value.title,value.summary,id);described=true;return {ok:true};
