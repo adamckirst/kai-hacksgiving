@@ -24,3 +24,12 @@ a:focus-visible { outline:2px solid #6d28d9; outline-offset:3px; }
 footer { text-align:center; margin-top:24px; font-size:16px; }
 .welcome-action { margin-top:32px; }
 video { width:100%; border-radius:16px; min-height:190px; }
+label { display:block; margin:16px 0 8px; font-weight:600; }
+.date-field { display:block; width:100%; min-width:0; min-height:48px; padding:10px; background:white; border:1px solid #dedce6; border-radius:8px; font:inherit; }
+form .primary { margin-top:16px; }
+.samples { display:grid; gap:12px; }
+.samples button,.quote-button { min-height:44px; white-space:normal; overflow-wrap:anywhere; font-size:16px; }
+.quote-button { margin-top:12px; text-align:left; font-weight:400; }
+.transcript { white-space:pre-wrap; overflow-wrap:anywhere; margin-bottom:24px; }
+mark { background:#ede9fe; color:#4c1d95; }
+.recording-link { display:flex; align-items:center; min-height:44px; color:#4c1d95; text-decoration:underline; text-underline-offset:4px; }

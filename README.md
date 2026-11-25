@@ -107,3 +107,31 @@ References: [Fly services](https://docs.fly.io/sprites/concepts/services),
 [Claude Messages](https://platform.claude.com/docs/en/api/messages/create),
 [AssemblyAI upload](https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/files/upload)
 and [transcription](https://www.assemblyai.com/docs/pre-recorded-audio/api-reference/transcripts/submit).
+
+## Read a transcript (step 4)
+
+In a judge copy, Home accepts up to 20,000 characters and a conversation
+date, or one of three invented samples. A Recording page polls each second,
+shows suggestions as each tool call finishes, and highlights a supporting
+quote when tapped. Suggestions stay out of People and To-dos until the
+decision step is built. Home links to earlier recordings.
+
+Local runs use a scripted reader (`KAI_MODEL=fake`). It produces the expected
+suggestions for the three samples; other local text receives a title and
+summary but no proposed items. Production uses Claude through the Sprites
+connector unless explicitly configured as fake. There is no direct-provider
+fallback and no provider key. The gateway is called with plain HTTPS and
+[Claude’s streaming event format](https://platform.claude.com/docs/en/build-with-claude/streaming).
+
+A quote must occur verbatim in the words, dates must exist, and referenced
+people must belong to the current workspace or its pending proposals.
+Rejected tool calls return an error to KAI without saving a suggestion.
+Refusals and interrupted reads become “Try again”. Every new read or retry
+reserves one of the workspace’s 30 daily readings and the shared 150 daily
+readings in a database transaction. Two counter columns on `workspaces`
+persist the current UTC day’s usage; there are still seven tables.
+
+Local checks cover every sample, invented quotes, impossible dates, foreign
+people, reading limits, retry accounting, incremental tool handling, and the
+375 px sample flow through quote highlighting. U3 still requires three timed
+runs on the Sprite; local fake-reader speed is not that measurement.
