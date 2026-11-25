@@ -9,12 +9,14 @@ import { createJudge,workspaceFor } from '../src/server/access';
 import { persistentJudgeSecret } from '../src/server/config';
 import { testTone } from '../src/server/gateway';
 
+// Each fixture gets a new origin so fetch cannot reuse a closed server's socket.
+let nextPort=18528;
 async function setup() {
   mkdirSync('.data',{recursive:true});const directory=mkdtempSync('.data/share-check-');
   const db=openDatabase();seed(db);const secret=randomBytes(32).toString('hex');
   const app=createApp(db,{judgeSecret:secret,secureCookies:false,audioDirectory:directory});await app.locals.queue.stop();
-  const server=app.listen(18526,'127.0.0.1');await new Promise<void>(resolve=>server.once('listening',resolve));
-  const base='http://127.0.0.1:18526';
+  const port=nextPort++;const server=app.listen(port,'127.0.0.1');await new Promise<void>(resolve=>server.once('listening',resolve));
+  const base='http://127.0.0.1:'+port;
   async function judge() {
     const login=await fetch(base+'/api/access/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({secret})});
     const cookie=login.headers.get('set-cookie')!.split(';')[0];const id=cookie.slice('kai_session='.length).split('.')[0];
