@@ -35,3 +35,11 @@ mark { background:#ede9fe; color:#4c1d95; }
 .recording-link { display:flex; align-items:center; min-height:44px; color:#4c1d95; text-decoration:underline; text-underline-offset:4px; }
 .audio-picker { display:block; max-width:100%; width:100%; min-height:48px; font:inherit; margin-bottom:12px; }
 .audio-picker::file-selector-button { min-height:44px; padding:8px; margin-right:8px; border:1px solid #dedce6; border-radius:8px; background:white; font:inherit; }
+.person-link { display:block; min-height:44px; }
+.overdue { color:#b91c1c; font-weight:700; }
+.due-soon { color:#92400e; font-weight:600; }
+blockquote { margin:12px 0 0; border-left:3px solid #c4b5fd; padding-left:12px; line-height:1.65; }
+.decision-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.decision-actions button { min-height:44px; font-size:16px; }
+.decision-status { margin-top:12px; font-weight:700; color:#646271; }
+main { overflow-wrap:anywhere; }

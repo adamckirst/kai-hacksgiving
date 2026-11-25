@@ -5,8 +5,8 @@ for (const route of ['/','/people','/home','/todos','/connect']) {
     await page.goto(route);
     await expect(page.getByRole('status')).toHaveCount(0);
     if (route === '/people') {
-      await expect(page.getByRole('heading',{name:'Dana Whitfield'})).toBeVisible();
-      await expect(page.locator('.people h3')).toHaveText(['Dana Whitfield','Ellis Rowan','Nia Calder']);
+      await expect(page.getByRole('heading',{name:'Dana Whitfield'}).first()).toBeVisible();
+      await expect(page.locator('.everyone h3')).toHaveText(['Dana Whitfield','Ellis Rowan','Nia Calder']);
     }
     await assertPhone(page);
     await page.locator('.primary').click();

@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { randomBytes } from 'node:crypto';
 
-export function openDatabase(path = ':memory:') {
+export function openDatabase(path:string|Buffer = ':memory:') {
   const db = new Database(path);
   db.pragma('foreign_keys = ON');
   db.pragma('journal_mode = WAL');
@@ -50,6 +50,13 @@ export function openDatabase(path = ':memory:') {
   const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
   if(!conversations.some(c=>c.name==='audio_path')) db.exec("ALTER TABLE conversations ADD COLUMN audio_path TEXT; ALTER TABLE conversations ADD COLUMN happened_at INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN transcribed INTEGER NOT NULL DEFAULT 0;");
   if(!conversations.some(c=>c.name==='batch_id')) db.exec('ALTER TABLE conversations ADD COLUMN batch_id TEXT');
+  const todos=db.prepare('PRAGMA table_info(todos)').all() as {name:string}[];
+  if(!todos.some(c=>c.name==='person_id')) {
+    db.exec('ALTER TABLE todos ADD COLUMN person_id TEXT REFERENCES people(id)');
+  }
+  // Older deployed steps can seed a new copy after this column already exists.
+  // Fill only missing links on the two known seed rows; preserve all user decisions.
+  db.exec("UPDATE todos SET person_id=CASE WHEN workspace_id='public' THEN 'dana' ELSE workspace_id||':dana' END WHERE person_id IS NULL AND id=CASE WHEN workspace_id='public' THEN 'pricing' ELSE workspace_id||':pricing' END; UPDATE todos SET person_id=owner_person_id WHERE person_id IS NULL AND id=CASE WHEN workspace_id='public' THEN 'trial' ELSE workspace_id||':trial' END;");
   })();
   return db;
 }
@@ -68,8 +75,8 @@ export function seed(db: KaiDatabase, now = new Date(), workspace = 'public') {
     conversation.run(id('dana-call'),workspace,'First call with Dana','Dana wants pricing for three clinics.\nHer team needs simpler scheduling.','paste','Dana Whitfield at Willow Dental wants pricing for three clinics. I promised to send Dana the pricing. She wants fewer gaps between appointments.',day(-4),'ready');
     conversation.run(id('ellis-call'),workspace,'A trial with Ellis','Ellis will ask the team about a trial.\nWe will talk again next week.','paste','Ellis Rowan at Harbour Dental will ask the team about a trial. Ellis promised to send the trial dates.',day(-2),'ready');
     db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?, ?)').run(id('dana-note'),workspace,id('dana'),id('dana-call'),'Wants fewer gaps between appointments.','She wants fewer gaps between appointments.');
-    const todo = db.prepare('INSERT INTO todos (id,workspace_id,text,owner_person_id,due_on,status,quote,conversation_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    todo.run(id('pricing'),workspace,'Send Dana the pricing',null,day(-2),'open','I promised to send Dana the pricing.',id('dana-call'));
-    todo.run(id('trial'),workspace,'Send the trial dates',id('ellis'),day(2),'open','Ellis promised to send the trial dates.',id('ellis-call'));
+    const todo = db.prepare('INSERT INTO todos (id,workspace_id,text,owner_person_id,due_on,status,quote,conversation_id,person_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    todo.run(id('pricing'),workspace,'Send Dana the pricing',null,day(-2),'open','I promised to send Dana the pricing.',id('dana-call'),id('dana'));
+    todo.run(id('trial'),workspace,'Send the trial dates',id('ellis'),day(2),'open','Ellis promised to send the trial dates.',id('ellis-call'),id('ellis'));
   })();
 }

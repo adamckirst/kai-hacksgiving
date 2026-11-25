@@ -4,6 +4,7 @@ import type { KaiDatabase } from './db';
 import { addReading, retryReading, ReadingError, type Reader } from './reading';
 import { fakeReader } from './fake-reader';
 import { samples } from '../samples';
+import { decide,acceptAll,peopleList,personPage } from './decisions';
 import multer from 'multer';
 import { addAudio, queueWorker, fakeTranscriber, maxAudioBytes, type Transcriber } from './audio';
 import { cookieName, createJudge, equalSecret, workspaceFor } from './access';
@@ -36,7 +37,21 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.use((_req,_res,next)=>{void work();next();});
   app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local'}));
   app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null}));
-  app.get('/api/people', (_req,res) => res.json(db.prepare('SELECT id,name,company,role FROM people WHERE workspace_id = ? ORDER BY name COLLATE NOCASE').all(res.locals.workspace)));
+  app.get('/api/people', (_req,res) => res.json(peopleList(db,res.locals.workspace)));
+  app.get('/api/people/:id',(req,res)=> {
+    const page=personPage(db,res.locals.workspace,req.params.id);
+    if(!page){res.status(404).json({error:'Person not found.'});return;}res.json(page);
+  });
+  app.post('/api/suggestions/:id/decision',(req,res)=> {
+    try {
+      if(!['accept','reject'].includes(req.body?.decision) || (req.body.edits && (typeof req.body.edits!=='object' || Array.isArray(req.body.edits))))throw new ReadingError('Choose accept or reject.');
+      decide(db,res.locals.workspace,req.params.id,req.body.decision,req.body.edits);res.json({ok:true});
+    } catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
+  });
+  app.post('/api/readings/:id/accept-all',(req,res)=> {
+    try {acceptAll(db,res.locals.workspace,req.params.id);res.json({ok:true});}
+    catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
+  });
   app.get('/api/home',(_req,res) => res.json({
     todos:db.prepare("SELECT id,text,due_on FROM todos WHERE workspace_id = ? AND status = 'open' ORDER BY due_on").all(res.locals.workspace),
     conversations:db.prepare('SELECT id,title,summary FROM conversations WHERE workspace_id = ? ORDER BY happened_on DESC').all(res.locals.workspace),
@@ -76,7 +91,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/home', '/people', '/todos', '/connect', '/recordings/:id'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get(['/', '/home', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose up to five recordings, each up to 10 MB.'});return;}
     res.status(err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});

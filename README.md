@@ -166,3 +166,20 @@ that database. The phone test uploads a generated WAV and sees the words.
 U2 is not established by these checks: Copal must record
 [`samples/memo-script.md`](samples/memo-script.md), then the deployed app’s
 first-suggestion time must be measured over three runs.
+
+## Decide what to keep (step 6)
+
+Each suggestion has Accept, Edit and Reject. Accept all keeps the current
+suggestions in one transaction. Accepting a note or promise about a new
+person also accepts that person. Rejecting a new person rejects their
+pending items. Repeating an acceptance does not create duplicate rows.
+Editing changes the words or due date but keeps the original supporting
+quote; the screen always has one filled violet action.
+
+People shows Needs you before Everyone. Dana’s overdue pricing promise is
+already there. A person’s page shows accepted open to-dos, notes with quotes
+and recordings newest first. A subject `person_id` on to-dos distinguishes
+who a promise concerns from who owes it; the existing seed is backfilled
+without replacing rows. People, notes and to-dos still contain accepted
+items only. Browser checks exercise the real acceptance routes in separate
+judge sessions and verify that the other copy does not receive the change.
