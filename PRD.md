@@ -231,7 +231,7 @@ recording's date is its file's date, and "by Friday" is counted from it.
   Mara's data, with its own upload and MCP tokens. Without it, a visitor
   sees one shared copy, and every route that writes or calls a provider
   refuses. The waitlist is the one exception.
-- **A judge's own recording is theirs.** Beside "Add recordings" KAI says:
+- **A judge's own recording is theirs.** On Home only, beside "Add recordings", KAI says **(Copal)**:
   "Your recording is transcribed by AssemblyAI and read by Claude. It stays
   in your own copy of this demo, which is deleted on 8 December."
 - **The waitlist is fenced.** It takes one well-formed address of at most
