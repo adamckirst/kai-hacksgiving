@@ -16,7 +16,7 @@ const shots = new URL('./shots/', import.meta.url).pathname
 mkdirSync(shots, { recursive: true })
 
 const browser = await chromium.launch()
-const page = await browser.newPage({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 2 })
+const page = await browser.newPage({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 1.5 })
 await page.goto(base)
 const states = await page.locator('main a').evaluateAll((links) => links.map((link) => link.getAttribute('href').slice(2)))
 
@@ -49,7 +49,11 @@ for (const state of states) {
     if (filled.length !== 1) issues.push(`${filled.length} filled violet buttons: ` + filled.map((el) => el.textContent.trim()).join(' | '))
     return issues
   })
+  // A picture of the whole screen: make the phone as tall as the page, so the dock sits at its foot.
+  const height = await page.evaluate(() => document.documentElement.scrollHeight)
+  await page.setViewportSize({ width: 375, height: Math.max(812, height) })
   await page.screenshot({ path: `${shots}${state.replaceAll('/', '-')}.png` })
+  await page.setViewportSize({ width: 375, height: 812 })
   console.log(issues.length ? 'FAIL' : 'ok  ', state, issues.length ? '\n      ' + issues.join('\n      ') : '')
   failures += issues.length
 }

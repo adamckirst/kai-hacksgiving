@@ -18,7 +18,8 @@ npx tsc --noEmit -p design/tsconfig.json
 
 `#/` lists the states; `#/recording/reading` is one. `check.mjs` measures
 every state at 375 px against U6 to U8, exits 1 on a failure, and writes a
-picture of each to [`shots/`](shots). Look at the pictures first.
+picture of each whole screen to [`shots/`](shots). Look at the pictures
+first.
 
 ## What is here
 
@@ -44,7 +45,8 @@ callbacks. `gallery.tsx` shows how each is called.
    render the screen from `src/look/` with them. `src/style.css` goes: its
    rules for `h1`, `nav`, `label` and the rest would fight these.
 3. In `kai.css`, change the two `@source` lines to where the files now are.
-4. In `tests/phone/usability.ts`, read the filled violet as
+4. In `tests/phone/usability.ts` (it arrives with the open step PRs), read
+   the filled violet as
    `--color-violet-600`, and leave out elements with
    `data-headlessui-focus-guard`: the kit's dialog adds two unseen buttons.
 5. Keep every behaviour. This step changes how KAI looks and where its one
