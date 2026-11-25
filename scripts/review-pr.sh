@@ -53,7 +53,11 @@ jq -r '.comments[] | "## Comment of " + .createdAt + "\n\n" + .body + "\n"' "$wo
   git diff "origin/$base...HEAD" -- . ':(exclude)package-lock.json' ':(exclude)src/catalyst'
 } >"$work/diff.txt"
 
-post() { gh pr comment "$pr" --body-file "$1" >/dev/null || fail "the review could not be posted on PR #$pr"; }
+post() {
+  jq -n --rawfile body "$1" '{body: $body}' |
+    gh api --method POST 'repos/{owner}/{repo}/issues/'"$pr"'/comments' --input - >/dev/null \
+    || fail "the review could not be posted on PR #$pr"
+}
 
 # The check, run here so that nobody takes anybody's word for it.
 if [[ -f package.json ]] && jq -e .scripts.check package.json >/dev/null 2>&1; then
