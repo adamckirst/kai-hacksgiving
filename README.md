@@ -46,9 +46,19 @@ then `npm run check`. The check runs TypeScript, database/API unit tests,
 a production build, and the phone browser checks at 375 px on every tab.
 
 `npm run build && npm start` serves the app at `http://127.0.0.1:18500`.
-People lists Mara’s invented contacts. The other tabs explain what comes
-in later steps. Stop it with Ctrl-C. The local SQLite file is ignored by git;
-seed data is inserted only once and dates are relative to that first run.
-`KAI_DB` can select a database path (use a path outside the code folder on
-the Sprite). `HOST`, `PORT`, and `KAI_COMMIT` configure the service address
+Welcome opens a read-only copy of Mara’s invented notebook. Home shows her
+people count, open to-dos and past recordings. People lists her contacts.
+Stop the server with Ctrl-C. Local runs use an in-memory database, keeping
+access secrets out of files; all local changes disappear on restart.
+
+On the Sprite, `KAI_DB` selects a database outside the code folder.
+`KAI_JUDGE_SECRET` supplies the secret for a link in the form `/#judge=…`.
+Do not put that secret in shell history, logs or this repository. Step 3
+will provision it on the Sprite and save the link for Copal. Each browser
+that opens the link receives its own newly seeded workspace and an
+HttpOnly session cookie. The fragment is removed before the session opens.
+With no configured secret, new judge sessions are refused.
+`VIDEO_URL` enables the Welcome video; without it there is no video player.
+`NODE_ENV=production` enables Secure cookies; the deployed service requires
+HTTPS. `HOST`, `PORT`, and `KAI_COMMIT` configure the service address
 and health response. No provider is called by this step.

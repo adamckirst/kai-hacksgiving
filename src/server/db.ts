@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { randomBytes } from 'node:crypto';
 
 export function openDatabase(path = ':memory:') {
   const db = new Database(path);
@@ -45,21 +46,22 @@ export function openDatabase(path = ':memory:') {
   return db;
 }
 export type KaiDatabase = ReturnType<typeof openDatabase>;
-export function seed(db: KaiDatabase, now = new Date()) {
+export function seed(db: KaiDatabase, now = new Date(), workspace = 'public') {
+  const id = (name: string) => workspace === 'public' ? name : `${workspace}:${name}`;
   const day = (offset: number) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset)).toISOString().slice(0,10);
   db.transaction(() => {
-    if (db.prepare('SELECT id FROM workspaces WHERE id = ?').get('public')) return;
-    db.prepare('INSERT INTO workspaces VALUES (?, ?, ?, NULL, NULL, ?)').run('public','public','public', now.toISOString());
+    if (db.prepare('SELECT id FROM workspaces WHERE id = ?').get(workspace)) return;
+    db.prepare('INSERT INTO workspaces VALUES (?, ?, ?, ?, ?, ?)').run(workspace, workspace, workspace === 'public' ? 'public' : 'judge', workspace === 'public' ? null : randomBytes(32).toString('hex'), workspace === 'public' ? null : randomBytes(32).toString('hex'), now.toISOString());
     const person = db.prepare('INSERT INTO people VALUES (?, ?, ?, ?, ?)');
-    person.run('dana','public','Dana Whitfield','Willow Dental','Operations lead');
-    person.run('ellis','public','Ellis Rowan','Harbour Dental','Clinic owner');
-    person.run('nia','public','Nia Calder','Loomwork','Product lead');
+    person.run(id('dana'),workspace,'Dana Whitfield','Willow Dental','Operations lead');
+    person.run(id('ellis'),workspace,'Ellis Rowan','Harbour Dental','Clinic owner');
+    person.run(id('nia'),workspace,'Nia Calder','Loomwork','Product lead');
     const conversation = db.prepare('INSERT INTO conversations VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)');
-    conversation.run('dana-call','public','First call with Dana','Dana wants pricing for three clinics.\nHer team needs simpler scheduling.','paste','Dana Whitfield at Willow Dental wants pricing for three clinics. I promised to send Dana the pricing. She wants fewer gaps between appointments.',day(-4),'ready');
-    conversation.run('ellis-call','public','A trial with Ellis','Ellis will ask the team about a trial.\nWe will talk again next week.','paste','Ellis Rowan at Harbour Dental will ask the team about a trial. Ellis promised to send the trial dates.',day(-2),'ready');
-    db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?, ?)').run('dana-note','public','dana','dana-call','Wants fewer gaps between appointments.','She wants fewer gaps between appointments.');
+    conversation.run(id('dana-call'),workspace,'First call with Dana','Dana wants pricing for three clinics.\nHer team needs simpler scheduling.','paste','Dana Whitfield at Willow Dental wants pricing for three clinics. I promised to send Dana the pricing. She wants fewer gaps between appointments.',day(-4),'ready');
+    conversation.run(id('ellis-call'),workspace,'A trial with Ellis','Ellis will ask the team about a trial.\nWe will talk again next week.','paste','Ellis Rowan at Harbour Dental will ask the team about a trial. Ellis promised to send the trial dates.',day(-2),'ready');
+    db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?, ?)').run(id('dana-note'),workspace,id('dana'),id('dana-call'),'Wants fewer gaps between appointments.','She wants fewer gaps between appointments.');
     const todo = db.prepare('INSERT INTO todos VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    todo.run('pricing','public','Send Dana the pricing',null,day(-2),'open','I promised to send Dana the pricing.','dana-call');
-    todo.run('trial','public','Send the trial dates','ellis',day(2),'open','Ellis promised to send the trial dates.','ellis-call');
+    todo.run(id('pricing'),workspace,'Send Dana the pricing',null,day(-2),'open','I promised to send Dana the pricing.',id('dana-call'));
+    todo.run(id('trial'),workspace,'Send the trial dates',id('ellis'),day(2),'open','Ellis promised to send the trial dates.',id('ellis-call'));
   })();
 }
