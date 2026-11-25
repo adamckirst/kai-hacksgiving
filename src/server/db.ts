@@ -68,7 +68,7 @@ export function seed(db: KaiDatabase, now = new Date(), workspace = 'public') {
     conversation.run(id('dana-call'),workspace,'First call with Dana','Dana wants pricing for three clinics.\nHer team needs simpler scheduling.','paste','Dana Whitfield at Willow Dental wants pricing for three clinics. I promised to send Dana the pricing. She wants fewer gaps between appointments.',day(-4),'ready');
     conversation.run(id('ellis-call'),workspace,'A trial with Ellis','Ellis will ask the team about a trial.\nWe will talk again next week.','paste','Ellis Rowan at Harbour Dental will ask the team about a trial. Ellis promised to send the trial dates.',day(-2),'ready');
     db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?, ?)').run(id('dana-note'),workspace,id('dana'),id('dana-call'),'Wants fewer gaps between appointments.','She wants fewer gaps between appointments.');
-    const todo = db.prepare('INSERT INTO todos VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    const todo = db.prepare('INSERT INTO todos (id,workspace_id,text,owner_person_id,due_on,status,quote,conversation_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     todo.run(id('pricing'),workspace,'Send Dana the pricing',null,day(-2),'open','I promised to send Dana the pricing.',id('dana-call'));
     todo.run(id('trial'),workspace,'Send the trial dates',id('ellis'),day(2),'open','Ellis promised to send the trial dates.',id('ellis-call'));
   })();
