@@ -43,3 +43,12 @@ blockquote { margin:12px 0 0; border-left:3px solid #c4b5fd; padding-left:12px; 
 .decision-actions button { min-height:44px; font-size:16px; }
 .decision-status { margin-top:12px; font-weight:700; color:#646271; }
 main { overflow-wrap:anywhere; }
+.todo-views { display:flex; gap:12px; margin:24px 0; }
+.todo-views button { flex:1; min-height:48px; font-size:16px; }
+.todo-views button[aria-pressed='true'] { box-shadow:inset 0 -3px #6d28d9; }
+.todo-row { display:flex; gap:12px; align-items:flex-start; }
+.todo-row > div { min-width:0; }
+.todo-tick { width:44px; height:44px; flex-shrink:0; border:1px solid #9b96ab; border-radius:8px; color:#646271; background:white; font-size:24px; cursor:pointer; }
+.todo-tick:focus-visible { outline:2px solid #6d28d9; outline-offset:3px; }
+.todo-tick:disabled { opacity:.5; cursor:wait; }
+.todo-empty { margin:24px 0; }
