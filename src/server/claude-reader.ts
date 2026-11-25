@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { discoverGateways, model } from './gateway';
 import { toolSchemas, type Reader } from './reading';
-type Block={type:string;id?:string;name?:string;input?:unknown;text?:string};
+type Block={type:string;id?:string;name?:string;input?:unknown;text?:string;thinking?:string;signature?:string};
 // Parse complete SSE frames, including frames split across network chunks.
 export async function* events(body:ReadableStream<Uint8Array>) {
   const reader=body.getReader(), decoder=new TextDecoder();let pending='';
@@ -33,6 +33,8 @@ export const claudeReader:Reader=async(input,call)=> {
       if(event.type==='content_block_delta') {
         const block=blocks[event.index];if(!block) throw new Error('Incomplete response.');
         if(event.delta.type==='input_json_delta') partials.set(event.index,(partials.get(event.index) ?? '')+event.delta.partial_json);
+        if(event.delta.type==='thinking_delta') block.thinking=(block.thinking ?? '')+event.delta.thinking;
+        if(event.delta.type==='signature_delta') block.signature=(block.signature ?? '')+event.delta.signature;
         if(event.delta.type==='text_delta') block.text=(block.text ?? '')+event.delta.text;
       }
       if(event.type==='content_block_stop') {

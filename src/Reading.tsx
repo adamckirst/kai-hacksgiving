@@ -21,9 +21,9 @@ export function AddTranscript() {
 }
 type Suggestion={id:string;kind:string;payload:string;quote:string};
 type Recording={title:string;summary:string;text:string;status:string;error:string|null;suggestions:Suggestion[]};
-export function RecordingScreen() {
+export function RecordingScreen({readOnly=false}:{readOnly?:boolean}) {
   const id=location.pathname.split('/').pop();
-  const [recording,setRecording]=useState<Recording|null>(null),[error,setError]=useState(''),[quote,setQuote]=useState('');
+  const [recording,setRecording]=useState<Recording|null>(null),[error,setError]=useState(''),[actionError,setActionError]=useState(''),[quote,setQuote]=useState('');
   useEffect(()=> {
     let alive=true;
     async function refresh() {
@@ -33,13 +33,14 @@ export function RecordingScreen() {
     void refresh();const timer=setInterval(()=>void refresh(),1000);return()=>{alive=false;clearInterval(timer);};
   },[id]);
   async function retry() {
+    setActionError('');
     try {
       const response=await fetch('/api/readings/'+id+'/retry',{method:'POST'});
-      if(!response.ok) {const data=await response.json();setError(data.error);}
-    } catch {setError('KAI could not start again. Try once more.');}
+      if(!response.ok) {const data=await response.json();setActionError(data.error);}
+    } catch {setActionError('KAI could not start again. Try once more.');}
   }
   const start=quote ? recording?.text.indexOf(quote) ?? -1 : -1;
-  return <main><h1>{recording?.title ?? 'Recording'}</h1>{error && <p role="alert">{error}</p>}
+  return <main><h1>{recording?.title ?? 'Recording'}</h1>{readOnly && <p className="notice">A read-only demo with made-up data.</p>}{error && <p role="alert">{error}</p>}{actionError && <p role="alert">{actionError}</p>}
     {!recording && !error && <p role="status">Loading your recording…</p>}
     {recording && <><p className="intro">{recording.summary}</p><p role="status">{recording.status==='ready' ? 'KAI has finished reading.' : recording.status==='failed' ? recording.error : 'KAI is reading…'}</p>
       <h2>KAI suggests</h2><ul className="people">{recording.suggestions.map(s=>{const p=JSON.parse(s.payload);return <li key={s.id}><h3>{p.name ?? p.text}</h3><p>{s.kind==='person' ? 'New person' : s.kind==='note' ? 'Note' : p.owner_person_id ? 'Waiting on' : 'Your to-do'}{p.due_on ? ` · ${p.due_on}`:''}</p><Button outline className="quote-button" onClick={()=>{setQuote(s.quote);document.getElementById('recording-words')?.scrollIntoView({block:'center'});}}>{s.quote}</Button></li>;})}</ul>
