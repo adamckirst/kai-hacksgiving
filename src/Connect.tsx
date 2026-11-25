@@ -2,11 +2,11 @@ import { useEffect,useState } from 'react';
 import { Button } from './catalyst/button';
 
 export function ConnectScreen({kind}:{kind:'judge'|'public'|undefined}) {
-  const [address,setAddress]=useState(''),[error,setError]=useState(''),[message,setMessage]=useState('');
+  const [address,setAddress]=useState(''),[assistant,setAssistant]=useState(''),[error,setError]=useState(''),[message,setMessage]=useState('');
   const home=location.origin+'/home';
   useEffect(()=> {
     if(kind!=='judge')return;
-    fetch('/api/connect').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>setAddress(location.origin+data.uploadPath)).catch(()=>setError('Your address could not load. Reload this page to try again.'));
+    fetch('/api/connect').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>{setAddress(location.origin+data.uploadPath);setAssistant(location.origin+data.mcpPath);}).catch(()=>setError('Your address could not load. Reload this page to try again.'));
   },[kind]);
   async function copy(value:string) {
     setMessage('');setError('');
@@ -32,7 +32,9 @@ export function ConnectScreen({kind}:{kind:'judge'|'public'|undefined}) {
       <p>Share one audio file at a time, up to 10 MB and five minutes. If the original date is missing, replace “Get Details of Files” with “Ask for Input”, choose Date and Time, and enter the recording’s date when sharing. Home also accepts up to five files at once.</p>
       <p>Your recording is transcribed by AssemblyAI and read by Claude. It stays in your own copy of this demo, which is deleted on 8 December.</p>
     </> : <p role="status">Opening your notebook…</p>}
-    <h2>Connect an assistant</h2><p>Assistant connections come in the next step.</p>
+    <h2>Connect an assistant</h2><p>Your assistant can read your accepted people, notes and to-dos with their quotes, and search your recordings’ words. It cannot change anything or send anything.</p>
+    {kind==='judge' && <><p>Keep this address private: it gives read access to your copy.</p><label htmlFor="assistant-address">Your assistant address</label><textarea id="assistant-address" className="connect-address" readOnly value={assistant} rows={3}/><Button outline disabled={!assistant} onClick={()=>void copy(assistant)} className="connect-copy">Copy assistant address</Button><ol className="connect-steps"><li>In Claude, open Settings → Connectors → Add custom connector.</li><li>Name it “KAI” and paste your assistant address as the connection address. Add and connect it.</li><li>Open a conversation, enable KAI, and ask “What do I owe Dana this week?”</li></ol></>}
+    {kind==='public' && <p>Open your own copy to get an assistant address.</p>}
     {kind!=='judge' && <Button color="violet" href="/people" className="primary">See people</Button>}
   </main>;
 }
