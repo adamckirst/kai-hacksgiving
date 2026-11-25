@@ -316,14 +316,17 @@ Codex takes the next step that does not need them and comes back.
     refuses the judge link and any wrong secret; the button is not the
     screen's filled violet one.
 12. **Polish.** Copal's notes from the phone, the video on Welcome and in
-    the README, U5 measured. *Checks:* every number in §1 measured and listed in the
-    PR body.
+    the README. *Checks:* `npm run check`; every criterion in §1 has its status
+    listed in the PR body. Final U1–U5 measurements belong to step 13, on the
+    deployed build with the finished screens and upload flow.
 
 13. **The look.** The app's screens are the ones in `design/`, as its
     README describes, with every behaviour kept. *Checks:* `design/check.mjs`
     passes on the gallery; the phone test of U6 to U8 passes on every route
     in a judge's copy and in the read-only copy; every earlier test passes;
-    the PR body shows each app screen beside its picture in `design/shots/`.
+    the PR body shows each app screen beside its picture in `design/shots/`;
+    U1–U5 are measured on this deployed head, with three runs and their medians
+    listed in the PR body. The targets in §1 are unchanged.
 
 Stretch steps follow only when steps 12 and 13 are merged. The video (§9)
 is recorded after step 13.

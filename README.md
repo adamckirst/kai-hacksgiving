@@ -371,8 +371,9 @@ configuration is erased when the code is redeployed.
 Earlier steps' live measurements are recorded in their PRs; they do not
 establish the final product's performance. The step-12 PR lists every
 C1–C4, D1–D4 and U1–U8 requirement with evidence or “not run”.
-On the final deployed head, record three runs for each speed-of-use check and the
-median. For U5, close polling tabs, verify sleep through the Sprite control
+In step 13, on its final deployed head, record three runs for each U1–U5
+check and the median. Step 12 lists each criterion’s status; it does not deploy
+an older build over the approved private preview for those measurements. For U5, close polling tabs, verify sleep through the Sprite control
 plane before each run, and measure navigation to the first visible Welcome
 action; an already-awake response is not cold-start evidence. Record the
 actual video, phone notes, demo URL, post URL and submission confirmation
