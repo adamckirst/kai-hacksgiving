@@ -22,7 +22,7 @@ test('verification gates grants, protects codes, bounds attempts and prevents em
   const cookie=good.headers.get('set-cookie')!.split(';')[0];
   assert.equal((await post('verify',{email,code:codes.get(email)})).status,409);
   const home=await(await fetch(base+'/api/home',{headers:{Cookie:cookie}})).json();assert.equal(home.trialSeconds,3600);assert.equal(home.peopleCount,0);assert.equal(home.trialVerified,true);
-  for(const route of ['home','people','todos','access','connect']) {
+  for(const route of ['home','people','todos','access','connect','library','notifications']) {
    const response=await fetch(base+'/api/'+route,{headers:{Cookie:cookie}});assert.equal(response.status,200);
    assert.ok(!(await response.text()).includes(email));
   }

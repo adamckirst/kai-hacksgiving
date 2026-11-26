@@ -24,6 +24,7 @@ export function mountSharing(app:Express,db:KaiDatabase,upload:RequestHandler,di
       if(!files || !Array.isArray(dates) || dates.length!==files.length)throw new ReadingError('Share recordings with their original dates.');
       const timestamps=dates;
       const ids=await addAudio(db,res.locals.sharingWorkspace,files.map((f,i)=>({name:f.originalname,buffer:f.buffer,date:timestamps[i]})),directory,'shared',{awaitingPerson:true});
+      db.prepare('UPDATE workspaces SET shortcut_ready=1 WHERE id=?').run(res.locals.sharingWorkspace);
       res.status(202).json({ids,openPath:'/upload/'+ids[0]});void work();
     }catch(error) {
       if(error instanceof ReadingError)res.status(error.status).json({error:error.message});

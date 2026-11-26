@@ -91,6 +91,7 @@ export type Recording = {
 export type QueueItem = { id: string; title: string; status: RecordingStatus; error: string | null; progress?: string | null; awaiting_person?: number; suggestion_count?: number }
 
 export type HomeData = {
+  shortcutReady?: boolean
   trialVerified?: boolean
   trialSeconds?: number | null
   hasRecordings?: boolean
@@ -101,4 +102,6 @@ export type HomeData = {
 
 export type Sample = { id: string; title: string }
 
-export type Connection = { uploadAddress: string; assistantAddress: string; homeAddress: string }
+export type Connection = { uploadAddress: string; assistantAddress: string; homeAddress: string; shortcutReady?: boolean }
+
+export type RecordingItem={id:string;title:string;summary:string;happened_on:string;status:RecordingStatus;error:string|null;awaiting_person:number;seen:number;suggestion_count:number}

@@ -16,6 +16,8 @@ import { Icon, type IconName } from './icons'
 const HrefContext = createContext<(path: string) => string>((path) => path)
 export const HrefProvider = HrefContext.Provider
 export const useHref = () => useContext(HrefContext)
+const NotebookStatusContext=createContext({unread:0})
+export const NotebookStatusProvider=NotebookStatusContext.Provider
 
 /* ---------- surfaces ---------- */
 
@@ -382,12 +384,12 @@ export function Area({ label, id, ...props }: { label: string; id: string } & Om
 
 const TABS: { label: string; path: string; icon: IconName }[] = [
   { label: 'Home', path: '/home', icon: 'home' },
+  { label: 'Library', path: '/library', icon: 'folder' },
   { label: 'People', path: '/people', icon: 'people' },
-  { label: 'To-dos', path: '/todos', icon: 'todo' },
-  { label: 'Connect', path: '/connect', icon: 'link' },
+  { label: 'Tasks', path: '/todos', icon: 'todo' },
 ]
 
-export type TabPath = '/home' | '/people' | '/todos' | '/connect'
+export type TabPath = '/home' | '/library' | '/people' | '/todos'
 
 /** The four tabs, floating at the top. `dueTone` turns To-dos red or amber. */
 function Tabs({ current, due }: { current: TabPath; due?: 'overdue' | 'soon' }) {
@@ -448,7 +450,7 @@ export function TabPage({
       <div className="sticky top-0 z-20 -mx-4 bg-gradient-to-b from-page from-70% to-page/0 px-4 pt-3 pb-4">
         <div className="mb-2 flex items-center justify-between gap-3 px-1">
           <span className="text-xl font-extrabold tracking-tight text-violet-700">KAI</span>
-          <span className="truncate text-base font-semibold text-zinc-500">{readOnly ? READ_ONLY : owner}</span>
+          <div className="flex min-w-0 items-center gap-2"><span className="truncate text-base font-semibold text-zinc-500">{readOnly ? READ_ONLY : owner}</span><RoundLink href="/connect" label="Connections" icon="settings"/></div>
         </div>
         <Tabs current={current} due={due} />
       </div>
@@ -512,8 +514,12 @@ export function Footer() {
  * "Add recordings": the action of every tab page in your own copy. The file
  * field lies over the pill, so one tap opens the phone's own picker.
  */
-export function AddRecordings({ personId }: { onFiles?: (files: File[]) => void; busy?: boolean; personId?: string }) {
-  return <Button variant="primary" wide icon="plus" href={'/upload/new'+(personId ? '?person='+encodeURIComponent(personId) : '')}>Add recordings</Button>
+export function AddRecordings({ personId, hideNotifications }: { onFiles?: (files: File[]) => void; busy?: boolean; personId?: string; hideNotifications?: boolean }) {
+  const {unread}=useContext(NotebookStatusContext)
+  return <div className="flex w-full items-center gap-3">
+    {!hideNotifications && <div className="relative shrink-0"><RoundLink href="/notifications" label={unread ? `Notifications, ${unread} unread`:'Notifications'} icon="bell"/>{unread>0 && <span aria-hidden="true" className="absolute right-1 top-1 size-3 rounded-full bg-rose-600 ring-2 ring-white"/>}</div>}
+    <div className="min-w-0 flex-1"><Button variant="primary" wide icon="plus" href={'/upload/new'+(personId ? '?person='+encodeURIComponent(personId) : '')}>Add recordings</Button></div>
+  </div>
 }
 
 export function RecordingPicker({ onFiles, busy, disabled }: { onFiles: (files: File[]) => void; busy?: boolean; disabled?: boolean }) {

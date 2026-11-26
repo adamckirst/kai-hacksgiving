@@ -174,6 +174,7 @@ export function Home({
       dock={readOnly ? <WhatIsKai /> : <AddRecordings onFiles={onFiles} busy={adding} />}
     >
       {queue.length > 0 && <Queue items={queue} />}
+      {home && !readOnly && !home.shortcutReady && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Send voice notes straight to KAI</h2><p className="text-base/7 text-zinc-600">Set up the iPhone shortcut once, then share from Voice Memos or WhatsApp.</p><Button variant="outline" href="/connect">Set up your phone</Button></Card>}
       {home?.trialSeconds!=null && !home.trialVerified && <Card className="p-5"><p className="mb-3 text-base/7">Verify your email to continue your trial. Your notebook and remaining time are kept.</p><Button href="/try" variant="outline">Verify email</Button></Card>}
       {home?.trialSeconds!=null && home.trialVerified && <p className="px-1 text-base/7 text-zinc-600">KAI will email you when a recording is ready, with suggestion counts and a link to review.</p>}
       {home?.trialSeconds!=null && <p className="px-1 text-base/7 font-medium text-zinc-600">{home.trialSeconds ? `${Math.floor(home.trialSeconds/60)} min ${home.trialSeconds%60} sec of recording time left` : 'You’ve used your hour of recordings. Your notebook and assistant connection are still here.'}</p>}
@@ -182,8 +183,8 @@ export function Home({
       {loadError && <Notice tone="error">{loadError}</Notice>}
       {!home && !loadError && <Notice>Loading your notebook…</Notice>}
       {home && (
-        <section aria-label="My to-dos">
-          <SectionLabel action={<TextLink href="/todos">All to-dos</TextLink>}>My to-dos</SectionLabel>
+        <section aria-label="My tasks">
+          <SectionLabel action={<TextLink href="/todos">All tasks</TextLink>}>My tasks</SectionLabel>
           {home.todos.length ? <Rows>
             {home.todos.map(todo => (
               <li key={todo.id} className="flex gap-1 py-2 pr-4 pl-2">
@@ -203,9 +204,9 @@ export function Home({
       {home && (
         <>
           <div>
-            <SectionLabel action={<TextLink href="/people">{home.peopleCount} people</TextLink>}>Past recordings</SectionLabel>
+            <SectionLabel action={<TextLink href="/library">Open library</TextLink>}>Recent recordings</SectionLabel>
             <Rows>
-              {home.conversations.filter(r=>!queue.some(q=>q.id===r.id)).map((recording) => (
+              {home.conversations.filter(r=>!queue.some(q=>q.id===r.id)).slice(0,3).map((recording) => (
                 <li key={recording.id}>
                   <a href={to('/recordings/' + recording.id)} className={`${FOCUS} flex min-h-16 items-center gap-3 px-4 py-3`}>
                     <span className="min-w-0 flex-1">

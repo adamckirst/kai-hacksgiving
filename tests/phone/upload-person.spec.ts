@@ -41,11 +41,11 @@ test('Home puts recording progress first, then my tasks, excluding promises owed
   await login(page,kai.secret);
   await page.route('**/api/queue',r=>r.fulfill({json:[{id:'invented',title:'An invented recording',status:'reading',progress:'Reading Dana’s page',error:null}]}));
   await page.goto('/home');await expect(page.getByText('Reading Dana’s page',{exact:true})).toBeVisible();
-  const tasks=page.getByRole('region',{name:'My to-dos',exact:true});await expect(tasks).toContainText('Send Dana the pricing');await expect(tasks).not.toContainText('Send the trial dates');
+  const tasks=page.getByRole('region',{name:'My tasks',exact:true});await expect(tasks).toContainText('Send Dana the pricing');await expect(tasks).not.toContainText('Send the trial dates');
   const progress=await page.getByText('Reading Dana’s page',{exact:true}).boundingBox(),todos=await tasks.boundingBox(),samples=await page.getByText('No recording at hand?',{exact:true}).boundingBox();
   expect(progress!.y).toBeLessThan(todos!.y);expect(todos!.y).toBeLessThan(samples!.y);await expect(page.getByText('Up to five recordings at once',{exact:true})).toHaveCount(0);await assertPhone(page);
   await page.getByRole('checkbox',{name:'Mark Send Dana the pricing done'}).click();await expect(tasks).not.toContainText('Send Dana the pricing');
-  await page.reload();await expect(page.getByRole('region',{name:'My to-dos'})).not.toContainText('Send Dana the pricing');
+  await page.reload();await expect(page.getByRole('region',{name:'My tasks'})).not.toContainText('Send Dana the pricing');
 });
 
 test('opening another page holds its loading screen and URL instead of flashing Welcome',async({page})=> {

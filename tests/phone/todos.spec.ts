@@ -15,7 +15,7 @@ test('yesterday is Overdue, urgency outranks names, and ticking finishes a promi
   await page.goto('/people');await expect(page.getByRole('region',{name:'Needs you',exact:true}).locator('li').first()).toContainText('Zora Whitfield');
   await expect(page.getByRole('region',{name:'Needs you',exact:true}).locator('li').first().getByLabel('1 overdue',{exact:true})).toHaveText('1');
   await expect(page.getByRole('region',{name:'Needs you',exact:true}).locator('li').nth(1).getByLabel('1 due soon',{exact:true})).toHaveText('1');await assertPhone(page);
-  await page.getByRole('link',{name:'To-dos',exact:true}).click();
+  await page.getByRole('link',{name:'Tasks',exact:true}).click();
   await expect(page.getByRole('region',{name:'Overdue',exact:true})).toContainText('Send Dana the pricing');
   await expect(page.getByRole('region',{name:'Due soon',exact:true})).toContainText('Today');
   await expect(page.getByRole('region',{name:'Due soon',exact:true})).toContainText('Tomorrow');

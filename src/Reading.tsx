@@ -15,6 +15,7 @@ export function RecordingScreen({readOnly=false}:{readOnly?:boolean}) {
     }
     void refresh();const timer=setInterval(()=>void refresh(),1000);return()=>{alive=false;clearInterval(timer);};
   },[id]);
+  useEffect(()=>{if(readOnly || !recording || !['ready','failed'].includes(recording.status))return;void fetch('/api/notifications/'+id+'/seen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:recording.status})}).catch(()=>{});},[id,readOnly,recording?.status]);
   async function retry() {
     setActionError('');
     try {

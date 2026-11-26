@@ -14,7 +14,8 @@ test('U1: judge Welcome opens a populated Home in one tap; two browsers stay sep
     const before = kai.db.prepare("SELECT id FROM workspaces WHERE kind='judge'").all() as {id:string}[];
     expect(before.length).toBe(2);
     await a.getByRole('link',{name:'Try it yourself'}).click();
-    await expect(a.getByRole('link',{name:'3 people',exact:true})).toBeVisible();
+    await expect(a.getByRole('link',{name:'People',exact:true})).toBeVisible();
+    expect((await(await a.request.get('/api/people')).json()).length).toBe(3);
     await expect(a.getByText('Send Dana the pricing')).toBeVisible();
     await expect(a.getByRole('link',{name:/First call with Dana/})).toBeVisible();
     await expect(a.getByText('Read-only demo')).toHaveCount(0);
