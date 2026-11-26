@@ -3,7 +3,7 @@ import {createJudge} from '../../src/server/access';
 import {test,expect} from './fixture';
 import {assertPhone} from './usability';
 test('public trial joins the waitlist and opens an empty notebook at 375 px',async({page,kai})=>{
- await page.setExtraHTTPHeaders({'Fly-Client-IP':'192.0.2.101'});
+ await page.setExtraHTTPHeaders({'Sprite-Client-IP':'192.0.2.101'});
  await page.goto('/');await page.getByRole('link',{name:'Try it yourself',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Try KAI with your recordings'})).toBeVisible();await assertPhone(page);
  const email=randomUUID()+'@example.invalid';await page.getByLabel('Email',{exact:true}).fill(email);
@@ -18,7 +18,7 @@ test('public trial joins the waitlist and opens an empty notebook at 375 px',asy
  await page.reload();await expect(page.getByText(/You’ve used your hour/)).toBeVisible();await assertPhone(page);
 });
 test('a trial claimed in another browser shows a useful error without giving access',async({page,kai})=>{
- await page.setExtraHTTPHeaders({'Fly-Client-IP':'192.0.2.102'});
+ await page.setExtraHTTPHeaders({'Sprite-Client-IP':'192.0.2.102'});
  const email=randomUUID()+'@example.invalid';
  const judge=createJudge(kai.db,false);
  kai.db.prepare('INSERT INTO waitlist(email,created_at,workspace_id) VALUES (?,?,?)').run(email,new Date().toISOString(),judge.id);

@@ -9,9 +9,9 @@ import {reserveReading} from '../src/server/reading';
 const address=()=>randomUUID()+'@example.invalid';
 test('verification gates grants, protects codes, bounds attempts and prevents email/IP reuse',async()=>{
  const db=openDatabase();seed(db);let now=Date.now(),fail=false,sends=0;const codes=new Map<string,string>();
- const app=createApp(db,{secureCookies:false,trustFlyProxy:true,now:()=>now,sendCode:async(email,code)=>{sends++;if(fail)throw new Error();codes.set(email,code)}});
+ const app=createApp(db,{secureCookies:false,trustSpriteProxy:true,now:()=>now,sendCode:async(email,code)=>{sends++;if(fail)throw new Error();codes.set(email,code)}});
  const server=app.listen(18574,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));const base='http://127.0.0.1:18574';
- const post=(route:string,body:unknown,ip='192.0.2.1',cookie='')=>fetch(base+'/api/trial/'+route,{method:'POST',headers:{'Content-Type':'application/json','Fly-Client-IP':ip,Cookie:cookie},body:JSON.stringify(body)});
+ const post=(route:string,body:unknown,ip='192.0.2.1',cookie='')=>fetch(base+'/api/trial/'+route,{method:'POST',headers:{'Content-Type':'application/json','Sprite-Client-IP':ip,Cookie:cookie},body:JSON.stringify(body)});
  const count=()=>(db.prepare('SELECT count(*) n FROM waitlist WHERE verified_at IS NOT NULL').get() as {n:number}).n;
  try {
   const email=address();assert.equal((await post('code',{email})).status,200);assert.equal(count(),0);
@@ -42,9 +42,9 @@ test('100th grant is atomic, existing unverified notebooks keep their remaining 
  db.prepare('UPDATE workspaces SET trial_seconds=123 WHERE id=?').run(legacy.id);
  db.prepare('INSERT INTO waitlist(email,created_at,workspace_id) VALUES (?,?,?)').run(legacyEmail,new Date().toISOString(),legacy.id);
  assert.throws(()=>reserveReading(db,legacy.id),/Verify your email/);
- const codes=new Map<string,string>();const app=createApp(db,{secureCookies:false,trustFlyProxy:true,sendCode:async(email,code)=>{codes.set(email,code)}});
+ const codes=new Map<string,string>();const app=createApp(db,{secureCookies:false,trustSpriteProxy:true,sendCode:async(email,code)=>{codes.set(email,code)}});
  const server=app.listen(18575,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));const base='http://127.0.0.1:18575';
- const post=(route:string,body:unknown,ip:string,cookie='')=>fetch(base+'/api/trial/'+route,{method:'POST',headers:{'Content-Type':'application/json','Fly-Client-IP':ip,Cookie:cookie},body:JSON.stringify(body)});
+ const post=(route:string,body:unknown,ip:string,cookie='')=>fetch(base+'/api/trial/'+route,{method:'POST',headers:{'Content-Type':'application/json','Sprite-Client-IP':ip,Cookie:cookie},body:JSON.stringify(body)});
  try {
   await post('code',{email:legacyEmail},'192.0.2.10');
   assert.equal((await post('verify',{email:legacyEmail,code:codes.get(legacyEmail)},'192.0.2.10','kai_session='+legacy.cookie)).status,200);

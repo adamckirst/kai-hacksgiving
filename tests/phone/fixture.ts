@@ -6,7 +6,7 @@ type Fixture = { codes:Map<string,string>; db:KaiDatabase; secret:string; downlo
 export const test = base.extend<{}, {kai:Fixture}>({kai:[async ({},use) => {
   const db = openDatabase(); seed(db);const codes=new Map<string,string>();
   const secret = randomBytes(32).toString('hex'),downloadSecret=randomBytes(32).toString('hex');
-  const server = createApp(db,{trustFlyProxy:true,sendCode:async(email,code)=>{codes.set(email,code)},judgeSecret:secret,downloadSecret,secureCookies:false,videoUrl:process.env.VIDEO_URL}).listen(18520,'127.0.0.1');
+  const server = createApp(db,{trustSpriteProxy:true,sendCode:async(email,code)=>{codes.set(email,code)},judgeSecret:secret,downloadSecret,secureCookies:false,videoUrl:process.env.VIDEO_URL}).listen(18520,'127.0.0.1');
   await new Promise<void>(resolve => server.once('listening',resolve));
   try {await use({db,secret,downloadSecret,codes});} finally {await new Promise<void>(resolve => server.close(() => resolve()));db.close();}
 },{scope:'worker',auto:true}]});

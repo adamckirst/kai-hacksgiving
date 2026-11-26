@@ -6,7 +6,7 @@ import type {KaiDatabase} from './db';
 import {createJudge,cookieName,workspaceFor,equalSecret} from './access';
 import {persistentJudgeSecret} from './config';
 export type SendCode=(email:string,code:string,id:string)=>Promise<void>;
-export type TrialOptions={secureCookies?:boolean;now?:()=>number;sendCode?:SendCode;trustFlyProxy?:boolean;trialsPaused?:boolean};
+export type TrialOptions={secureCookies?:boolean;now?:()=>number;sendCode?:SendCode;trustSpriteProxy?:boolean;trialsPaused?:boolean};
 const emailSchema=z.string().trim().max(254).email().transform(s=>s.toLowerCase());
 const requestSchema=z.object({email:emailSchema}).strict();
 const verifySchema=z.object({email:emailSchema,code:z.string().regex(/^\d{6}$/)}).strict();
@@ -21,7 +21,7 @@ export function mountTrial(app:Express,db:KaiDatabase,options:TrialOptions) {
  const now=options.now??Date.now,secret=persistentJudgeSecret(db);
  const digest=(kind:string,value:string)=>createHmac('sha256',secret).update(kind+':'+value).digest('hex');
  function ip(req:Request) {
-  const value=options.trustFlyProxy ? req.get('fly-client-ip') : req.socket.remoteAddress;
+  const value=options.trustSpriteProxy ? req.get('sprite-client-ip') : req.socket.remoteAddress;
   const normalized=value ? normalizeIp(value):null;
   return normalized ? digest('ip',normalized):null;
  }

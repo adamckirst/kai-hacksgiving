@@ -417,7 +417,7 @@ idempotency prevents duplicate delivery on retry.
 One normalized email and public IP can receive one trial, with 100 verified
 trials in total. The database checks all three limits in the same grant
 transaction. Raw IP addresses are not stored: the app keeps a keyed digest.
-The Fly-Client-IP header must be confirmed at the deployed proxy before
+The Sprite-Client-IP header must be confirmed at the deployed proxy before
 public signup is enabled. The operator-only network check returns a digest,
 never the IP. Shared Wi-Fi shares an allowance; changing networks can bypass
 an IP rule, so the global caps remain the spending boundary.

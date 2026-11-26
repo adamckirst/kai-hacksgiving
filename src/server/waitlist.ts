@@ -71,7 +71,7 @@ export function mountWaitlist(app:Express,db:KaiDatabase,options:Options) {
   }
   app.get('/api/operator/network',(req,res)=> {
     if(!operator(req,res))return;
-    const ip=normalizeIp(req.get('fly-client-ip')??'');
+    const ip=normalizeIp(req.get('sprite-client-ip')??'');
     const proof=(value:string)=>{const normalized=normalizeIp(value);return normalized ? createHmac('sha256',options.downloadSecret!).update('network-check:'+normalized).digest('hex'):null;};
     res.json({valid:Boolean(ip),fingerprint:ip ? proof(ip):null,headerNames:Object.keys(req.headers).filter(name=>/forward|client|real|sprite|fly/i.test(name)),forwarded:(req.get('x-forwarded-for')??'').split(',').map(value=>proof(value.trim())),real:proof(req.get('x-real-ip')??''),peer:proof(req.socket.remoteAddress??'')});
   });
