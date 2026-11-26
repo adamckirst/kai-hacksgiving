@@ -39,3 +39,34 @@ test('paused trials cannot create a notebook or claim credit',async()=>{
   assert.equal((db.prepare('SELECT count(*) n FROM waitlist').get() as {n:number}).n,0);
  }finally{await app.locals.queue.stop();await new Promise<void>(r=>server.close(()=>r()));db.close()}
 });
+
+test('forged audio headers cannot request more provider time than reserved; overruns end a trial',async()=>{
+ const {assemblyTranscriber,queueWorker}=await import('../src/server/audio');
+ const {reserveReading}=await import('../src/server/reading');
+ const db=openDatabase();seed(db);const judge=createJudge(db,false),dir=mkdtempSync('.data/trial-duration-');
+ db.prepare('UPDATE workspaces SET trial_seconds=3600,trial_verified=1 WHERE id=?').run(judge.id);
+ const tone=testTone(),fact=Buffer.alloc(12);fact.write('fact');fact.writeUInt32LE(4,4);fact.writeUInt32LE(16000,8);
+ const forged=Buffer.concat([tone.subarray(0,36),fact,tone.subarray(36)]);forged.writeUInt32LE(forged.length-8,4);
+ const original=globalThis.fetch;let providerDuration=1,requested=0;
+ globalThis.fetch=async(input,init)=>{
+  const url=String(input);
+  if(url.endsWith('/gateway/list'))return Response.json(['https://api.sprites.dev/v1/gateway/anthropic/test','https://api.sprites.dev/v1/gateway/assemblyai/test']);
+  if(url.endsWith('/v2/upload'))return Response.json({upload_url:'https://example.invalid/audio'});
+  if(url.endsWith('/v2/transcript')){const body=JSON.parse(String(init?.body));assert.equal(body.audio_start_from,0);assert.equal(body.audio_end_at,1000);requested++;return Response.json({id:'invented-job'});}
+  if(init?.method==='DELETE')return Response.json({});
+  return Response.json({status:'completed',audio_duration:providerDuration,text:'Invented words.'});
+ };
+ const reader=async(_input:unknown,call:any)=>{call('describe_recording',{title:'Invented recording',summary:'A made-up update.\nNothing to do.'})};
+ let worker:ReturnType<typeof queueWorker>|undefined;
+ try {
+  const [id]=await addAudio(db,judge.id,[{name:'forged.wav',buffer:forged,date:Date.now()}],dir);
+  assert.equal((db.prepare('SELECT reserved_seconds FROM conversations WHERE id=?').get(id) as {reserved_seconds:number}).reserved_seconds,1);
+  worker=queueWorker(db,reader,assemblyTranscriber);await worker.kick();await worker.stop();
+  assert.equal(requested,1);assert.equal((db.prepare('SELECT status FROM conversations WHERE id=?').get(id) as {status:string}).status,'ready');
+  providerDuration=2;
+  await addAudio(db,judge.id,[{name:'forged.wav',buffer:forged,date:Date.now()},{name:'forged.wav',buffer:forged,date:Date.now()}],dir);
+  worker=queueWorker(db,reader,assemblyTranscriber);await worker.kick();await worker.stop();
+  assert.equal(requested,2);assert.throws(()=>reserveReading(db,judge.id),/trial has ended/);
+  const reopened=openDatabase(db.serialize());assert.throws(()=>reserveReading(reopened,judge.id),/trial has ended/);reopened.close();
+ }finally{await worker?.stop();globalThis.fetch=original;db.close();rmSync(dir,{recursive:true,force:true})}
+});
