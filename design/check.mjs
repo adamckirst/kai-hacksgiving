@@ -35,8 +35,9 @@ for (const state of states) {
       const ownText = [...el.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim())
       if (ownText && parseFloat(getComputedStyle(el).fontSize) < 16) issues.push('small text: ' + el.textContent.trim().slice(0, 40))
     }
-    for (const el of document.querySelectorAll('a,button,input,select,textarea')) {
+    for (const el of document.querySelectorAll('a,button,input,select,textarea,summary')) {
       if (el.hasAttribute('data-headlessui-focus-guard')) continue // the kit's unseen focus keepers
+      if (!el.getClientRects().length) continue
       const box = el.getBoundingClientRect()
       if (box.width < 44 || box.height < 44) issues.push(`small target (${Math.round(box.width)}×${Math.round(box.height)}): ` + (el.textContent.trim() || el.getAttribute('aria-label') || el.id).slice(0, 40))
     }

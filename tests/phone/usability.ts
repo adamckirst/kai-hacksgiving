@@ -8,8 +8,9 @@ export async function assertPhone(page:Page) {
         if (!el.getClientRects().length) continue;
         if ([...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent?.trim()) && parseFloat(getComputedStyle(el).fontSize)<16) issues.push('small text: '+el.textContent);
       }
-      for (const el of document.querySelectorAll('a,button,input,select,textarea')) {
+      for (const el of document.querySelectorAll('a,button,input,select,textarea,summary')) {
         if(el.hasAttribute('data-headlessui-focus-guard'))continue;
+        if(!el.getClientRects().length)continue;
         const r=el.getBoundingClientRect();
         if (r.width<44 || r.height<44) issues.push('small target: '+el.textContent);
       }
