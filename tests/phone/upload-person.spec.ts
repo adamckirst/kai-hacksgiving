@@ -10,7 +10,7 @@ async function login(page:any,secret:string) {
 
 test('choose a new person before upload; their page keeps the recording after reload',async({page,kai})=> {
   await login(page,kai.secret);await page.getByRole('link',{name:'Add recordings',exact:true}).click();
-  await page.getByLabel('Person for this recording').selectOption('new');await assertPhone(page);
+  await page.getByRole('button',{name:/^Someone else/}).click();await page.getByLabel('Who is speaking?').selectOption('new');await assertPhone(page);
   await page.getByLabel('Name',{exact:true}).fill('Avery Fern');await page.getByLabel('Company (optional)').fill('Juniper Dental');await photograph(page,'upload-new-person');
   await page.getByLabel('Add recordings: choose up to five audio files').setInputFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
   await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();await page.getByRole('link',{name:'Avery Fern',exact:true}).click();
@@ -29,7 +29,7 @@ test('WhatsApp handoff waits for person choice and resumes the attached recordin
   await interruptedNavigation;await expect(page.getByText('Upload temporarily unavailable',{exact:true})).toBeVisible();await page.goto('/home');await expect(page).toHaveURL(new RegExp('/upload/'+ids[0]),{timeout:10000});expect(interrupted).toBe(true);
   await expect(page.getByText('Your recording is attached and waiting for you.')).toBeVisible();await assertPhone(page);await photograph(page,'upload-shared');
   const people=await (await page.request.get('/api/people')).json();
-  await page.getByLabel('Person for this recording').selectOption(people.find((p:any)=>p.name==='Dana Whitfield').id);
+  await page.getByRole('button',{name:/^Someone else/}).click();await page.getByLabel('Who is speaking?').selectOption(people.find((p:any)=>p.name==='Dana Whitfield').id);
   await page.getByRole('button',{name:'Let KAI read',exact:true}).click();
   await expect(page).toHaveURL(new RegExp('/recordings/'+ids[0]));await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();
   await expect(page.getByRole('link',{name:'Dana Whitfield',exact:true})).toBeVisible();await assertPhone(page);

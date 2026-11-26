@@ -4,6 +4,7 @@ import '../src/look/kai.css'
 import * as data from './fixtures'
 import { Opening } from '../src/look/screens/Opening'
 import {Library,Notifications} from '../src/look/screens/Library'
+import {Speakers} from '../src/look/screens/Speakers'
 import { Upload } from '../src/look/screens/Upload'
 import { Connect } from '../src/look/screens/Connect'
 import { Home } from '../src/look/screens/Home'
@@ -92,7 +93,16 @@ const homeProps = { home: data.home, samples: data.samples, today, due: 'overdue
 const libraryItems=data.home.conversations.map((c,i)=>({...c,happened_on:today,status:'ready' as const,error:null,awaiting_person:0,seen:i ? 1:0,suggestion_count:i ? 0:3}))
 
 /** Every state, by its address. The first word is the screen. */
+const speakerPassages=[{speaker:'A',text:'I will send the notes tomorrow.',start:0,end:1000},{speaker:'B',text:'I will review them on Friday.',start:1000,end:2000}]
 const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
+  'recording/speakers':{title:'Recording · identify speakers',screen:()=> <Speakers people={data.people} utterances={speakerPassages} onSubmit={nothing}/>},
+  'recording/speakers-loading':{title:'Recording · loading people',screen:()=> <Speakers people={null} utterances={speakerPassages} onSubmit={nothing}/>},
+  'recording/speakers-ready':{title:'Recording · speakers selected',screen:()=> <Speakers people={data.people} utterances={speakerPassages} initialChoices={{A:{kind:'owner'},B:{kind:'person',person_id:data.people[0].id}}} onSubmit={nothing}/>},
+  'recording/speakers-new':{title:'Recording · new speaker',screen:()=> <Speakers people={data.people} utterances={speakerPassages} initialChoices={{A:{kind:'owner'},B:{kind:'new',person:{id:'invented',name:'Avery Fern',company:'',role:''}}}} onSubmit={nothing}/>},
+  'recording/speakers-error':{title:'Recording · speakers not saved',screen:()=> <Speakers people={data.people} utterances={speakerPassages} error="The speakers could not be saved. Try again." onSubmit={nothing}/>},
+  'upload/memo':{title:'Upload · memo from me',screen:()=> <Upload people={data.people} initialType="memo" readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
+  'upload/voice':{title:'Upload · voice note',screen:()=> <Upload people={data.people} initialType="voice" readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
+  'upload/multiple':{title:'Upload · multiple speakers',screen:()=> <Upload people={data.people} initialType="multiple" readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
   library:{title:'Library',screen:()=> <Library items={libraryItems} readOnly={false}/>},
   'library/empty':{title:'Library · empty',screen:()=> <Library items={[]} readOnly={false}/>},
   'library/loading':{title:'Library · loading',screen:()=> <Library items={null} readOnly={false}/>},
@@ -124,7 +134,7 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   "upload/files-guide": {title:"Upload · files-guide",screen:()=> <Upload people={data.people} readOnly={false} initialGuide="files" onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
   "upload/quota-used": {title:"Upload · quota-used",screen:()=> <Upload people={data.people} readOnly={false} remainingSeconds={0} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
   "upload/shared-quota-used": {title:"Upload · shared-quota-used",screen:()=> <Upload people={data.people} readOnly={false} remainingSeconds={0} incoming={{id:"invented",title:"New recording"}} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
-  'upload/new-person': { title: 'Upload · add a person', screen: () => <Upload people={data.people} readOnly={false} presetPerson="new" onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/new-person': { title: 'Upload · add a person', screen: () => <Upload people={data.people} readOnly={false} initialType="voice" presetPerson="new" onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/shared': { title: 'Upload · a WhatsApp voice note', screen: () => <Upload people={data.people} readOnly={false} incoming={{id:'shared',title:'New recording'}} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/loading': { title: 'Upload · opening', screen: () => <Upload people={null} readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/failed': { title: 'Upload · could not open', screen: () => <Upload people={null} readOnly={false} loadError="Your upload could not open. Try again." onFiles={nothing} onStart={nothing} onRetry={nothing}/> },

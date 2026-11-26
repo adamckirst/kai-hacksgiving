@@ -27,7 +27,7 @@ function decideOne(db:KaiDatabase,workspace:string,id:string,decision:'accept'|'
     if(updated.changes!==1)throw new ReadingError('That promise is no longer available.');
   } else if('name' in p) db.prepare('INSERT INTO people (id,workspace_id,name,company,role) VALUES (?,?,?,?,?)').run(id,workspace,p.name,p.company,p.role);
   else {
-    ensurePerson(p.person_id);
+    if(p.person_id)ensurePerson(p.person_id);
     if(s.kind==='todo') {
       const todo=toolSchemas.propose_todo.parse({...p,quote});
       if(todo.owner_person_id)ensurePerson(todo.owner_person_id);

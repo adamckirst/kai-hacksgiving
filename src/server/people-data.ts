@@ -12,9 +12,9 @@ export function personPage(db:KaiDatabase,workspace:string,id:string) {
   if(!person)return null;
   const todos=db.prepare("SELECT id,text,due_on,owner_person_id,quote,conversation_id FROM todos WHERE workspace_id=? AND (person_id=? OR owner_person_id=?) AND status='open' ORDER BY due_on IS NULL,due_on").all(workspace,id,id);
   const notes=db.prepare('SELECT id,text,quote,conversation_id FROM notes WHERE workspace_id=? AND person_id=? ORDER BY rowid DESC').all(workspace,id);
-  const conversations=db.prepare(`SELECT id,title,happened_on FROM conversations WHERE workspace_id=? AND (person_id=? OR id IN (
+  const conversations=db.prepare(`SELECT id,title,happened_on FROM conversations WHERE workspace_id=? AND (person_id=? OR EXISTS (SELECT 1 FROM json_each(conversations.speaker_map) WHERE json_extract(value,'$.person_id')=?) OR id IN (
     SELECT conversation_id FROM notes WHERE workspace_id=? AND person_id=? UNION SELECT conversation_id FROM todos WHERE workspace_id=? AND (person_id=? OR owner_person_id=?)
-  )) ORDER BY happened_on DESC,rowid DESC`).all(workspace,id,workspace,id,workspace,id,id);
+  )) ORDER BY happened_on DESC,rowid DESC`).all(workspace,id,id,workspace,id,workspace,id,id);
   const pending=db.prepare("SELECT conversation_id FROM suggestions WHERE workspace_id=? AND status='proposed' AND json_extract(payload,'$.person_id')=? ORDER BY rowid LIMIT 1").get(workspace,id) as {conversation_id:string}|undefined;
   return {...person,todos,notes,conversations,pending:pending?.conversation_id ?? null};
 }

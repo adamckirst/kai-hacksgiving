@@ -76,6 +76,7 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   if(!waitlist.some(c=>c.name==='verified_at'))db.exec('ALTER TABLE waitlist ADD COLUMN verified_at TEXT; ALTER TABLE waitlist ADD COLUMN trial_ip TEXT; CREATE UNIQUE INDEX waitlist_trial_ip ON waitlist(trial_ip) WHERE trial_ip IS NOT NULL');
   const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
   if(!conversations.some(c=>c.name==='audio_path')) db.exec("ALTER TABLE conversations ADD COLUMN audio_path TEXT; ALTER TABLE conversations ADD COLUMN happened_at INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN transcribed INTEGER NOT NULL DEFAULT 0;");
+  if(!conversations.some(c=>c.name==='recording_type'))db.exec("ALTER TABLE conversations ADD COLUMN recording_type TEXT; ALTER TABLE conversations ADD COLUMN utterances TEXT NOT NULL DEFAULT '[]'; ALTER TABLE conversations ADD COLUMN speaker_map TEXT NOT NULL DEFAULT '{}'; ALTER TABLE conversations ADD COLUMN awaiting_speakers INTEGER NOT NULL DEFAULT 0");
   if(!conversations.some(c=>c.name==='batch_id')) db.exec('ALTER TABLE conversations ADD COLUMN batch_id TEXT');
   if(!conversations.some(c=>c.name==='notification_seen_status'))db.exec('ALTER TABLE conversations ADD COLUMN notification_seen_status TEXT');
   if(!conversations.some(c=>c.name==='failure_code'))db.exec("ALTER TABLE conversations ADD COLUMN failure_code TEXT; ALTER TABLE conversations ADD COLUMN tool_error_counts TEXT NOT NULL DEFAULT '{}'");

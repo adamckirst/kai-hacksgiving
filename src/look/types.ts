@@ -72,9 +72,15 @@ export type RecordingStatus = 'waiting' | 'listening' | 'reading' | 'ready' | 'f
 export type Source = 'recording' | 'shared' | 'paste' | 'sample'
 
 export type LinkedPerson = { id: string; name: string; company: string; role: string }
-export type PersonChoice = { person_id: string | null } | { new_person: LinkedPerson }
+export type RecordingType='memo'|'voice'|'multiple'
+export type PersonChoice = ({ person_id: string | null } | { new_person: LinkedPerson }) & {recording_type?:RecordingType}
+export type SpeakerChoice={kind:'owner'}|{kind:'person';person_id:string}|{kind:'new';person:LinkedPerson}
+export type Utterance={speaker:string;text:string;start:number;end:number}
 
 export type Recording = {
+  awaiting_speakers?:number
+  recording_type?:RecordingType | null
+  utterances?:Utterance[]
   person?: LinkedPerson | null
   awaiting_person?: number
   title: string
