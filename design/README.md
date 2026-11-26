@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 64 states. The phone suite checks all public and judge
+`check.mjs` checks all 66 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -105,3 +105,8 @@ The trial gallery includes signup, busy, error, empty notebook and used quota st
 
 The trial also shows code entry and wrong-code states. Credit is granted only
 after verification, for at most 100 people and one trial per email/public IP.
+
+Phone setup is three compact steps: copy the private address, add the iOS
+shortcut, then try it. Manual setup is a closed disclosure under step 2.
+The private address is a separate disclosure, opened automatically if copying
+fails. Both expanded states are included in the gallery.

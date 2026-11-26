@@ -124,6 +124,8 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'person/failed': { title: 'Person · could not load', screen: () => <Person person={null} readOnly={false} today={today} error="This person could not load. Go to People and try again." onFiles={nothing} /> },
   'todos/failed': { title: 'To-dos · could not finish', screen: () => <Todos todos={data.todos} readOnly={false} today={today} error="This to-do could not be finished. Try ticking it again." onFiles={nothing} onTick={nothing} /> },
   'recording/edit-failed': { title: 'Recording · edit could not save', screen: () => <LiveRecording first={data.recordings.ready} editing="s3" error="Check the words and use a real date." /> },
+  'connect/manual': {title:'Connect · build shortcut manually',screen:()=> <Connect connection={data.connection} readOnly={false} showManual onCopy={nothing}/>},
+  'connect/address': {title:'Connect · show private address',screen:()=> <Connect connection={data.connection} readOnly={false} showAddress onCopy={nothing}/>},
   'connect/loading': { title: 'Connect · loading', screen: () => <Connect connection={null} readOnly={false} onCopy={nothing} /> },
   'connect/failed': { title: 'Connect · could not load', screen: () => <Connect connection={null} readOnly={false} error="Your address could not load. Reload this page to try again." onCopy={nothing} /> },
   'connect/copy-failed': { title: 'Connect · copy unavailable', screen: () => <Connect connection={data.connection} readOnly={false} copyError={{at:'assistant',text:'Touch and hold the address to copy it.'}} onCopy={nothing} /> },

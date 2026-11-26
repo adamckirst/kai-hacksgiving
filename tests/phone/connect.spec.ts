@@ -8,6 +8,10 @@ test('Connect explains the shortcut at 375 px and copies an address without show
   await page.goto('/');await page.evaluate(value=>{history.replaceState(null,'',`/#judge=${value}`);location.reload();},kai.secret);
   await page.getByRole('link',{name:'Try it yourself'}).click();await page.getByRole('link',{name:'Connect',exact:true}).click();
   await expect(page.getByRole('button',{name:'Copy your address',exact:true})).toBeEnabled();
+  await expect(page.locator('ol[aria-label="Phone setup"] > li > h3')).toHaveText(['1. Copy your address','2. Add the iOS shortcut','3. Try it']);
+  await expect(page.getByText('Show in Share Sheet',{exact:false})).toBeHidden();
+  await expect(page.getByLabel('Your private address')).toBeHidden();await assertPhone(page);
+  await page.locator('summary').filter({hasText:'Build it yourself'}).click();
   await expect(page.getByText('Show in Share Sheet',{exact:false})).toBeVisible();
   await expect(page.getByText('Get Contents of URL',{exact:false})).toBeVisible();await assertPhone(page);
   await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async(value:string)=>{document.body.dataset.copied=value;}}}));
@@ -20,6 +24,12 @@ test('Connect explains the shortcut at 375 px and copies an address without show
   await expect(page.getByRole('status')).toBeVisible();
   const feedback=await page.getByRole('status').boundingBox(),button=await page.getByRole('button',{name:'Copy assistant address',exact:true}).boundingBox();
   expect(Math.abs(feedback!.y-button!.y)).toBeLessThan(100);
+  await page.locator('summary').filter({hasText:'Build it yourself'}).click();
+  await expect(page.getByText('Show in Share Sheet',{exact:false})).toBeHidden();
+  await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('Clipboard unavailable');}}}));
+  await page.getByRole('button',{name:'Copy your address',exact:true}).click();
+  await expect(page.getByText('Touch and hold the address to copy it.')).toBeVisible();
+  await expect(page.getByLabel('Your private address')).toBeVisible();
   await assertPhone(page);
 });
 
