@@ -4,13 +4,15 @@ import path from 'node:path';
 import { parseBuffer } from 'music-metadata';
 import type { KaiDatabase } from './db';
 import { ReadingError, reserveReading, reserveRecording, readConversation, type Reader } from './reading';
-import { linkRecordingPerson } from './recording-person';
+import { configureRecording } from './recording-person';
 import { samples } from '../samples';
 import { discoverGateways, gatewayRequest } from './gateway';
 export const maxAudioBytes=10_000_000;
 export type AudioInput={name:string;buffer:Buffer;date:number};
-export type Transcriber=(audio:Buffer,signal:AbortSignal,reservedSeconds?:number)=>Promise<string>;
-export const fakeTranscriber:Transcriber=async()=>samples[0].text;
+export type Utterance={speaker:string;text:string;start:number;end:number};
+export type Transcript={text:string;utterances:Utterance[]};
+export type Transcriber=(audio:Buffer,signal:AbortSignal,reservedSeconds?:number,multiple?:boolean)=>Promise<string|Transcript>;
+export const fakeTranscriber:Transcriber=async(_audio,_signal,_seconds,multiple)=>multiple ? {text:samples[0].text,utterances:[{speaker:'A',text:samples[0].text.split('\n')[0],start:0,end:1000},{speaker:'B',text:samples[0].text.split('\n').slice(1).join('\n') || 'Thanks.',start:1000,end:2000}]}:samples[0].text;
 export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[],directory:string,source:'recording'|'shared'='recording',options:{person?:unknown;awaitingPerson?:boolean}={}) {
   if(files.length<1 || files.length>5) throw new ReadingError('Choose between one and five recordings.');
   let seconds=0;const durations=new Map<AudioInput,number>();
@@ -39,17 +41,17 @@ export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[
       db.prepare('INSERT INTO conversations (id,workspace_id,title,summary,source,text,happened_on,status,audio_path,happened_at,batch_id,awaiting_person,reserved_on) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(id,workspace,'New recording','',source,'',new Date(file.date).toISOString().slice(0,10),'waiting',audioPath,file.date,batch,options.awaitingPerson ? 1:0,new Date().toISOString().slice(0,10));
       db.prepare('UPDATE conversations SET reserved_seconds=? WHERE id=?').run(durations.get(file),id);
       db.prepare('UPDATE conversations SET notify_ready=1 WHERE id=? AND EXISTS (SELECT 1 FROM waitlist WHERE workspace_id=? AND verified_at IS NOT NULL)').run(id,workspace);
-      if(options.person!==undefined)linkRecordingPerson(db,workspace,id,options.person);
+      if(options.person!==undefined)configureRecording(db,workspace,id,options.person);
       return id;
     });})();
   } catch(error) {for(const file of written) if(existsSync(file)) unlinkSync(file);throw error;}
 }
 export class AudioDurationError extends Error {}
-export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=300)=> {
+export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=300,multiple=false)=> {
   if(!Number.isInteger(reservedSeconds) || reservedSeconds<1 || reservedSeconds>300)throw new Error('Invalid recording reservation.');
   const {assemblyai}=await discoverGateways();
   const uploaded=await gatewayRequest(assemblyai,'/v2/upload',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:new Uint8Array(audio),signal});
-  const job=await gatewayRequest(assemblyai,'/v2/transcript',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio_url:uploaded.upload_url,speech_models:['assemblyai-stt-3-7'],audio_start_from:0,audio_end_at:reservedSeconds*1000}),signal});
+  const job=await gatewayRequest(assemblyai,'/v2/transcript',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio_url:uploaded.upload_url,speech_models:['assemblyai-stt-3-7'],audio_start_from:0,audio_end_at:reservedSeconds*1000,...(multiple ? {speaker_labels:true}:{})}),signal});
   if(typeof job.id!=='string' || !/^[a-zA-Z0-9-]+$/.test(job.id)) throw new Error('Listening could not start.');
   try {
     for(;;) {
@@ -58,6 +60,16 @@ export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=
       if(result.status==='completed') {
         if(typeof result.audio_duration!=='number' || !Number.isFinite(result.audio_duration) || result.audio_duration<0 || result.audio_duration>reservedSeconds)throw new AudioDurationError('Recording exceeds its reserved time.');
         if(typeof result.text!=='string' || result.text.length>20000 || result.audio_duration>300) throw new Error('Recording exceeds the limits.');
+        if(multiple) {
+          const utterances=result.utterances;
+          if(!Array.isArray(utterances) || !utterances.length || utterances.length>2000)throw new Error('Speaker labels are missing.');
+          const clean:Utterance[]=utterances.map(u=>{
+            if(!u || typeof u.speaker!=='string' || !/^[A-Z]{1,3}$/.test(u.speaker) || typeof u.text!=='string' || !u.text.trim() || u.text.length>20000 || !Number.isFinite(u.start) || !Number.isFinite(u.end) || u.start<0 || u.end<u.start || u.end>reservedSeconds*1000+1000)throw new Error('Speaker labels are invalid.');
+            return {speaker:u.speaker,text:u.text,start:u.start,end:u.end};
+          });
+          if(new Set(clean.map(u=>u.speaker)).size>20 || clean.reduce((n,u)=>n+u.text.length,0)>40000)throw new Error('Too many speaker passages.');
+          return {text:result.text,utterances:clean};
+        }
         return result.text;
       }
       if(result.status==='error') throw new Error('Listening failed.');
@@ -68,7 +80,7 @@ export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=
     try {await gatewayRequest(assemblyai,`/v2/transcript/${job.id}`,{method:'DELETE'});} catch {console.error('Provider transcript cleanup failed.');}
   }
 };
-type Job={id:string;workspace_id:string;audio_path:string|null;status:string;attempts:number;text:string;transcribed:number;reserved_seconds:number|null};
+type Job={recording_type:string|null;id:string;workspace_id:string;audio_path:string|null;status:string;attempts:number;text:string;transcribed:number;reserved_seconds:number|null};
 export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,onReady:()=>void=()=>{}) {
   let active:Promise<void>|undefined,stopped=false;
   const controller=new AbortController();
@@ -79,6 +91,11 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
       db.prepare("UPDATE conversations SET status='waiting',progress=NULL WHERE id=?").run(job.id);
     })();} catch {db.prepare("UPDATE conversations SET status='failed',error='KAI has reached today’s limit. Try tomorrow.' WHERE id=?").run(job.id);}
   }
+  // Finish audio cleanup after a crash between saving labelled words and deleting audio.
+  for(const row of db.prepare('SELECT id,audio_path FROM conversations WHERE transcribed=1 AND awaiting_speakers=1').all() as {id:string;audio_path:string|null}[]) {
+    if(row.audio_path && existsSync(row.audio_path))unlinkSync(row.audio_path);
+    db.prepare("UPDATE conversations SET audio_path=NULL,status='waiting',progress='Choose who is speaking' WHERE id=?").run(row.id);
+  }
   // One server owns this database. A new process means these leases were interrupted.
   for(const job of db.prepare("SELECT * FROM conversations WHERE status IN ('listening','reading')").all() as Job[]) retryInterrupted(job);
   function kick() {
@@ -86,7 +103,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
     active=(async()=> {
       for(;;) {
         if(stopped) return;
-        const job=db.prepare("SELECT * FROM conversations WHERE status='waiting' AND awaiting_person=0 AND workspace_id IN (SELECT id FROM workspaces WHERE trial_ended=0 AND (trial_seconds IS NULL OR trial_verified=1)) ORDER BY happened_at,rowid LIMIT 1").get() as Job|undefined;
+        const job=db.prepare("SELECT * FROM conversations WHERE status='waiting' AND awaiting_person=0 AND awaiting_speakers=0 AND workspace_id IN (SELECT id FROM workspaces WHERE trial_ended=0 AND (trial_seconds IS NULL OR trial_verified=1)) ORDER BY happened_at,rowid LIMIT 1").get() as Job|undefined;
         if(!job) return;
         const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(120000)]);
         db.prepare('UPDATE conversations SET attempts=attempts+1 WHERE id=?').run(job.id);
@@ -96,15 +113,20 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
             const audio=readFileSync(job.audio_path);
             // Older waiting recordings were charged by the same metadata parser.
             const seconds=job.reserved_seconds ?? Math.ceil((await parseBuffer(audio,undefined,{duration:true,skipCovers:true})).format.duration ?? 0);
-            const words=await transcribe(audio,signal,seconds);signal.throwIfAborted();
+            const transcript=await transcribe(audio,signal,seconds,job.recording_type==='multiple');signal.throwIfAborted();
+            const words=typeof transcript==='string' ? transcript:transcript.text;
+            const utterances=typeof transcript==='string' ? []:transcript.utterances;
+            if(job.recording_type==='multiple' && !utterances.length)throw new Error('Speaker labels are missing.');
             if(words.length>20000) throw new Error();
             // Persist words first: a restart after this line never needs to listen again.
-            db.prepare('UPDATE conversations SET text=?,transcribed=1 WHERE id=?').run(words,job.id);
+            db.prepare('UPDATE conversations SET text=?,transcribed=1,utterances=?,awaiting_speakers=? WHERE id=?').run(words,JSON.stringify(utterances),Number(job.recording_type==='multiple'),job.id);
           }
           if(job.audio_path) {
             if(existsSync(job.audio_path)) unlinkSync(job.audio_path);
             db.prepare('UPDATE conversations SET audio_path=NULL WHERE id=?').run(job.id);
           }
+          const pending=db.prepare('SELECT awaiting_speakers FROM conversations WHERE id=?').get(job.id) as {awaiting_speakers:number};
+          if(pending.awaiting_speakers){db.prepare("UPDATE conversations SET status='waiting',progress='Choose who is speaking' WHERE id=?").run(job.id);continue;}
           await readConversation(db,job.id,reader,signal);
           onReady();
           if(signal.aborted && !stopped) retryInterrupted(db.prepare('SELECT * FROM conversations WHERE id=?').get(job.id) as Job);

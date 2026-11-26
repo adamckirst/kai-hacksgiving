@@ -14,7 +14,7 @@ import { listTodos,finishTodo } from './todos';
 import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
 import { mountWaitlist,xPost } from './waitlist';
-import { linkRecordingPerson } from './recording-person';
+import { configureRecording,identifySpeakers } from './recording-person';
 export type AppOptions = TrialOptions & {sendReady?:SendReady;trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
@@ -118,7 +118,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
       else if(error instanceof SyntaxError) res.status(400).json({error:'The recording dates could not be read.'});else throw error;
     }
   });
-  app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.status,c.error,c.progress,c.awaiting_person,
+  app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.status,c.error,c.progress,c.awaiting_person,c.awaiting_speakers,
     (SELECT count(*) FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed') AS suggestion_count
     FROM conversations c WHERE c.workspace_id=? AND (c.status IN ('waiting','listening','reading','failed')
       OR c.batch_id IN (SELECT batch_id FROM conversations WHERE workspace_id=c.workspace_id AND status IN ('waiting','listening','reading'))
@@ -148,19 +148,20 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
         if(!row.awaiting_person)return;
         const day=new Date().toISOString().slice(0,10);
         if(row.reserved_on && row.reserved_on!==day) {reserveRecording(db,res.locals.workspace);reserveReading(db,res.locals.workspace);}
-        linkRecordingPerson(db,res.locals.workspace,req.params.id,req.body);
+        configureRecording(db,res.locals.workspace,req.params.id,req.body);
         db.prepare('UPDATE conversations SET awaiting_person=0,reserved_on=? WHERE id=? AND workspace_id=?').run(day,req.params.id,res.locals.workspace);
       })();
       res.json({id:req.params.id});void work();
     }
     catch(error) {if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
   });
+  app.post('/api/readings/:id/speakers',(req,res)=>{try{identifySpeakers(db,res.locals.workspace,req.params.id,req.body);res.json({ok:true});void work();}catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}});
   app.get('/api/readings/:id',(req,res) => {
-    const row=db.prepare('SELECT id,title,summary,text,happened_on,source,status,error,progress,person_id,awaiting_person FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace) as {person_id:string|null}|undefined;
+    const row=db.prepare('SELECT id,title,summary,text,happened_on,source,status,error,progress,person_id,awaiting_person,recording_type,utterances,speaker_map,awaiting_speakers FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace) as {person_id:string|null;utterances:string;speaker_map:string}|undefined;
     if(!row) {res.status(404).json({error:'Recording not found.'});return;}
     const suggestions=db.prepare('SELECT id,kind,payload,quote,status FROM suggestions WHERE conversation_id=? AND workspace_id=? ORDER BY rowid').all(req.params.id,res.locals.workspace);
     const person=row.person_id ? db.prepare('SELECT id,name,company,role FROM people WHERE id=? AND workspace_id=?').get(row.person_id,res.locals.workspace) ?? null:null;
-    res.json({...row,person,suggestions});
+    res.json({...row,utterances:JSON.parse(row.utterances),speaker_map:JSON.parse(row.speaker_map),person,suggestions});
   });
   app.get('/demo.mp4',(_req,res)=> {
     if(!options.videoFile){res.status(404).end();return;}

@@ -648,3 +648,41 @@ the demo is ready.” Do not build, collect or store those keys now. After
 those prerequisites and Copal’s go-ahead, agree a secure credential design
 and provider rules before implementation. The current one-hour trial and
 connector setup remain in force.
+
+## 15 · Recording types and speaker identity (Copal, 26 November)
+
+Copal requested “memo from myself, voice note from someone else, and
+multiple speakers” because “Person for this recording” did not explain
+whether it meant the speaker or someone mentioned. He approved updating
+this PRD and enabling AssemblyAI speaker labels only for multiple speakers:
+“Approve flows and speaker labels”. This replaces §14’s generic person
+choice before reading with an explicit recording type.
+
+- Ask what kind of recording it is before processing. A memo from me needs
+  no person selection and stays in my library. KAI treats first-person
+  statements as mine; it does not assume every notebook owner is Mara.
+- A voice note from someone else requires choosing an existing person or
+  adding the speaker before transcription. Their first-person promises are
+  theirs, not mine. It needs no second speaker-selection screen.
+- Multiple speakers needs no names before transcription. Enable speaker
+  labels on the existing AssemblyAI model and connector for this type only.
+  Save labelled passages, delete the audio as before, and pause before
+  reading. Show passages for each speaker and let me choose Me, an existing
+  person or Add a person. KAI reads only after all speakers are identified.
+  Keep this state across restarts; naming speakers never retranscribes or
+  consumes recording time again. Only explicit choices identify speakers.
+- Summary and suggestions use that speaker context; quotes remain exact
+  transcript text. Suggestions still require acceptance. Completion email
+  follows finished suggestions, never the intermediate speaker screen.
+- Speaker labels add $0.02 per audio hour at the approved current rate,
+  at most $2 across the 100 original trial hours if all use this type.
+  Existing one-hour, 100-user, file, daily and provider limits stay in force.
+  No provider switch, new account, new key or paid-plan change is authorised.
+- Checks: `npm run check`; gallery at 375 px; memo and single-speaker
+  attribution are distinct; a voice note requires a speaker; multiple
+  speakers pause before any reading or completion mail; assignments are
+  confined to the notebook and survive restart; no repeated transcription
+  or duration charge after identification; only multiple-speaker provider
+  requests enable speaker labels; phone tests walk all three flows.
+- Copal tries an invented recording with two speakers on the deployed
+  build and confirms labelled passages can be assigned before suggestions.

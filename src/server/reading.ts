@@ -11,11 +11,11 @@ export const toolSchemas={
   describe_recording:z.object({title:words.max(100),summary:words.max(500).refine(s=>s.split('\n').length===2 && s.split('\n').every(line=>line.trim()),'Use two lines.')}),
   propose_person:z.object({name:words.max(100),company:words.max(100),role:words.max(100),quote:words}),
   propose_note:z.object({person_id:words,text:words,quote:words}),
-  propose_todo:z.object({person_id:words,owner_person_id:words.nullable(),text:words,due_on:realDate.nullable(),quote:words}),
+  propose_todo:z.object({person_id:words.nullable(),owner_person_id:words.nullable(),text:words,due_on:realDate.nullable(),quote:words}),
 };
 export type ToolName=keyof typeof toolSchemas;
 export type ToolResult={ok:boolean;id?:string;error?:string;person?:NonNullable<ReturnType<typeof personPage>>};
-export type ReadInput={sender?:{kind:'person'|'owner'|'unknown';person?:{id:string;name:string;company:string;role:string}};text:string;happened_on:string;people:{id:string;name:string;company:string;role:string}[]};
+export type ReadInput={speakers?:Record<string,{kind:'owner'}|{kind:'person';person:{id:string;name:string;company:string;role:string}}>;utterances?:{speaker:string;text:string;start:number;end:number}[];sender?:{kind:'person'|'owner'|'unknown';person?:{id:string;name:string;company:string;role:string}};text:string;happened_on:string;people:{id:string;name:string;company:string;role:string}[]};
 export type Reader=(input:ReadInput,call:(name:string,input:unknown)=>ToolResult,signal?:AbortSignal)=>Promise<void>;
 export class ReadingError extends Error {constructor(message:string,public status=400){super(message);}}
 export function reserveReading(db:KaiDatabase,workspace:string,now=new Date()) {
@@ -63,14 +63,14 @@ export function retryReading(db:KaiDatabase,workspace:string,id:string) {
   })();
 }
 export async function readConversation(db:KaiDatabase,id:string,reader:Reader,signal?:AbortSignal) {
-  const row=db.prepare('SELECT workspace_id,text,happened_on,source,person_id FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string;source:string;person_id:string|null};
+  const row=db.prepare('SELECT workspace_id,text,happened_on,source,person_id,recording_type,utterances,speaker_map FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string;source:string;person_id:string|null;recording_type:string|null;utterances:string;speaker_map:string};
   db.prepare("UPDATE conversations SET status='reading',error=NULL,progress=NULL,failure_code=NULL,tool_error_counts='{}' WHERE id=?").run(id);
   let described=false, calls=0;const readPeople=new Set<string>();
   const personExists=(person:string) => !!db.prepare('SELECT id FROM people WHERE workspace_id=? AND id=?').get(row.workspace_id,person) || !!db.prepare("SELECT id FROM suggestions WHERE workspace_id=? AND conversation_id=? AND kind='person' AND status='proposed' AND id=?").get(row.workspace_id,id,person);
   try {
     const people=db.prepare('SELECT id,name,company,role FROM people WHERE workspace_id=?').all(row.workspace_id) as ReadInput['people'];
     const person=people.find(p=>p.id===row.person_id);
-    const sender:ReadInput['sender']=person ? {kind:'person',person}:row.source==='sample' ? {kind:'owner'}:{kind:'unknown'};
+    const sender:ReadInput['sender']=person ? {kind:'person',person}:row.recording_type==='memo' || row.source==='sample' ? {kind:'owner'}:{kind:'unknown'};
     const handleTool=(name:string,input:unknown):ToolResult=> {
       signal?.throwIfAborted();
       if(++calls>50) throw new Error('Too many calls.');
@@ -81,7 +81,7 @@ export async function readConversation(db:KaiDatabase,id:string,reader:Reader,si
       if(name==='describe_recording' && 'title' in value) {
         db.prepare('UPDATE conversations SET title=?,summary=? WHERE id=?').run(value.title,value.summary,id);described=true;return {ok:true};
       }
-      if(name==='get_person' && 'person_id' in value) {
+      if(name==='get_person' && 'person_id' in value && typeof value.person_id==='string') {
         const person=personPage(db,row.workspace_id,value.person_id);
         if(!person)return {ok:false,error:'Person not found in this copy.'};
         readPeople.add(value.person_id);
@@ -113,7 +113,9 @@ export async function readConversation(db:KaiDatabase,id:string,reader:Reader,si
       return {ok:true,id:suggestion};
     };
     const errors:Record<string,number>={};
-    await reader({...row,people,sender},(name,input)=>{
+    const speakers:NonNullable<ReadInput['speakers']>={};
+    for(const [label,selected] of Object.entries(JSON.parse(row.speaker_map) as Record<string,{kind:string;person_id?:string}>)){if(selected.kind==='owner')speakers[label]={kind:'owner'};else {const found=people.find(p=>p.id===selected.person_id);if(found)speakers[label]={kind:'person',person:found};}}
+    await reader({text:row.text,happened_on:row.happened_on,people,sender,...(row.recording_type==='multiple' ? {speakers,utterances:JSON.parse(row.utterances)}:{})},(name,input)=>{
       const result=handleTool(name,input);
       if(!result.ok) {
         const category=result.error==='The quote must appear in the words exactly.' ? 'quote':result.error?.startsWith('Call get_person') ? 'person_context':result.error?.includes('known') ? 'person_reference':name==='describe_recording' ? 'summary_shape':'tool_validation';

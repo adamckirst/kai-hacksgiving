@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 export async function assertPhone(page:Page) {
-    await expect(page.locator('body')).not.toContainText(/\b(AI|LLM|entity|extract|prompt|token)\b/i);
+    await expect.poll(()=>page.locator('body').innerText()).not.toMatch(/\b(AI|LLM|entity|extract|prompt|token)\b/i);
     await expect.poll(async()=>page.evaluate(() => {
       const issues:string[]=[];
       if (document.documentElement.scrollWidth > innerWidth) issues.push('sideways scroll');

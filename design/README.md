@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 86 states. The phone suite checks all public and judge
+`check.mjs` checks all 94 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -137,3 +137,10 @@ still finish after the allowance reaches zero.
 
 Voice Memos shows sharing instructions after setup, with a Files fallback.
 Its rejected direct-launch address is not used. WhatsApp keeps its app link.
+
+Recordings now have three explicit types: a memo from me, a voice note from
+someone else, or multiple speakers. Only the voice note asks who is speaking
+before transcription. Multiple speakers pauses at “Who said what?” with
+labelled passages and Me/existing/new-person choices before suggestions.
+Memo recordings stay in the library without a speaker picker, and personal
+tasks can be accepted without creating a contact.
