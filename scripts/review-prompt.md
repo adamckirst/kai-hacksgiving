@@ -41,7 +41,7 @@ Only these six. Anything else is a note, however much you would change it.
 | c | Data loss | Accepted people, notes or to-dos, a waiting recording, or the waitlist can be lost or overwritten. |
 | d | Something that must not be in the repository | A key, token or password; a real person, company or conversation; code copied from outside this week's work, other than npm libraries and the stock kit in `src/catalyst/`; an audio or video file. |
 | e | A contest rule broken | PRD §1, C1 to C4: for example a rewritten commit date, or a provider called without its Sprites connector. |
-| f | A stranger can spend our credit | Someone with only the public address, and no judge link, can cause a call to a provider, or a judge can pass the limits in PRD §6. |
+| f | Provider access or spending exceeds the approved limits | Someone without a judge notebook or a trial granted under PRD §12 can cause a call to a provider; or a judge or trial can exceed the applicable duration, per-notebook or overall daily limits in PRD §§6 and 12. Public trial access within those limits is explicitly authorised by Copal. |
 
 Style, naming, refactors, more tests, performance beyond the PRD's numbers,
 and ideas are notes. So is anything the PRD gives to a later step.
