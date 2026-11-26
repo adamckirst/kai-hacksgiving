@@ -36,7 +36,7 @@ test('yesterday is Overdue, urgency outranks names, and ticking finishes a promi
 });
 
 test('public To-dos can browse both views but cannot tick a promise',async({page})=> {
-  await page.goto('/todos');await expect(page.getByText('A read-only demo with made-up data.')).toBeVisible();
+  await page.goto('/todos');await expect(page.getByText('Read-only demo')).toBeVisible();
   await expect(page.getByRole('region',{name:'Overdue',exact:true})).toContainText('Send Dana the pricing');
   await expect(page.getByRole('checkbox')).toHaveCount(0);await assertPhone(page);
   await page.getByRole('button',{name:'Waiting on',exact:true}).click();await expect(page.getByText('Send the trial dates',{exact:true})).toBeVisible();

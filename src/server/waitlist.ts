@@ -1,12 +1,13 @@
 import express,{type Express,type Request,type Response} from 'express';
-import { randomBytes } from 'node:crypto';
+import {normalizeIp} from './trial';
+import { randomBytes,createHmac } from 'node:crypto';
 import { z } from 'zod';
 import type { KaiDatabase } from './db';
 import { equalSecret } from './access';
 const hour=3600000,cookieName='kai_visitor';
 type Visitor={seen:number;attempts:number[]};
 type Visitors=Record<string,Visitor>;
-type Options={downloadSecret?:string;judgeSecret?:string;secureCookies?:boolean;xPostUrl?:string;now?:()=>number};
+type Options={trialsPaused?:boolean;downloadSecret?:string;judgeSecret?:string;secureCookies?:boolean;xPostUrl?:string;now?:()=>number};
 function cookie(req:Request) {
   const value=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith(cookieName+'='))?.slice(cookieName.length+1);
   return value && /^[a-f0-9]{64}$/.test(value) ? value:undefined;
@@ -21,7 +22,7 @@ function xPost(value?:string) {
   if(!value)return null;
   try {const url=new URL(value);return url.protocol==='https:' && ['x.com','www.x.com'].includes(url.hostname) && /^\/[A-Za-z0-9_]+\/status\/\d+\/?$/.test(url.pathname) ? url.origin+url.pathname:null;}catch{return null;}
 }
-const address=z.object({email:z.string().trim().max(254).email().transform(value=>value.toLowerCase())}).strict();
+const address=z.object({email:z.string().trim().max(254).email().transform(value=>value.toLowerCase()),trial:z.boolean().optional()}).strict();
 
 export function mountWaitlist(app:Express,db:KaiDatabase,options:Options) {
   const now=options.now ?? Date.now;
@@ -54,18 +55,26 @@ export function mountWaitlist(app:Express,db:KaiDatabase,options:Options) {
   },express.json({limit:'1kb'}),(req,res)=> {
     const parsed=address.safeParse(req.body);
     if(!parsed.success){res.status(400).json({error:'Enter an email address of at most 254 characters.'});return;}
+    if(parsed.data.trial){res.status(503).json({error:'Trial signups are paused while email verification is added. Please look around for now.'});return;}
     const saved=db.transaction(()=> {
-      if(db.prepare('SELECT 1 FROM waitlist WHERE email=?').get(parsed.data.email))return true;
+      const {email}=parsed.data;
+      if(db.prepare('SELECT 1 FROM waitlist WHERE email=?').get(email))return true;
       if((db.prepare('SELECT count(*) AS n FROM waitlist').get() as {n:number}).n>=2000)return false;
-      db.prepare('INSERT INTO waitlist(email,created_at) VALUES (?,?)').run(parsed.data.email,new Date(now()).toISOString());return true;
+      db.prepare('INSERT INTO waitlist(email,created_at) VALUES (?,?)').run(email,new Date(now()).toISOString());return true;
     })();
-    if(!saved){res.status(409).json({error:'The list is full. You can still follow the X post.'});return;}
+    if(!saved){res.status(409).json({error:'The list is full. Please try again later.'});return;}
     res.json({ok:true});
   });
   function operator(req:Request,res:Response) {
     const supplied=req.get('x-kai-download');
     if(!options.downloadSecret || options.downloadSecret===options.judgeSecret || !supplied || !equalSecret(supplied,options.downloadSecret)) {res.status(404).json({error:'Not found.'});return false;}return true;
   }
+  app.get('/api/operator/network',(req,res)=> {
+    if(!operator(req,res))return;
+    const ip=normalizeIp(req.get('sprite-client-ip')??'');
+    const proof=(value:string)=>{const normalized=normalizeIp(value);return normalized ? createHmac('sha256',options.downloadSecret!).update('network-check:'+normalized).digest('hex'):null;};
+    res.json({valid:Boolean(ip),fingerprint:ip ? proof(ip):null,headerNames:Object.keys(req.headers).filter(name=>/forward|client|real|sprite|fly/i.test(name)),forwarded:(req.get('x-forwarded-for')??'').split(',').map(value=>proof(value.trim())),real:proof(req.get('x-real-ip')??''),peer:proof(req.socket.remoteAddress??'')});
+  });
   app.get('/api/operator/count',(req,res)=> {
     if(!operator(req,res))return;
     res.json({count:(db.prepare('SELECT count(*) AS n FROM waitlist').get() as {n:number}).n});

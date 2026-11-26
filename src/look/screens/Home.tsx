@@ -174,6 +174,9 @@ export function Home({
       dock={readOnly ? <WhatIsKai /> : <AddRecordings onFiles={onFiles} busy={adding} />}
     >
       {queue.length > 0 && <Queue items={queue} />}
+      {home?.trialSeconds!=null && !home.trialVerified && <Card className="p-5"><p className="mb-3 text-base/7">Verify your email to continue your trial. Your notebook and remaining time are kept.</p><Button href="/try" variant="outline">Verify email</Button></Card>}
+      {home?.trialSeconds!=null && <p className="px-1 text-base/7 font-medium text-zinc-600">{home.trialSeconds ? `${Math.floor(home.trialSeconds/60)} min ${home.trialSeconds%60} sec of recording time left` : 'You’ve used your hour of recordings. Your notebook and assistant connection are still here.'}</p>}
+      {home && !readOnly && home.conversations.length===0 && <Card className="p-5"><h2 className="text-xl font-extrabold">Your notebook starts here</h2><p className="mt-2 text-base/7 text-zinc-600">Add a recording. KAI will find the people, notes and to-dos for you to review.</p></Card>}
       {addError && <Notice tone="error">{addError}</Notice>}
       {loadError && <Notice tone="error">{loadError}</Notice>}
       {!home && !loadError && <Notice>Loading your notebook…</Notice>}

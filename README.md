@@ -16,8 +16,9 @@ me to build it, from scratch, this week.
 ## Status
 
 [Open the live demo](https://kai-b6whz.sprites.app/). Everyone can browse the
-read-only notebook. A private judge invitation opens an editable copy, with
-recording uploads and its own assistant connection. Video waits for Copal’s
+read-only notebook, or join the waitlist for an empty private notebook with
+one hour of recording time and its own assistant connection. Existing judge
+invitations still open seeded editable copies. Video waits for Copal’s
 approval of the final product.
 
 ## How it is built
@@ -48,7 +49,7 @@ then `npm run check`. The check runs TypeScript, database/API unit tests,
 a production build, and the phone browser checks at 375 px on every tab.
 
 `npm run build && npm start` serves the app at `http://127.0.0.1:18500`.
-Welcome opens a read-only copy of Mara’s invented notebook. Home shows her
+Welcome offers a private recording trial or a look around Mara’s invented notebook. Home shows her
 people count, open to-dos and past recordings. People lists her contacts.
 Stop the server with Ctrl-C. Local runs use an in-memory database, keeping
 access secrets out of files; all local changes disappear on restart.
@@ -305,15 +306,15 @@ X post when he provides it; until then the card says the link is pending.
 [Open the demo](https://kai-b6whz.sprites.app/) to try the read-only notebook
 and join the waitlist.
 
-The waitlist remains exactly two columns: `email` and `created_at`. The
+The waitlist stores `email`, `created_at` and an optional `workspace_id` for
+trial claims. The
 route accepts one well-formed address up to 254 characters, normalizes case
 and surrounding whitespace, ignores repeats, and refuses row 2,001. It
 never echoes an address. An anonymous HttpOnly, SameSite browser cookie
 identifies a visitor for five attempts in a rolling hour, including invalid
 submissions. The cookie's attempt times live separately in the public
 workspace's `waitlist_visitors` JSON field and survive service restarts.
-No address, IP, device information or judge-workspace association is stored
-there. Clearing cookies creates a new anonymous visitor; this is a browser
+No address, IP or device information is stored in the visitor counters. Clearing cookies creates a new anonymous visitor; this is a browser
 limit, not proof of a person's identity. Inactive counters expire after an
 hour; the form renews an expired visit before submitting. At most 2,000
 active visitor entries are kept, so anonymous GETs cannot grow this field
@@ -400,5 +401,44 @@ keeps that page’s loading screen instead of showing Welcome.
 
 [App pictures](design/app-shots/) use invented local data; [gallery pictures](design/shots/)
 show the reference. No usable connection address appears in those pictures.
-The Sprite URL is public; writes and assistant access still require a private
-judge copy. Video work waits for Copal’s product approval.
+The Sprite URL is public; writes and assistant access require a private
+notebook opened through a judge invitation or waitlist trial. Video work waits for Copal’s product approval.
+
+### Public recording trial
+
+“Try it yourself” leads to email verification and an empty private notebook.
+A six-digit code sent through the existing Resend Sprite connector expires
+in ten minutes and permits five guesses. Codes are protected with a keyed
+digest and never logged or stored as plaintext. Sending is limited to once
+per email per minute, three per IP per hour and 100 overall in a rolling
+day; failed deliveries consume the send allowance too. Resend request
+idempotency prevents duplicate delivery on retry.
+
+One normalized email and public IP can receive one trial, with 100 verified
+trials in total. The database checks all three limits in the same grant
+transaction. Raw IP addresses are not stored: the app keeps a keyed digest.
+The Sprite-Client-IP header must be confirmed at the deployed proxy before
+public signup is enabled. The operator-only network check returns a digest,
+never the IP. Shared Wi-Fi shares an allowance; changing networks can bypass
+an IP rule, so the global caps remain the spending boundary.
+
+A trial gets 3,600 seconds, rounded up per uploaded file and reserved
+atomically with the daily counters. Rejected batches roll back; accepted
+uploads consume time even when transcription fails. Retries of that upload
+do not deduct its duration again. Existing unverified trials retain their
+notebooks and remaining time but cannot call providers until verified.
+Private judge invitations remain separate. Keep the original browser;
+this verification flow does not recover another browser’s notebook.
+
+Daily caps, file limits and provider limits are unchanged. A full hour may
+span days. One hundred hours is an allowance for new uploaded audio, not a
+guarantee about the full bill: retries, Claude, email and compute also count.
+Transcription requests do not enable keyterms or other paid add-ons.
+
+The sender is configured only on the Sprite in `kai-state/mail-from`.
+No Resend key enters the app; the connector keeps it. A marker at
+`kai-state/trial-network-verified` enables signup only after the operator’s
+proxy check. Missing configuration fails closed. Two server-only tables
+keep short-lived code challenges and bounded send counters. The waitlist
+holds the verified date, private notebook link and protected IP digest;
+none of these enter notebook/MCP responses.

@@ -31,13 +31,13 @@ test('waitlist fences public writes, attempts, capacity, privacy and operator do
     assert.equal((await post(first,'a'.repeat(250)+'@example.invalid')).status,400);
     assert.equal((await post(first,email)).status,200);assert.equal((await post(first,inventedAddress())).status,429);assert.equal(count(),1);
     for(const method of ['POST','PUT','DELETE'])assert.equal((await fetch(base+'/api/people',{method,headers:{Cookie:first,'Content-Type':'application/json'},body:'{}'})).status,403);
-    assert.deepEqual((db.prepare('PRAGMA table_info(waitlist)').all() as {name:string}[]).map(c=>c.name),['email','created_at']);
+    assert.deepEqual((db.prepare('PRAGMA table_info(waitlist)').all() as {name:string}[]).map(c=>c.name),['email','created_at','workspace_id','verified_at','trial_ip']);
     for(const table of ['workspaces','people','notes','todos','conversations','suggestions'])assert.ok(!JSON.stringify(db.prepare('SELECT * FROM '+table).all()).includes(email));
     const mcp=db.prepare('SELECT mcp_token FROM workspaces WHERE id=?').get(judge.id) as {mcp_token:string};
     await client.connect(new StreamableHTTPClientTransport(new URL(base+'/mcp/'+mcp.mcp_token)));
     const responses=[await client.listTools(),await client.callTool({name:'list_people',arguments:{}}),await client.callTool({name:'get_person',arguments:{person_id:judge.id+':dana'}}),await client.callTool({name:'list_todos',arguments:{}}),await client.callTool({name:'search',arguments:{query:email}})];
     assert.ok(!JSON.stringify(responses).includes(email));await client.close();
-    for(const secret of [undefined,judgeSecret,randomBytes(32).toString('hex')])for(const route of ['count','download']) {
+    for(const secret of [undefined,judgeSecret,randomBytes(32).toString('hex')])for(const route of ['count','download','network']) {
       assert.equal((await fetch(base+'/api/operator/'+route,{headers:secret ? {'x-kai-download':secret}:{}})).status,404);
     }
     assert.equal((await (await fetch(base+'/api/operator/count',{headers:{'x-kai-download':downloadSecret}})).json()).count,1);

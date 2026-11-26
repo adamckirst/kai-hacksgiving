@@ -24,6 +24,6 @@ test('Connect explains the shortcut at 375 px and copies an address without show
 });
 
 test('public Connect has no private address or setup controls',async({page})=> {
-  await page.goto('/connect');await expect(page.getByText('A read-only demo with made-up data.')).toBeVisible();
+  await page.goto('/connect');await expect(page.getByText('Read-only demo')).toBeVisible();
   await expect(page.getByLabel('Your private address')).toHaveCount(0);await expect(page.getByLabel('Your assistant address')).toHaveCount(0);await expect(page.getByRole('button',{name:'Copy your address'})).toHaveCount(0);await assertPhone(page);
 });

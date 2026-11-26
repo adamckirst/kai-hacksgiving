@@ -17,7 +17,7 @@ test('U1: judge Welcome opens a populated Home in one tap; two browsers stay sep
     await expect(a.getByRole('link',{name:'3 people',exact:true})).toBeVisible();
     await expect(a.getByText('Send Dana the pricing')).toBeVisible();
     await expect(a.getByRole('link',{name:/First call with Dana/})).toBeVisible();
-    await expect(a.getByText('A read-only demo with made-up data.')).toHaveCount(0);
+    await expect(a.getByText('Read-only demo')).toHaveCount(0);
     const cookie=(await first.cookies()).find(c=>c.name==='kai_session')!;
     expect(cookie.httpOnly).toBe(true);expect(cookie.sameSite).toBe('Strict');
     const id=cookie.value.split('.')[0];
@@ -35,6 +35,6 @@ test('public Welcome has Look around and no video until VIDEO_URL is set',async 
   await expect(page.getByRole('status')).toHaveCount(0);
   await expect(page.locator('video')).toHaveCount(process.env.VIDEO_URL ? 1 : 0);
   await page.getByRole('link',{name:'Look around'}).click();
-  await expect(page.getByText('A read-only demo with made-up data.')).toBeVisible();
+  await expect(page.getByText('Read-only demo')).toBeVisible();
   await expect(page.getByText('Send Dana the pricing')).toBeVisible();
 });

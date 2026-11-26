@@ -15,7 +15,7 @@ for(const kind of ['public','judge'] as const) {
       const actual=route==='/people/dana' ? '/people/'+prefix+'dana':route==='/recordings/dana-call' ? '/recordings/'+prefix+'dana-call':route;
       await page.goto(actual);
       if(route==='/')await expect(page.getByRole('link',{name:kind==='judge' ? 'Try it yourself':'Look around'})).toBeVisible();
-      else if(kind==='public')await expect(page.getByText('A read-only demo with made-up data.')).toBeVisible();
+      else if(kind==='public')await expect(page.getByText('Read-only demo')).toBeVisible();
       if(route==='/people') {
         await expect(page.getByRole('link',{name:/Dana Whitfield/})).toBeVisible();
         await expect(page.getByRole('region',{name:'Everyone else',exact:true}).locator('li')).toHaveCount(2);

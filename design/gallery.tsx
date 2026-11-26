@@ -10,6 +10,7 @@ import { People, Person } from '../src/look/screens/People'
 import { Recording } from '../src/look/screens/Recording'
 import { Todos } from '../src/look/screens/Todos'
 import { Operator, Waitlist } from '../src/look/screens/Waitlist'
+import { Trial } from '../src/look/screens/Trial'
 import { Welcome } from '../src/look/screens/Welcome'
 import type { Payload, Recording as RecordingData } from '../src/look/types'
 import { HrefProvider } from '../src/look/ui'
@@ -89,6 +90,13 @@ const homeProps = { home: data.home, samples: data.samples, today, due: 'overdue
 
 /** Every state, by its address. The first word is the screen. */
 const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
+  'try/code': {title:'Trial · verification code',screen:()=> <Trial codeSent onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
+  'try/code-error': {title:'Trial · wrong code',screen:()=> <Trial codeSent error='Check the code and try again.' onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
+  try: {title:'Trial · join',screen:()=> <Trial onSubmit={nothing}/>},
+  'try/busy': {title:'Trial · opening',screen:()=> <Trial busy onSubmit={nothing}/>},
+  'try/error': {title:'Trial · could not open',screen:()=> <Trial error='This trial cannot be opened here. Use the browser where you started it.' onSubmit={nothing}/>},
+  'home/trial': {title:'Home · new trial',screen:()=> <Home {...homeProps} readOnly={false} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:3600,trialVerified:true}}/>},
+  'home/trial-used': {title:'Home · trial used',screen:()=> <Home {...homeProps} readOnly={false} home={{...data.home,trialSeconds:0,trialVerified:true}}/>},
   'opening/page': { title: 'Page · opening', screen: () => <Opening page="People" onRetry={nothing}/> },
   'opening/failed': { title: 'Page · could not open', screen: () => <Opening page="People" failed onRetry={nothing}/> },
   upload: { title: 'Upload · choose a person', screen: () => <Upload people={data.people} readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },

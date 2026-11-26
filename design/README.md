@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 57 states. The phone suite checks all public and judge
+`check.mjs` checks all 64 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -64,12 +64,12 @@ The dock at the foot of the screen holds it, except where noted.
 
 | Screen | Your own copy | Read-only copy |
 |---|---|---|
-| Welcome | "Try it yourself", in the page | "Look around", in the page |
-| Home, People, To-dos | "Add recordings": opens the upload page to choose a person, then files | "What is KAI?", to Welcome |
+| Welcome | "Try it yourself", in the page | "Try it yourself", with a quiet "Look around" |
+| Home, People, To-dos | "Add recordings": opens the upload page to choose a person, then files | "Try it yourself", to trial signup |
 | Recording | "Accept all · n"; "Try again" when it failed; "See people" when all is decided. Hidden while a suggestion is edited: "Save and accept" is then the one | "Back to Home" |
 | Person | "Review suggestions" when some wait; otherwise "Add recordings" | "Back to People" |
-| Upload | "Choose recordings"; "Let KAI read" for a shared recording | "What is KAI?" |
-| Connect | "Copy your address", in the first card | "What is KAI?" |
+| Upload | "Choose recordings"; "Let KAI read" for a shared recording | "Try it yourself" |
+| Connect | "Copy your address", in the first card | "Try it yourself" |
 
 ### What the look shows that the server does not send yet
 
@@ -99,3 +99,9 @@ Each is optional in `types.ts`, and the screen is whole without it.
   is `soft`, `quiet` or `outline`.
 - The look changes on Copal's words. When the app needs a state that is not
   drawn, add it to `gallery.tsx` in the same pull request.
+
+The public header says “Read-only demo”; private copies say “Your notebook”.
+The trial gallery includes signup, busy, error, empty notebook and used quota states.
+
+The trial also shows code entry and wrong-code states. Credit is granted only
+after verification, for at most 100 people and one trial per email/public IP.

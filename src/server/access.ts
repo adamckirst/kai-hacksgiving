@@ -16,8 +16,8 @@ export function workspaceFor(db: KaiDatabase, req: Request): string {
   const row = db.prepare("SELECT session_secret FROM workspaces WHERE id = ? AND kind = 'judge'").get(id) as {session_secret:string|null}|undefined;
   return row?.session_secret && equalSecret(mac,signature(id,row.session_secret)) ? id : 'public';
 }
-export function createJudge(db: KaiDatabase) {
-  const id = randomUUID(); seed(db,new Date(),id);
+export function createJudge(db: KaiDatabase, populated = true) {
+  const id = randomUUID(); seed(db,new Date(),id,populated);
   const row = db.prepare('SELECT session_secret FROM workspaces WHERE id = ?').get(id) as {session_secret:string};
   return {id,cookie:`${id}.${signature(id,row.session_secret)}`};
 }

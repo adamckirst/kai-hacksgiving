@@ -9,7 +9,7 @@ import { RecordingScreen } from './Reading';
 import { PeopleScreen,PersonScreen } from './People';
 import { TodosScreen } from './Todos';
 import { ConnectScreen } from './Connect';
-import { Operator } from './Waitlist';
+import { Operator,Waitlist } from './Waitlist';
 const downloadSecret=location.pathname==='/operator' ? new URLSearchParams(location.hash.slice(1)).get('download'):null;
 type Access = {kind:'public'|'judge';videoUrl:string|null};
 async function openAccess(): Promise<Access> {
@@ -35,6 +35,7 @@ function App() {
     return <Opening page={page} failed={failed} onRetry={()=>location.reload()}/>;
   }
   const readOnly=access.kind==='public';
+  if(route==='/try')return <Waitlist trial/>;
   if(route==='/upload' || route.startsWith('/upload/'))return <UploadPage readOnly={readOnly}/>;
   if(route==='/home')return <HomeScreen readOnly={readOnly}/>;
   if(route==='/people')return <PeopleScreen readOnly={readOnly}/>;

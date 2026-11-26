@@ -41,6 +41,8 @@ export function openDatabase(path:string|Buffer = ':memory:') {
       FOREIGN KEY(workspace_id,owner_person_id) REFERENCES people(workspace_id,id),
       FOREIGN KEY(workspace_id,conversation_id) REFERENCES conversations(workspace_id,id)
     );
+    CREATE TABLE IF NOT EXISTS trial_challenges (email TEXT PRIMARY KEY,id TEXT NOT NULL,ip_hash TEXT NOT NULL,code_hash TEXT NOT NULL,expires_at INTEGER NOT NULL,attempts INTEGER NOT NULL,delivered INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS trial_sends (id TEXT PRIMARY KEY,ip_hash TEXT NOT NULL,email_hash TEXT NOT NULL,sent_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created_at TEXT NOT NULL);
   `);
   db.transaction(()=> {
@@ -57,9 +59,16 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   }
   if (!columns.some(c=>c.name==='reading_day')) db.exec("ALTER TABLE workspaces ADD COLUMN reading_day TEXT; ALTER TABLE workspaces ADD COLUMN readings_today INTEGER NOT NULL DEFAULT 0;");
   if (!columns.some(c=>c.name==='recording_day')) db.exec("ALTER TABLE workspaces ADD COLUMN recording_day TEXT; ALTER TABLE workspaces ADD COLUMN recordings_today INTEGER NOT NULL DEFAULT 0;");
+  if(!columns.some(c=>c.name==='trial_seconds')) db.exec('ALTER TABLE workspaces ADD COLUMN trial_seconds INTEGER');
+  const waitlist=db.prepare('PRAGMA table_info(waitlist)').all() as {name:string}[];
+  if(!waitlist.some(c=>c.name==='workspace_id')) db.exec('ALTER TABLE waitlist ADD COLUMN workspace_id TEXT REFERENCES workspaces(id)');
+  if(!columns.some(c=>c.name==='trial_ended'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_ended INTEGER NOT NULL DEFAULT 0');
+  if(!columns.some(c=>c.name==='trial_verified'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_verified INTEGER NOT NULL DEFAULT 0');
+  if(!waitlist.some(c=>c.name==='verified_at'))db.exec('ALTER TABLE waitlist ADD COLUMN verified_at TEXT; ALTER TABLE waitlist ADD COLUMN trial_ip TEXT; CREATE UNIQUE INDEX waitlist_trial_ip ON waitlist(trial_ip) WHERE trial_ip IS NOT NULL');
   const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
   if(!conversations.some(c=>c.name==='audio_path')) db.exec("ALTER TABLE conversations ADD COLUMN audio_path TEXT; ALTER TABLE conversations ADD COLUMN happened_at INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN transcribed INTEGER NOT NULL DEFAULT 0;");
   if(!conversations.some(c=>c.name==='batch_id')) db.exec('ALTER TABLE conversations ADD COLUMN batch_id TEXT');
+  if(!conversations.some(c=>c.name==='reserved_seconds'))db.exec('ALTER TABLE conversations ADD COLUMN reserved_seconds INTEGER');
   if(!conversations.some(c=>c.name==='reserved_on')) db.exec('ALTER TABLE conversations ADD COLUMN reserved_on TEXT');
   if(!conversations.some(c=>c.name==='awaiting_person')) db.exec('ALTER TABLE conversations ADD COLUMN awaiting_person INTEGER NOT NULL DEFAULT 0');
   if(!conversations.some(c=>c.name==='person_id')) db.exec('ALTER TABLE conversations ADD COLUMN person_id TEXT REFERENCES people(id)');
@@ -75,12 +84,13 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   return db;
 }
 export type KaiDatabase = ReturnType<typeof openDatabase>;
-export function seed(db: KaiDatabase, now = new Date(), workspace = 'public') {
+export function seed(db: KaiDatabase, now = new Date(), workspace = 'public', populated = true) {
   const id = (name: string) => workspace === 'public' ? name : `${workspace}:${name}`;
   const day = (offset: number) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset)).toISOString().slice(0,10);
   db.transaction(() => {
     if (db.prepare('SELECT id FROM workspaces WHERE id = ?').get(workspace)) return;
     db.prepare('INSERT INTO workspaces (id,workspace_id,kind,mcp_token,upload_token,created_at,session_secret) VALUES (?, ?, ?, ?, ?, ?, ?)').run(workspace, workspace, workspace === 'public' ? 'public' : 'judge', workspace === 'public' ? null : randomBytes(32).toString('hex'), workspace === 'public' ? null : randomBytes(32).toString('hex'), now.toISOString(),workspace === 'public' ? null : randomBytes(32).toString('hex'));
+    if(!populated)return;
     const person = db.prepare('INSERT INTO people VALUES (?, ?, ?, ?, ?)');
     person.run(id('dana'),workspace,'Dana Whitfield','Willow Dental','Operations lead');
     person.run(id('ellis'),workspace,'Ellis Rowan','Harbour Dental','Clinic owner');

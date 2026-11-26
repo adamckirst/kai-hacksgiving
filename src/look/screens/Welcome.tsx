@@ -50,11 +50,14 @@ export function Welcome({ access, failed }: { access: Access | null; failed?: bo
               Opening your notebook…
             </Button>
           ) : (
-            <Button variant="primary" wide href="/home">
-              {access?.kind === 'judge' ? 'Try it yourself' : 'Look around'}
+            <Button variant="primary" wide href={access?.kind === 'judge' ? '/home' : '/try'}>
+              Try it yourself
             </Button>
           )}
-          {!opening && access?.kind !== 'judge' && <p className="text-center text-base font-medium text-zinc-600">A read-only demo with made-up data.</p>}
+          {!opening && access?.kind !== 'judge' && <>
+            <p className="text-center text-base font-medium text-zinc-600">Join the waitlist. Try an hour of your own recordings.</p>
+            <Button variant="quiet" wide href="/home">Look around</Button>
+          </>}
         </div>
       </main>
       <Footer />
