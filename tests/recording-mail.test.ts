@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {mkdtempSync,rmSync} from 'node:fs';
+import {mkdirSync,mkdtempSync,rmSync} from 'node:fs';
 import {openDatabase,seed,type KaiDatabase} from '../src/server/db';
 import {createJudge} from '../src/server/access';
 import {addAudio,queueWorker,fakeTranscriber} from '../src/server/audio';
@@ -44,6 +44,7 @@ test('recording mail isolates verified recipients, sends counts only, and skips 
  }finally{await worker.stop();db.close()}
 });
 test('new shared audio queues one completion email after reading; mail failure leaves its suggestions ready',async()=>{
+ mkdirSync('.data',{recursive:true});
  const db=openDatabase();seed(db);const judge=actor(db),directory=mkdtempSync('.data/mail-audio-');let sends=0;
  const mail=recordingMailWorker(db,async()=>{sends++;throw new Error('Invented failure')});
  const worker=queueWorker(db,async(_input,call)=>{call('describe_recording',{title:'Invented update',summary:'A made-up summary.\nNo new promises.'})},fakeTranscriber,()=>{void mail.kick()});
