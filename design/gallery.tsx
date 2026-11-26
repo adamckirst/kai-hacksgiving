@@ -1,3 +1,5 @@
+import {Search} from '../src/look/screens/Search'
+import {Task} from '../src/look/screens/Task'
 import { StrictMode, useEffect, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '../src/look/kai.css'
@@ -94,7 +96,23 @@ const libraryItems=data.home.conversations.map((c,i)=>({...c,happened_on:today,s
 
 /** Every state, by its address. The first word is the screen. */
 const speakerPassages=[{speaker:'A',text:'I will send the notes tomorrow.',start:0,end:1000},{speaker:'B',text:'I will review them on Friday.',start:1000,end:2000}]
+const searchResults={library:[{id:'dana-call',title:'First call with Dana',detail:'Dana wants pricing for three clinics.',href:'/recordings/dana-call'}],people:[{id:'dana',title:'Dana Whitfield',detail:'Operations lead · Willow Dental',href:'/people/dana'}],tasks:[{id:'pricing',title:'Send Dana the pricing',detail:'Your to-do · Dana Whitfield',href:'/todos/pricing'}],more:{library:false,people:false,tasks:false}}
+const searchProps={query:'Dana',results:searchResults,readOnly:false,onQuery:nothing,onSearch:nothing}
+const taskExample={id:'pricing',text:'Send Dana the pricing',status:'open' as const,due_on:today,owner_name:null,person_name:'Dana Whitfield',person_id:'dana',quote:'I promised to send Dana the pricing.',conversation_id:'dana-call'}
+const taskProps={task:taskExample,readOnly:false,onDone:nothing,onRetry:nothing,back:'/search'}
 const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
+  search:{title:'Search · start',screen:()=> <Search {...searchProps} query="" results={null}/>},
+  'search/results':{title:'Search · matches',screen:()=> <Search {...searchProps}/>},
+  'search/empty':{title:'Search · no matches',screen:()=> <Search {...searchProps} results={{library:[],people:[],tasks:[],more:{library:false,people:false,tasks:false}}}/>},
+  'search/loading':{title:'Search · searching',screen:()=> <Search {...searchProps} results={null} busy/>},
+  'search/error':{title:'Search · failed',screen:()=> <Search {...searchProps} results={null} error="Search could not finish. Try again."/>},
+  'search/public':{title:'Search · public',screen:()=> <Search {...searchProps} readOnly/>},
+  'search/more':{title:'Search · refine',screen:()=> <Search {...searchProps} results={{...searchResults,more:{library:true,people:false,tasks:false}}}/>},
+  task:{title:'Task · open',screen:()=> <Task {...taskProps}/>},
+  'task/done':{title:'Task · done',screen:()=> <Task {...taskProps} task={{...taskExample,status:'done'}}/>},
+  'task/public':{title:'Task · public',screen:()=> <Task {...taskProps} readOnly/>},
+  'task/loading':{title:'Task · loading',screen:()=> <Task {...taskProps} task={null}/>},
+  'task/error':{title:'Task · failed',screen:()=> <Task {...taskProps} task={null} error="This task could not open. Go back and try again."/>},
   'recording/speakers':{title:'Recording · identify speakers',screen:()=> <Speakers people={data.people} utterances={speakerPassages} onSubmit={nothing}/>},
   'recording/speakers-loading':{title:'Recording · loading people',screen:()=> <Speakers people={null} utterances={speakerPassages} onSubmit={nothing}/>},
   'recording/people-context': {title:'Recording · who each suggestion updates',screen:()=> <LiveRecording first={{...data.recordings.ready,text:'I need to write a call checklist. Ellis will send Dana the clinic schedule. '+data.recordings.ready.text,suggestions:[

@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 97 states. The phone suite checks all public and judge
+`check.mjs` checks all 109 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -157,3 +157,10 @@ note and kept promise names the person it updates; a task distinguishes its
 owner from the person it is about. Personal tasks say “For you”. Names come
 from the same notebook's existing or newly proposed people, including before
 acceptance. These are display labels, not changes to the stored suggestions.
+
+Search sits to the right of Add recordings (and the public trial action),
+with notifications kept on the left. It opens one notebook search, grouped
+as Library, People and Tasks. The gallery covers initial, matching, empty,
+loading, failed, public and result-limit states. Task results open their own
+read-only-or-actionable detail view, including completed tasks. Search and
+task detail each keep one violet action; all data stays notebook-scoped.

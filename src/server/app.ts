@@ -1,3 +1,5 @@
+import {searchNotebook} from './search';
+import {getTodo} from './todos';
 import {suggestionList} from './suggestion-list';
 import {recordingMailWorker,type SendReady} from './recording-mail';
 import express from 'express';
@@ -78,6 +80,8 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     res.json({ok:true});
   });
   app.get('/api/people', (_req,res) => res.json(peopleList(db,res.locals.workspace)));
+  app.get('/api/search',(req,res)=>{try{res.json(searchNotebook(db,res.locals.workspace,req.query.q));}catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}});
+  app.get('/api/todos/:id',(req,res)=>{const todo=getTodo(db,res.locals.workspace,req.params.id);if(!todo){res.status(404).json({error:'Task not found.'});return;}res.json(todo);});
   app.get('/api/todos',(_req,res)=>res.json(listTodos(db,res.locals.workspace)));
   app.post('/api/todos/:id/done',(req,res)=> {
     try {finishTodo(db,res.locals.workspace,req.params.id);res.json({ok:true});}
@@ -170,7 +174,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/try', '/home', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get(['/', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose up to five recordings, each up to 10 MB.'});return;}
     res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});
