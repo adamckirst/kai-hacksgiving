@@ -18,7 +18,7 @@ function visitors(db:KaiDatabase,now:number):Visitors {
   return Object.fromEntries(Object.entries(all).filter(([,v])=>v.seen>now-hour).map(([id,v])=>[id,{seen:v.seen,attempts:v.attempts.filter(at=>at>now-hour)}]));
 }
 function saveVisitors(db:KaiDatabase,all:Visitors) {db.prepare("UPDATE workspaces SET waitlist_visitors=? WHERE id='public'").run(JSON.stringify(all));}
-function xPost(value?:string) {
+export function xPost(value?:string) {
   if(!value)return null;
   try {const url=new URL(value);return url.protocol==='https:' && ['x.com','www.x.com'].includes(url.hostname) && /^\/[A-Za-z0-9_]+\/status\/\d+\/?$/.test(url.pathname) ? url.origin+url.pathname:null;}catch{return null;}
 }

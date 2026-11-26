@@ -522,12 +522,12 @@ export function AddRecordings({ personId, hideNotifications }: { onFiles?: (file
   </div>
 }
 
-export function RecordingPicker({ onFiles, busy, disabled }: { onFiles: (files: File[]) => void; busy?: boolean; disabled?: boolean }) {
+export function RecordingPicker({ onFiles, busy, disabled, label='Add recordings' }: { label?:string; onFiles: (files: File[]) => void; busy?: boolean; disabled?: boolean }) {
   return (
     <div className="relative">
       <button type="button" tabIndex={-1} aria-hidden="true" disabled={busy || disabled} className={clsx(PILL, VARIANT.primary, 'h-14 w-full text-lg')}>
         <Icon name="plus" />
-        {busy ? 'Adding…' : 'Add recordings'}
+        {busy ? 'Adding…' : label}
       </button>
       <input
         type="file"

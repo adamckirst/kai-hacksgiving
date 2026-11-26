@@ -93,6 +93,7 @@ export type QueueItem = { id: string; title: string; status: RecordingStatus; er
 export type HomeData = {
   shortcutReady?: boolean
   trialVerified?: boolean
+  xPostUrl?: string | null
   trialSeconds?: number | null
   hasRecordings?: boolean
   peopleCount: number

@@ -1,13 +1,18 @@
 import { useEffect,useState } from 'react';
-import { Upload } from './look/screens/Upload';
+import { Upload,type UploadSource } from './look/screens/Upload';
 import type { LinkedPerson,PersonChoice } from './look/types';
 import { useUpload } from './Upload';
 export function UploadPage({readOnly}:{readOnly:boolean}) {
+  const [setup,setSetup]=useState(false),[remaining,setRemaining]=useState<number|null>(null),[post,setPost]=useState<string|null>(null);
+  const source=new URLSearchParams(location.search).get('source');
+  const initialSource:UploadSource=source==='voice-memos' || source==='whatsapp' ? source:'files';
   const [people,setPeople]=useState<LinkedPerson[]|null>(null),[incoming,setIncoming]=useState<{id:string;title:string}|null>(null);
   const [loadError,setLoadError]=useState(''),[error,setError]=useState(''),[starting,setStarting]=useState(false);
   const upload=useUpload(),path=location.pathname.split('/')[2];
   useEffect(()=>{if(readOnly)return;let alive=true;
     async function load(){try {
+      const [a,c]=await Promise.all([fetch('/api/access'),fetch('/api/connect')]);if(!a.ok || !c.ok)throw new Error();
+      const access=await a.json(),connection=await c.json();if(alive){setRemaining(access.trialSeconds);setPost(access.xPostUrl);setSetup(connection.shortcutReady);}
       const p=await fetch('/api/people');if(!p.ok)throw new Error();const people=await p.json();
       if(path && path!=='new') {
         const r=await fetch('/api/readings/'+encodeURIComponent(path));if(!r.ok)throw new Error();const recording=await r.json();
@@ -26,5 +31,5 @@ export function UploadPage({readOnly}:{readOnly:boolean}) {
     try {const r=await fetch('/api/uploads/'+encodeURIComponent(incoming.id)+'/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(person)});const data=await r.json();if(!r.ok)throw new Error(data.error);location.assign('/recordings/'+encodeURIComponent(incoming.id));}
     catch(e){setError(e instanceof Error ? e.message:'KAI could not start. Try again.');setStarting(false);}
   }
-  return <Upload people={people} incoming={incoming} readOnly={readOnly} presetPerson={new URLSearchParams(location.search).get('person') ?? undefined} busy={starting || upload.adding} error={error || upload.addError} loadError={loadError} onFiles={upload.onFiles} onStart={person=>void start(person)} onRetry={()=>location.reload()}/>;
+  return <Upload shortcutReady={setup} remainingSeconds={remaining} xPostUrl={post} initialSource={initialSource} people={people} incoming={incoming} readOnly={readOnly} presetPerson={new URLSearchParams(location.search).get('person') ?? undefined} busy={starting || upload.adding} error={error || upload.addError} loadError={loadError} onFiles={upload.onFiles} onStart={person=>void start(person)} onRetry={()=>location.reload()}/>;
 }
