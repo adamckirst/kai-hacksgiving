@@ -106,7 +106,7 @@ test('Resend completion mail uses one stable idempotency key and a secret-free H
  try {
   const send=resendReadySender('KAI <kai@example.invalid>','https://kai.example.invalid');
   const email=randomUUID()+'@example.invalid',id=randomUUID(),counts={person:1,note:2,todo:3,done:0};
-  await send(email,id,counts);await send(email,id,counts);assert.deepEqual(requests[0],requests[1]);
+  await send(email,id,counts,'An invented catch-up');await send(email,id,counts,'An invented catch-up');assert.deepEqual(requests[0],requests[1]);
   assert.deepEqual(requests[0].body.to,[email]);assert.match(requests[0].body.text,/3 suggested to-dos/);assert.ok(!requests[0].body.text.includes(email));
   assert.throws(()=>resendReadySender('KAI <kai@example.invalid>','https://kai.example.invalid/?private=yes'));
  }finally{globalThis.fetch=original}
@@ -122,4 +122,19 @@ test('a second recording finishing during mail delivery is sent without a new br
   db.prepare("UPDATE conversations SET status='ready' WHERE id=?").run(second);void worker.kick();release();await run;
   assert.deepEqual(sent,[first,second]);
  }finally{release();await worker.stop();db.close()}
+});
+
+test('styled email escapes the recording title and snapshots it for identical retries',async()=>{
+ const {readyEmail}=await import('../src/email/ready');
+ const title='<img src=x onerror="bad()">\r\nA made-up call';
+ const message=readyEmail('https://kai.example.invalid','invented-recording',{person:1,note:2,todo:1,done:0},title);
+ assert.ok(message.subject.includes('A made-up call'));assert.ok(!/[\r\n]/.test(message.subject));
+ assert.ok(!message.html.includes('<img'));assert.ok(message.html.includes('&lt;img'));assert.ok(message.html.includes('Review in KAI'));
+ assert.ok(message.text.includes('A made-up call'));
+ const db=openDatabase();seed(db);const judge=actor(db),id=recording(db,judge.id);let now=Date.now();const titles:string[]=[];
+ const worker=recordingMailWorker(db,async(_email,_id,_counts,title)=>{titles.push(title);throw new Error('Invented failure')},()=>now);
+ try {
+  await worker.kick();db.prepare('UPDATE conversations SET title=? WHERE id=?').run('A later title',id);now+=60001;await worker.kick();
+  assert.deepEqual(titles,['Private invented title','Private invented title']);
+ }finally{await worker.stop();db.close()}
 });
