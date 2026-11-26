@@ -53,6 +53,7 @@ export function openDatabase(path:string|Buffer = ':memory:') {
     CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created_at TEXT NOT NULL);
   `);
   db.transaction(()=> {
+  if(!(db.prepare('PRAGMA table_info(recording_emails)').all() as {name:string}[]).some(c=>c.name==='title'))db.exec("ALTER TABLE recording_emails ADD COLUMN title TEXT NOT NULL DEFAULT 'Your recording'");
   const columns=db.prepare('PRAGMA table_info(workspaces)').all() as {name:string}[];
   if(!columns.some(c=>c.name==='waitlist_visitors'))db.exec("ALTER TABLE workspaces ADD COLUMN waitlist_visitors TEXT NOT NULL DEFAULT '{}'");
   if(!columns.some(c=>c.name==='session_secret')) {

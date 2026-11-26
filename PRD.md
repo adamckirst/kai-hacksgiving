@@ -569,7 +569,7 @@ sends no promises, follow-ups or messages to a person mentioned in a recording.
   transcripts, samples, failures or waitlist-only/unverified addresses.
 - Send only to the verified email attached to that notebook, through the
   existing Resend connector. Include counts of proposed people, notes,
-  to-dos and kept promises; include no names, titles, words, summary text,
+  to-dos and kept promises; include no names beyond the title, words, summary text,
   quotes or suggested actions. With zero suggestions, say the transcript
   and summary are ready. Say the person decides what to keep.
 - “Review in KAI” opens that recording in the existing notebook browser.
@@ -592,3 +592,15 @@ sends no promises, follow-ups or messages to a person mentioned in a recording.
   limits hold. Check the new queue on the Sprite using a fake mail sender
   and invented data, without sending to a real address. Copal confirms
   receipt after uploading his own invented recording.
+
+
+### Completion email presentation (Copal, 26 November)
+
+Copal confirmed “the email arrived and the link worked”, then requested
+“a call to action in the same style as the app” and “the title of the entry
+that Kai created on the subject and the body of the email.”
+This permits the recording title in addition to §13’s counts and review
+link. Use a white card, lavender background and one violet “Review in KAI”
+button. Keep a plain-text alternative. Escape the title in HTML and remove
+line breaks from the subject; freeze the title with the counts for retries.
+No transcript, summary text or suggestion text is added.

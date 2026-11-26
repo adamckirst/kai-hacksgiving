@@ -113,3 +113,9 @@ fails. Both expanded states are included in the gallery.
 
 Verified trial Home and signup explain recording-ready emails: suggestion
 counts and a review link, with recording content kept in KAI.
+
+The recording-ready email uses the same lavender background, white card and
+violet call-to-action as the app. `email-ready.html` and `email-empty.html`
+are invented-data captures from `src/email/ready.ts`; their phone pictures
+are `shots/email-ready.png` and `shots/email-empty.png`. The entry title is
+shown in the subject and body, as Copal requested.
