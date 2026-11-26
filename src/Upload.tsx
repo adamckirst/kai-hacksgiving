@@ -6,6 +6,7 @@ export function useUpload() {
   async function send(files:File[],person?:PersonChoice) {
     if(!files.length || sending.current)return;
     if(files.length>5 || files.some(f=>f.size>10000000)){setError('Choose one to five recordings, each up to 10 MB.');return;}
+    if(files.some(f=>!f.size || !/\.(m4a|opus|ogg|mp3|wav)$/i.test(f.name))){setError('Choose an audio file: M4A, OPUS, OGG, MP3 or WAV.');return;}
     sending.current=true;setBusy(true);setError('');const body=new FormData();
     if(person)body.append('person',JSON.stringify(person));
     files.forEach(f=>body.append('recordings',f));body.append('dates',JSON.stringify(files.map(f=>f.lastModified)));

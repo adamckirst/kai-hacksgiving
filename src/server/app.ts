@@ -13,7 +13,7 @@ import { cookieName, createJudge, equalSecret, workspaceFor } from './access';
 import { listTodos,finishTodo } from './todos';
 import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
-import { mountWaitlist } from './waitlist';
+import { mountWaitlist,xPost } from './waitlist';
 import { linkRecordingPerson } from './recording-person';
 export type AppOptions = TrialOptions & {sendReady?:SendReady;trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
@@ -50,7 +50,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use((_req,_res,next)=>{void work();next();});
   app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
-  app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null,trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds}));
+  app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null,xPostUrl:xPost(options.xPostUrl),trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds}));
   app.get('/api/connect',(_req,res)=> {
     const row=db.prepare("SELECT upload_token,mcp_token,shortcut_ready FROM workspaces WHERE id=? AND kind='judge'").get(res.locals.workspace) as {upload_token:string;mcp_token:string;shortcut_ready:number}|undefined;
     if(!row){res.status(403).json({error:'Open your own copy to connect your phone.'});return;}
@@ -99,6 +99,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.get('/api/home',(_req,res) => res.json({
     shortcutReady:Boolean((db.prepare('SELECT shortcut_ready FROM workspaces WHERE id=?').get(res.locals.workspace) as {shortcut_ready:number}).shortcut_ready),
     trialVerified:Boolean((db.prepare('SELECT trial_verified FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_verified:number}).trial_verified),
+    xPostUrl:xPost(options.xPostUrl),
     trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds,
     todos:db.prepare("SELECT t.id,t.text,t.due_on,p.name AS person_name FROM todos t LEFT JOIN people p ON p.id=t.person_id AND p.workspace_id=t.workspace_id WHERE t.workspace_id = ? AND t.status = 'open' AND t.owner_person_id IS NULL ORDER BY t.due_on IS NULL,t.due_on").all(res.locals.workspace),
     conversations:db.prepare('SELECT id,title,summary,happened_on FROM conversations WHERE workspace_id = ? ORDER BY happened_on DESC').all(res.locals.workspace),
