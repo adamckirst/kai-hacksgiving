@@ -47,6 +47,14 @@ export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[
   } catch(error) {for(const file of written) if(existsSync(file)) unlinkSync(file);throw error;}
 }
 export class AudioDurationError extends Error {}
+/** Fixed categories only. Never retain provider messages or recording content. */
+export class ListeningFailure extends Error {constructor(public code:string){super(code)}}
+function listeningCode(error:unknown) {
+  if(error instanceof ListeningFailure)return error.code;
+  if(error instanceof AudioDurationError)return 'audio_duration';
+  if(error instanceof Error && /^Connector request failed \((\d{3})\)\.$/.test(error.message))return 'listening_http_'+error.message.match(/\d{3}/)![0];
+  return 'listening_failed';
+}
 export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=300,multiple=false)=> {
   if(!Number.isInteger(reservedSeconds) || reservedSeconds<1 || reservedSeconds>300)throw new Error('Invalid recording reservation.');
   const {assemblyai}=await discoverGateways();
@@ -62,17 +70,19 @@ export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=
         if(typeof result.text!=='string' || result.text.length>20000 || result.audio_duration>300) throw new Error('Recording exceeds the limits.');
         if(multiple) {
           const utterances=result.utterances;
-          if(!Array.isArray(utterances) || !utterances.length || utterances.length>2000)throw new Error('Speaker labels are missing.');
+          if(!Array.isArray(utterances) || !utterances.length || utterances.length>2000)throw new ListeningFailure('speakers_missing');
           const clean:Utterance[]=utterances.map(u=>{
-            if(!u || typeof u.speaker!=='string' || !/^[A-Z]{1,3}$/.test(u.speaker) || typeof u.text!=='string' || !u.text.trim() || u.text.length>20000 || !Number.isFinite(u.start) || !Number.isFinite(u.end) || u.start<0 || u.end<u.start || u.end>reservedSeconds*1000+1000)throw new Error('Speaker labels are invalid.');
+            if(!u || typeof u.speaker!=='string' || !/^[A-Z]{1,3}$/.test(u.speaker))throw new ListeningFailure('speaker_label_invalid');
+            if(typeof u.text!=='string' || !u.text.trim() || u.text.length>20000)throw new ListeningFailure('speaker_text_invalid');
+            if(!Number.isFinite(u.start) || !Number.isFinite(u.end) || u.start<0 || u.end<u.start || u.end>reservedSeconds*1000+1000)throw new ListeningFailure('speaker_time_invalid');
             return {speaker:u.speaker,text:u.text,start:u.start,end:u.end};
           });
-          if(new Set(clean.map(u=>u.speaker)).size>20 || clean.reduce((n,u)=>n+u.text.length,0)>40000)throw new Error('Too many speaker passages.');
+          if(new Set(clean.map(u=>u.speaker)).size>20 || clean.reduce((n,u)=>n+u.text.length,0)>40000)throw new ListeningFailure('speaker_limit');
           return {text:result.text,utterances:clean};
         }
         return result.text;
       }
-      if(result.status==='error') throw new Error('Listening failed.');
+      if(result.status==='error') throw new ListeningFailure('listening_provider_error');
       await new Promise(resolve=>setTimeout(resolve,1000));
     }
   } finally {
@@ -116,7 +126,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
             const transcript=await transcribe(audio,signal,seconds,job.recording_type==='multiple');signal.throwIfAborted();
             const words=typeof transcript==='string' ? transcript:transcript.text;
             const utterances=typeof transcript==='string' ? []:transcript.utterances;
-            if(job.recording_type==='multiple' && !utterances.length)throw new Error('Speaker labels are missing.');
+            if(job.recording_type==='multiple' && !utterances.length)throw new ListeningFailure('speakers_missing');
             if(words.length>20000) throw new Error();
             // Persist words first: a restart after this line never needs to listen again.
             db.prepare('UPDATE conversations SET text=?,transcribed=1,utterances=?,awaiting_speakers=? WHERE id=?').run(words,JSON.stringify(utterances),Number(job.recording_type==='multiple'),job.id);
@@ -131,6 +141,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
           onReady();
           if(signal.aborted && !stopped) retryInterrupted(db.prepare('SELECT * FROM conversations WHERE id=?').get(job.id) as Job);
         } catch(error) {
+          db.prepare('UPDATE conversations SET failure_code=? WHERE id=?').run(signal.aborted ? 'listening_timeout':listeningCode(error),job.id);
           if(error instanceof AudioDurationError) {
             db.prepare('UPDATE workspaces SET trial_ended=1,trial_seconds=0 WHERE id=? AND trial_seconds IS NOT NULL').run(job.workspace_id);
           }
