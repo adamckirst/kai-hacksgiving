@@ -1,3 +1,4 @@
+import {suggestionList} from './suggestion-list';
 import {recordingMailWorker,type SendReady} from './recording-mail';
 import express from 'express';
 import {mountTrial,type TrialOptions} from './trial';
@@ -159,7 +160,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.get('/api/readings/:id',(req,res) => {
     const row=db.prepare('SELECT id,title,summary,text,happened_on,source,status,error,progress,person_id,awaiting_person,recording_type,utterances,speaker_map,awaiting_speakers FROM conversations WHERE id=? AND workspace_id=?').get(req.params.id,res.locals.workspace) as {person_id:string|null;utterances:string;speaker_map:string}|undefined;
     if(!row) {res.status(404).json({error:'Recording not found.'});return;}
-    const suggestions=db.prepare('SELECT id,kind,payload,quote,status FROM suggestions WHERE conversation_id=? AND workspace_id=? ORDER BY rowid').all(req.params.id,res.locals.workspace);
+    const suggestions=suggestionList(db,res.locals.workspace,req.params.id);
     const person=row.person_id ? db.prepare('SELECT id,name,company,role FROM people WHERE id=? AND workspace_id=?').get(row.person_id,res.locals.workspace) ?? null:null;
     res.json({...row,utterances:JSON.parse(row.utterances),speaker_map:JSON.parse(row.speaker_map),person,suggestions});
   });

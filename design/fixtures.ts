@@ -54,6 +54,8 @@ const suggestion = (id: string, kind: Suggestion['kind'], payload: object, quote
   id,
   kind,
   payload: JSON.stringify(payload),
+  person_name: (payload as {person_name?:string}).person_name,
+  owner_name: (payload as {owner_person_id?:string}).owner_person_id ? (payload as {person_name?:string}).person_name : null,
   quote,
   status,
 })
