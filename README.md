@@ -401,8 +401,8 @@ keeps that page’s loading screen instead of showing Welcome.
 
 [App pictures](design/app-shots/) use invented local data; [gallery pictures](design/shots/)
 show the reference. No usable connection address appears in those pictures.
-The Sprite URL is public; writes and assistant access still require a private
-judge copy. Video work waits for Copal’s product approval.
+The Sprite URL is public; writes and assistant access require a private
+notebook opened through a judge invitation or waitlist trial. Video work waits for Copal’s product approval.
 
 ### Public recording trial
 
