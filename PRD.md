@@ -341,8 +341,8 @@ is recorded after step 13.
   review on the PR.
 - A blocker is only: a check that fails or was not run; a crash on the demo
   path; data loss; a secret, real personal data or copied code (§10) in
-  the repository; a broken contest rule; or a way for a stranger to spend
-  our credit. Everything else is a note.
+  the repository; a broken contest rule; or provider access or spending beyond the explicitly authorised
+  judge and public-trial limits (§§6 and 12). Everything else is a note.
 - Codex fixes every blocker and asks again, with no limit on rounds. At
   "Blockers: 0" Codex merges and deploys.
 
@@ -468,3 +468,82 @@ visitor without the link sees Welcome only); then editing
 a suggestion; then "Waiting on"; then several recordings at once (one at a
 time); then "Send to KAI" (the file picker stays); then MCP. Recordings
 and "KAI remembers" are never cut.
+
+## 12 · Public recording trial (Copal, 26 November)
+
+Copal asked to “open up the demo with one hour of recording quota for
+anyone who wants to sign up for the wait list” and approved updating the
+PRD for “one 60-minute trial per email, linked to a private notebook,
+while keeping the existing overall daily spending caps.” This replaces
+§3's exclusion of signup, §4's public entry action, §5's prohibition on a
+waitlist/workspace link, and §6's waitlist-only public write exception.
+
+- Welcome offers “Try it yourself” to join the waitlist and “Look around”
+  to browse. The public notebook says “Read-only demo” quietly in its
+  header. Its main action leads to the trial signup. No video yet.
+- Joining for a trial creates an empty private notebook in this browser.
+  Its access, upload and read-only MCP work like a judge's copy. Existing
+  judge links still open their seeded notebooks without signup.
+- One hour total of uploaded recording duration per email, rounded up to
+  whole seconds per file, reserved atomically for the whole batch before
+  processing. Failed batches reserve nothing; retries of the same accepted
+  upload do not consume the hour again. A new upload consumes time even
+  if transcription fails. Remaining time appears on Home.
+- The waitlist alone links an email to a notebook. Addresses never enter
+  model input, MCP results, app logs or notebook APIs. An email alone never
+  reopens a notebook; only its existing browser cookie can. A code sent through Kopal’s Resend account verifies ownership before
+  granting any trial credit. Verification email is the only new sending
+  exception; KAI still sends no notes, promises or follow-ups. Another email in the same browser
+  cannot refill its allowance. Existing waitlist-only signups can claim
+  their first trial; repeated claims from a different browser are refused.
+- The existing daily caps (10 recordings/30 readings per notebook,
+  60 recordings/150 readings overall), file limits, waitlist fences and
+  provider limits stay unchanged. The hour may span days. No extra Sprite,
+  connector, account or paid upgrade. Signup itself calls no provider.
+- Visitors may add their own recordings, private on the Sprite, just as
+  judges may (§10 exception). Audio is deleted after transcription; all
+  notebooks are deleted on 8 December. Signup explains the linked email,
+  one future product note, browser-only access, and daily limits.
+- Checks: `npm run check`; gallery at 375 px; signup yields an empty,
+  isolated notebook; public browsing stays read-only; email cannot reopen
+  another notebook; duplicates and concurrency cannot refill time; duration
+  quota survives restart and covers browser and shared uploads; rejected
+  batches reserve nothing; existing daily caps still apply; email stays out
+  of notebook APIs and MCP. Verify signup and isolation on the Sprite with
+  invented data, without calling paid providers.
+
+
+### Trial verification and abuse limits (Copal, 26 November)
+
+Copal requested: “We need a verification code sent there. We can do that
+with our Kopal Resend account” and “block different emails in the same IP”
+and “limit the free credits to 100 users”. These requirements supersede
+§12's original unverified signup and §3/§10's blanket prohibition on sending
+for verification messages only. No new paid plan is authorised.
+
+- A fresh short-lived single-use code proves email ownership before a
+  trial is granted. Two server-only tables hold expiring challenges and bounded send counters.
+  Store only a protected code digest; never log or persist
+  the code itself. Bound guesses, resends, sends per IP, and overall sends.
+  Use the existing Kopal Resend account through its Sprite connector; Copal
+  alone creates/configures that connector and supplies a verified sender.
+- Grant at most 100 trials in total, atomically, only after verification.
+  Enforce one grant per normalized email and per public IP, across browsers
+  and restarts. Store a keyed digest of the IP, not the raw address. Shared
+  networks share one allowance; changing IP can evade an IP rule, so it is
+  additional friction rather than proof of a unique human. Never trust a
+  client-supplied forwarding header without verifying the deployed proxy.
+- Existing unverified trial notebooks retain their data, but must verify
+  before further provider use. Verification does not refill used duration.
+  Existing private judge invitations continue unchanged.
+- The first 100 grants retain their original hour; requests after the cap
+  may join the waitlist without credits. The existing per-day, per-file and
+  provider limits stay in place. One hundred hours is an audio allowance,
+  not a promise that the full application bill will be $23. Retries,
+  Claude, email and compute must also remain bounded.
+- Checks also cover wrong/expired/reused codes, send failures and throttles,
+  concurrency at the 100th grant, one IP with multiple emails, email/IP
+  normalization, quota persistence, and verification of existing trials
+  without a refill. Confirm real email receipt and code entry with Copal;
+  check the Sprite proxy overwrites spoofed IP headers before enabling
+  public trials. Until then new claims remain paused.
