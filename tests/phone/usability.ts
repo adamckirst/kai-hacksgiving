@@ -21,5 +21,5 @@ export async function assertPhone(page:Page) {
       const violet=['600','700','800'].map(shade=>{probe.style.backgroundColor=`var(--color-violet-${shade})`;return getComputedStyle(probe).backgroundColor;});
       probe.remove();
       return elements.filter(el=>violet.includes(getComputedStyle(el).backgroundColor)).length;
-    })).toBe(1);
+    })).toBe(await page.locator('[data-main-actions="0"]').count() ? 0 : 1);
 }

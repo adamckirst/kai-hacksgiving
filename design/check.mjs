@@ -47,7 +47,7 @@ for (const state of states) {
     const violet = getComputedStyle(probe).backgroundColor
     probe.remove()
     const filled = [...document.querySelectorAll('a,button')].filter((el) => getComputedStyle(el).backgroundColor === violet)
-    if (filled.length !== 1) issues.push(`${filled.length} filled violet buttons: ` + filled.map((el) => el.textContent.trim()).join(' | '))
+    if (filled.length !== (document.querySelector('[data-main-actions="0"]') ? 0 : 1)) issues.push(`${filled.length} filled violet buttons: ` + filled.map((el) => el.textContent.trim()).join(' | '))
     return issues
   })
   // A picture of the whole screen: make the phone as tall as the page, so the dock sits at its foot.

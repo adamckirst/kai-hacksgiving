@@ -29,7 +29,7 @@ const today = data.TODAY
 const nothing = () => {}
 
 /** A recording you can really decide, so the buttons can be tried. */
-function LiveRecording({ first, readOnly = false, editing: firstEditing = null, error }: { first: RecordingData; readOnly?: boolean; editing?: string | null; error?: string }) {
+function LiveRecording({ first, readOnly = false, editing: firstEditing = null, error, confirmation }: { first: RecordingData; readOnly?: boolean; editing?: string | null; error?: string; confirmation?: string }) {
   const [recording, setRecording] = useState(first)
   const [editing, setEditing] = useState<string | null>(firstEditing)
   const decide = (id: string, decision: 'accept' | 'reject', edits?: Payload) =>
@@ -42,6 +42,7 @@ function LiveRecording({ first, readOnly = false, editing: firstEditing = null, 
   const left = recording.suggestions.some((s) => s.status === 'proposed')
   return (
     <Recording
+      confirmation={confirmation}
       recording={recording}
       readOnly={readOnly}
       today={today}
@@ -199,6 +200,7 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'recording/reading': { title: 'Recording · KAI is reading', screen: () => <LiveRecording first={data.recordings.reading} /> },
   'recording/editing': { title: 'Recording · editing a suggestion', screen: () => <LiveRecording first={data.recordings.ready} editing="s3" /> },
   'recording/person': { title: 'Recording · a new person', screen: () => <LiveRecording first={data.recordings.person} /> },
+  'recording/confirmation': {title:'Recording · decision saved',screen:()=> <LiveRecording first={data.recordings.decided} confirmation="All suggestions accepted"/>},
   'recording/decided': { title: 'Recording · all decided', screen: () => <LiveRecording first={data.recordings.decided} /> },
   'recording/failed': { title: 'Recording · could not be read', screen: () => <LiveRecording first={data.recordings.failed} /> },
   'recording/public': { title: 'Recording · read-only', screen: () => <LiveRecording first={data.recordings.decided} readOnly /> },

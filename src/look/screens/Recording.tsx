@@ -191,6 +191,7 @@ export function Recording({
   editing,
   error,
   actionError,
+  confirmation,
   waitlist,
   onDecide,
   onAcceptAll,
@@ -207,6 +208,7 @@ export function Recording({
   editing?: string | null
   error?: string
   actionError?: string
+  confirmation?: string
   waitlist?: ReactNode
   onDecide: (id: string, decision: 'accept' | 'reject') => void
   onAcceptAll: () => void
@@ -234,15 +236,12 @@ export function Recording({
     <Button variant="primary" icon="check" disabled={busy || recording?.status !== 'ready'} onClick={onAcceptAll}>
       Accept all · {proposed.length}
     </Button>
-  ) : (
-    <Button variant="primary" href={readOnly ? '/home' : '/people'}>
-      {readOnly ? 'Back to Home' : 'See people'}
-    </Button>
-  )
+  ) : readOnly ? <Button variant="primary" href="/home">Back to Home</Button> : undefined
 
   return (
     <PushedPage back="/home" backLabel="Back to Home" readOnly={readOnly} dock={dock}>
-      <header className="px-1">
+      {confirmation && <div role="status" className="pointer-events-none fixed inset-x-4 top-4 z-50 mx-auto flex max-w-[520px] items-center gap-3 rounded-2xl bg-white px-5 py-4 text-base font-bold text-violet-800 shadow-lg ring-1 ring-violet-200"><Icon name="check"/>{confirmation}</div>}
+      <header className="px-1" data-main-actions={!dock && !edited ? 0 : 1}>
         <div className="flex flex-wrap items-center gap-2">
           {source && <Chip icon={source.icon}>{source.label}</Chip>}
           {recording?.happened_on && <span className="text-base font-semibold text-zinc-600">{shortDay(recording.happened_on, true)}</span>}
@@ -266,14 +265,14 @@ export function Recording({
           {recording.status === 'failed' && <Notice tone="error">{recording.error ?? 'KAI could not read this recording.'}</Notice>}
           {actionError && !edited && <Notice tone="error">{actionError}</Notice>}
 
-          {(recording.suggestions.length > 0 || recording.status === 'ready') && (
+          {(proposed.length > 0 || (recording.suggestions.length === 0 && recording.status === 'ready')) && (
             <div>
               <SectionLabel tone="kai" count={proposed.length || undefined}>
-                {proposed.length ? 'KAI suggests' : 'What KAI suggested'}
+                KAI suggests
               </SectionLabel>
-              {recording.suggestions.length > 0 ? (
+              {proposed.length > 0 ? (
                 <ul className="divide-y divide-zinc-100 overflow-hidden rounded-3xl bg-white shadow-card ring-2 ring-violet-200">
-                  {[...proposed, ...recording.suggestions.filter(s=>s.status!=='proposed')].map((suggestion) => (
+                  {proposed.map((suggestion) => (
                     <SuggestionRow
                       key={suggestion.id}
                       suggestion={suggestion}
@@ -303,6 +302,8 @@ export function Recording({
               <p className="mt-2 text-lg/8 font-medium whitespace-pre-line text-zinc-800">{recording.summary}</p>
             </Card>
           )}
+
+          {recording.suggestions.some(s=>s.status!=='proposed') && <section aria-label="Reviewed suggestions"><SectionLabel>Reviewed suggestions</SectionLabel><ul className="divide-y divide-zinc-100 overflow-hidden rounded-3xl bg-white shadow-card ring-1 ring-zinc-200">{recording.suggestions.filter(s=>s.status!=='proposed').map(suggestion=><SuggestionRow key={suggestion.id} suggestion={suggestion} today={today} readOnly={readOnly} busy={busy || Boolean(edited)} onQuote={showQuote} onDecide={onDecide} onEdit={onEdit}/>)}</ul></section>}
 
           {recording.status === 'ready' && proposed.length === 0 && waitlist}
 

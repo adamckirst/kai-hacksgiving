@@ -126,9 +126,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.status,c.error,c.progress,c.awaiting_person,c.awaiting_speakers,c.recording_type,c.reserved_seconds,c.happened_on,
     (SELECT count(*) FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed') AS suggestion_count
     FROM conversations c WHERE c.workspace_id=? AND (c.status IN ('waiting','listening','reading','failed')
-      OR c.batch_id IN (SELECT batch_id FROM conversations WHERE workspace_id=c.workspace_id AND status IN ('waiting','listening','reading'))
-      OR (c.status='ready' AND (EXISTS(SELECT 1 FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed')
-        OR c.rowid=(SELECT max(rowid) FROM conversations WHERE workspace_id=c.workspace_id AND source IN ('recording','shared')))))
+      OR (c.status='ready' AND EXISTS(SELECT 1 FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed')))
     ORDER BY CASE c.status WHEN 'ready' THEN 1 ELSE 0 END,c.happened_at,c.rowid`).all(res.locals.workspace)));
 
   app.post('/api/readings',(req,res) => {
