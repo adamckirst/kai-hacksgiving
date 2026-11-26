@@ -491,8 +491,9 @@ waitlist/workspace link, and §6's waitlist-only public write exception.
   if transcription fails. Remaining time appears on Home.
 - The waitlist alone links an email to a notebook. Addresses never enter
   model input, MCP results, app logs or notebook APIs. An email alone never
-  reopens a notebook; only its existing browser cookie can. No email login
-  or recovery, and no messages sent. Another email in the same browser
+  reopens a notebook; only its existing browser cookie can. A code sent through Kopal’s Resend account verifies ownership before
+  granting any trial credit. Verification email is the only new sending
+  exception; KAI still sends no notes, promises or follow-ups. Another email in the same browser
   cannot refill its allowance. Existing waitlist-only signups can claim
   their first trial; repeated claims from a different browser are refused.
 - The existing daily caps (10 recordings/30 readings per notebook,
@@ -510,3 +511,39 @@ waitlist/workspace link, and §6's waitlist-only public write exception.
   batches reserve nothing; existing daily caps still apply; email stays out
   of notebook APIs and MCP. Verify signup and isolation on the Sprite with
   invented data, without calling paid providers.
+
+
+### Trial verification and abuse limits (Copal, 26 November)
+
+Copal requested: “We need a verification code sent there. We can do that
+with our Kopal Resend account” and “block different emails in the same IP”
+and “limit the free credits to 100 users”. These requirements supersede
+§12's original unverified signup and §3/§10's blanket prohibition on sending
+for verification messages only. No new paid plan is authorised.
+
+- A fresh short-lived single-use code proves email ownership before a
+  trial is granted. Two server-only tables hold expiring challenges and bounded send counters.
+  Store only a protected code digest; never log or persist
+  the code itself. Bound guesses, resends, sends per IP, and overall sends.
+  Use the existing Kopal Resend account through its Sprite connector; Copal
+  alone creates/configures that connector and supplies a verified sender.
+- Grant at most 100 trials in total, atomically, only after verification.
+  Enforce one grant per normalized email and per public IP, across browsers
+  and restarts. Store a keyed digest of the IP, not the raw address. Shared
+  networks share one allowance; changing IP can evade an IP rule, so it is
+  additional friction rather than proof of a unique human. Never trust a
+  client-supplied forwarding header without verifying the deployed proxy.
+- Existing unverified trial notebooks retain their data, but must verify
+  before further provider use. Verification does not refill used duration.
+  Existing private judge invitations continue unchanged.
+- The first 100 grants retain their original hour; requests after the cap
+  may join the waitlist without credits. The existing per-day, per-file and
+  provider limits stay in place. One hundred hours is an audio allowance,
+  not a promise that the full application bill will be $23. Retries,
+  Claude, email and compute must also remain bounded.
+- Checks also cover wrong/expired/reused codes, send failures and throttles,
+  concurrency at the 100th grant, one IP with multiple emails, email/IP
+  normalization, quota persistence, and verification of existing trials
+  without a refill. Confirm real email receipt and code entry with Copal;
+  check the Sprite proxy overwrites spoofed IP headers before enabling
+  public trials. Until then new claims remain paused.
