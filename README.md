@@ -15,8 +15,10 @@ me to build it, from scratch, this week.
 
 ## Status
 
-Being built, 24 to 29 November 2026. The demo link and the video arrive
-here as the build reaches them.
+[Open the live demo](https://kai-b6whz.sprites.app/). Everyone can browse the
+read-only notebook. A private judge invitation opens an editable copy, with
+recording uploads and its own assistant connection. Video waits for Copal’s
+approval of the final product.
 
 ## How it is built
 
@@ -300,7 +302,8 @@ Home and a Recording whose suggestions are all decided show one quiet
 waitlist card. It asks for one email, promises one note if KAI becomes a
 product, and says “ask me and I delete it”. `X_POST_URL` adds Copal's actual
 X post when he provides it; until then the card says the link is pending.
-The public demo URL will be linked here once Copal authorizes public access.
+[Open the demo](https://kai-b6whz.sprites.app/) to try the read-only notebook
+and join the waitlist.
 
 The waitlist remains exactly two columns: `email` and `created_at`. The
 route accepts one well-formed address up to 254 characters, normalizes case
@@ -397,4 +400,5 @@ keeps that page’s loading screen instead of showing Welcome.
 
 [App pictures](design/app-shots/) use invented local data; [gallery pictures](design/shots/)
 show the reference. No usable connection address appears in those pictures.
-The Sprite remains private and video work waits for Copal’s product approval.
+The Sprite URL is public; writes and assistant access still require a private
+judge copy. Video work waits for Copal’s product approval.
