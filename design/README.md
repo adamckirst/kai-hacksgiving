@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 94 states. The phone suite checks all public and judge
+`check.mjs` checks all 96 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -147,3 +147,9 @@ tasks can be accepted without creating a contact.
 
 The three recording types use one compact segmented selector, with a short
 explanation beneath the selected choice, as Copal requested.
+
+Failure emails use a generic message and one violet Open recording action,
+with no recording title or contents. `email-failed.html` and
+`shots/email-failed.png` show the invented example. Home distinguishes
+unfinished recordings by type, duration and date, and shows when speaker
+identification is needed. Verified trial copy covers ready and failed mail.

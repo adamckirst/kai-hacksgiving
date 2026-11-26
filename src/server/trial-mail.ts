@@ -1,4 +1,5 @@
 import {readyEmail} from '../email/ready';
+import {failedEmail} from '../email/failed';
 import {gatewayUrl,gatewayRequest} from './gateway';
 import type {SendCode} from './trial';
 import type {ReadyCounts,SendReady} from './recording-mail';
@@ -23,5 +24,5 @@ export function readyMessage(origin:string,id:string,counts:ReadyCounts,title?:s
 export function resendReadySender(from:string,origin:string):SendReady {
  // Validate configuration before starting the worker; never derive links from request headers.
  readyMessage(origin,'check',{person:0,note:0,todo:0,done:0});
- return (email,id,counts,title)=>{const message=readyEmail(origin,id,counts,title);return sendMail(from,email,'kai-recording-ready-'+id,message.subject,message.text,message.html);};
+ return (email,id,counts,title,kind='ready')=>{const message=kind==='failed'?failedEmail(origin,id):readyEmail(origin,id,counts,title);return sendMail(from,email,'kai-recording-'+kind+'-'+id,message.subject,message.text,message.html);};
 }

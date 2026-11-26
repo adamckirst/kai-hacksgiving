@@ -686,3 +686,30 @@ choice before reading with an explicit recording type.
   requests enable speaker labels; phone tests walk all three flows.
 - Copal tries an invented recording with two speakers on the deployed
   build and confirms labelled passages can be assigned before suggestions.
+
+
+### Recording failure emails (Copal, 26 November)
+
+Copal reported “I didn't get an email notifying me of the error” and
+approved “Allow failure emails” for one friendly failure email per recording,
+with a link to retry in KAI, no recording details, and the existing limits.
+This supersedes §13's exclusion of failures.
+
+- Email the notebook's verified address when a new uploaded or shared
+  recording finishes in a failed state, whether listening or reading failed.
+  Do not email intermediate automatic retries or the speaker-identification
+  pause. No title, transcript, suggestions or provider error goes in this email.
+- Send at most one logical failure email for that recording, across manual
+  retries and restarts. A later success may still send its one ready email.
+  A pending failure email is not sent while the recording is retrying or ready.
+- Both kinds share the existing notebook, global and verification send caps;
+  each message keeps the existing three-attempt/23-hour idempotency window.
+  Use the existing Resend connector. No extra account or paid-plan change.
+- The link opens the existing recording in its original browser and grants
+  no access. Retrying keeps that recording and does not charge its duration
+  again; existing daily limits remain enforced.
+- Checks: transcription and reading failures notify only their verified
+  owner; no details or secrets in failure mail; duplicate kicks, repeated
+  failures and restarts produce one logical failure message; success after
+  retry can still notify; stale failure messages are suppressed; shared
+  send caps hold; the gallery includes the failure email and Home states.

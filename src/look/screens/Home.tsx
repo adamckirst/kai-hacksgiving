@@ -27,10 +27,11 @@ function Queue({ items }: { items: QueueItem[] }) {
           <li key={item.id}>
             <a href={to((item.awaiting_person ? '/upload/' : '/recordings/') + item.id)} className={`${FOCUS} flex min-h-16 items-center gap-3 px-4 py-3`}>
               <span className="min-w-0 flex-1">
-                <span className="block text-base font-bold text-zinc-900">{item.title}</span>
+                <span className="block text-base font-bold text-zinc-900">{item.title==='New recording' ? (item.recording_type ? {memo:'My memo',voice:'Voice note',multiple:'Multiple speakers'}[item.recording_type] : 'Shared recording') : item.title}</span>
                 <span className={`block text-base font-medium ${item.status === 'failed' ? 'text-rose-700' : 'text-zinc-600'}`}>
-                  {item.awaiting_person ? 'Choose a person and start' : item.status === 'failed' ? (item.error ?? STATUS.failed) : item.status === 'reading' ? (item.progress ?? STATUS.reading) : item.status === 'ready' && item.suggestion_count ? `${item.suggestion_count} suggestions to review` : STATUS[item.status]}
+                  {item.awaiting_person ? 'Choose the recording type to start' : item.awaiting_speakers ? 'Identify speakers to continue' : item.status === 'failed' ? (item.error ?? STATUS.failed) : item.status === 'reading' ? (item.progress ?? STATUS.reading) : item.status === 'ready' && item.suggestion_count ? `${item.suggestion_count} suggestions to review` : STATUS[item.status]}
                 </span>
+                {item.reserved_seconds!=null && <span className="block text-base text-zinc-500">{Math.floor(item.reserved_seconds/60)} min {item.reserved_seconds%60} sec · {item.happened_on}</span>}
               </span>
               {item.status === 'listening' || item.status === 'reading' ? (
                 <Working />
@@ -176,7 +177,7 @@ export function Home({
       {queue.length > 0 && <Queue items={queue} />}
       {home && !readOnly && !home.shortcutReady && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Send voice notes straight to KAI</h2><p className="text-base/7 text-zinc-600">Set up the iPhone shortcut once, then share from Voice Memos or WhatsApp.</p><Button variant="outline" href="/connect">Set up your phone</Button></Card>}
       {home?.trialSeconds!=null && !home.trialVerified && <Card className="p-5"><p className="mb-3 text-base/7">Verify your email to continue your trial. Your notebook and remaining time are kept.</p><Button href="/try" variant="outline">Verify email</Button></Card>}
-      {home?.trialSeconds!=null && home.trialVerified && <p className="px-1 text-base/7 text-zinc-600">KAI will email you when a recording is ready, with suggestion counts and a link to review.</p>}
+      {home?.trialSeconds!=null && home.trialVerified && <p className="px-1 text-base/7 text-zinc-600">KAI will email you when a recording is ready or needs another try, with a link to open it.</p>}
       {home?.trialSeconds===0 && home.xPostUrl && <Button href={home.xPostUrl} variant="outline">Show KAI some love</Button>}
       {home?.trialSeconds!=null && <p className="px-1 text-base/7 font-medium text-zinc-600">{home.trialSeconds ? `${Math.floor(home.trialSeconds/60)} min ${home.trialSeconds%60} sec of recording time left` : 'You’ve used your hour of recordings. Your notebook and assistant connection are still here.'}</p>}
       {home && !readOnly && home.conversations.length===0 && <Card className="p-5"><h2 className="text-xl font-extrabold">Your notebook starts here</h2><p className="mt-2 text-base/7 text-zinc-600">Add a recording. KAI will find the people, notes and to-dos for you to review.</p></Card>}
