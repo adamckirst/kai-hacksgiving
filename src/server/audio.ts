@@ -92,7 +92,7 @@ export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=
 };
 type Job={recording_type:string|null;id:string;workspace_id:string;audio_path:string|null;status:string;attempts:number;text:string;transcribed:number;reserved_seconds:number|null};
 export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,onReady:()=>void=()=>{}) {
-  let active:Promise<void>|undefined,stopped=false;
+  let active:Promise<void>|undefined,stopped=false,again=false;
   const controller=new AbortController();
   function retryInterrupted(job:Job) {
     if(job.attempts>=2) {db.prepare("UPDATE conversations SET status='failed',error='KAI could not finish. Try again.' WHERE id=?").run(job.id);return;}
@@ -109,7 +109,8 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
   // One server owns this database. A new process means these leases were interrupted.
   for(const job of db.prepare("SELECT * FROM conversations WHERE status IN ('listening','reading')").all() as Job[]) retryInterrupted(job);
   function kick() {
-    if(active || stopped) return active ?? Promise.resolve();
+    if(stopped)return active ?? Promise.resolve();
+    if(active){again=true;return active;}
     active=(async()=> {
       for(;;) {
         if(stopped) return;
@@ -148,9 +149,10 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
           if(stopped) return;
           if(signal.aborted) retryInterrupted(db.prepare('SELECT * FROM conversations WHERE id=?').get(job.id) as Job);
           else db.prepare("UPDATE conversations SET status='failed',error='KAI could not listen to this recording. Try again.' WHERE id=?").run(job.id);
+          if((db.prepare('SELECT status FROM conversations WHERE id=?').get(job.id) as {status:string}).status==='failed')onReady();
         }
       }
-    })().finally(()=>{active=undefined;});
+    })().finally(()=>{active=undefined;if(again && !stopped){again=false;return kick();}});
     return active;
   }
   return {kick,stop:async()=>{stopped=true;controller.abort();await active;}};

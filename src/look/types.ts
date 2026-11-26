@@ -94,7 +94,7 @@ export type Recording = {
   source?: Source
 }
 
-export type QueueItem = { id: string; title: string; status: RecordingStatus; error: string | null; progress?: string | null; awaiting_person?: number; suggestion_count?: number }
+export type QueueItem = { recording_type?: RecordingType | null; reserved_seconds?: number | null; happened_on?: string; awaiting_speakers?: number; id: string; title: string; status: RecordingStatus; error: string | null; progress?: string | null; awaiting_person?: number; suggestion_count?: number }
 
 export type HomeData = {
   shortcutReady?: boolean

@@ -54,6 +54,18 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   `);
   db.transaction(()=> {
   if(!(db.prepare('PRAGMA table_info(recording_emails)').all() as {name:string}[]).some(c=>c.name==='title'))db.exec("ALTER TABLE recording_emails ADD COLUMN title TEXT NOT NULL DEFAULT 'Your recording'");
+  if(!(db.prepare('PRAGMA table_info(recording_emails)').all() as {name:string}[]).some(c=>c.name==='kind'))db.exec(`
+    CREATE TABLE recording_emails_next (
+      id TEXT NOT NULL REFERENCES conversations(id), kind TEXT NOT NULL CHECK(kind IN ('ready','failed')),
+      workspace_id TEXT NOT NULL REFERENCES workspaces(id), counts TEXT NOT NULL CHECK(json_valid(counts)),
+      queued_at INTEGER NOT NULL, first_attempt_at INTEGER, attempts INTEGER NOT NULL DEFAULT 0,
+      next_attempt_at INTEGER NOT NULL DEFAULT 0, sent_at INTEGER, closed INTEGER NOT NULL DEFAULT 0,
+      title TEXT NOT NULL DEFAULT 'Your recording', PRIMARY KEY(id,kind)
+    );
+    INSERT INTO recording_emails_next SELECT id,'ready',workspace_id,counts,queued_at,first_attempt_at,attempts,next_attempt_at,sent_at,closed,title FROM recording_emails;
+    DROP TABLE recording_emails;
+    ALTER TABLE recording_emails_next RENAME TO recording_emails;
+  `);
   const columns=db.prepare('PRAGMA table_info(workspaces)').all() as {name:string}[];
   if(!columns.some(c=>c.name==='waitlist_visitors'))db.exec("ALTER TABLE workspaces ADD COLUMN waitlist_visitors TEXT NOT NULL DEFAULT '{}'");
   if(!columns.some(c=>c.name==='session_secret')) {

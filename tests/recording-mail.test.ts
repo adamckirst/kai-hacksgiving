@@ -25,7 +25,7 @@ test('recording mail isolates verified recipients, sends counts only, and skips 
  const db=openDatabase();seed(db);const first=actor(db),second=actor(db),unverified=actor(db,false);
  const id=recording(db,first.id),empty=recording(db,second.id,{source:'shared'});
  for(const kind of ['person','note','todo','done'])db.prepare("INSERT INTO suggestions VALUES (?,?,?,?,?,?,'proposed')").run(randomUUID(),first.id,id,kind,JSON.stringify({text:'Private invented action'}),'Private invented quote');
- for(const options of [{status:'failed'},{status:'listening'},{status:'reading'},{status:'waiting'},{source:'sample'},{source:'paste'},{notify:0},{transcribed:0}])recording(db,first.id,options);
+ for(const options of [{status:'listening'},{status:'reading'},{status:'waiting'},{source:'sample'},{source:'paste'},{notify:0},{transcribed:0}])recording(db,first.id,options);
  recording(db,unverified.id);recording(db,'public');
  const sent:{email:string;id:string;counts:ReadyCounts}[]=[];
  const worker=recordingMailWorker(db,async(email,id,counts)=>{sent.push({email,id,counts})});
@@ -137,4 +137,81 @@ test('styled email escapes the recording title and snapshots it for identical re
   await worker.kick();db.prepare('UPDATE conversations SET title=? WHERE id=?').run('A later title',id);now+=60001;await worker.kick();
   assert.deepEqual(titles,['Private invented title','Private invented title']);
  }finally{await worker.stop();db.close()}
+});
+
+
+test('one private failure email survives restarts, suppresses stale sends and allows a later ready message',async()=>{
+ let db=openDatabase();seed(db);const judge=actor(db),other=actor(db,false),id=recording(db,judge.id,{status:'failed',transcribed:0});
+ recording(db,other.id,{status:'failed'});recording(db,judge.id,{status:'failed',source:'paste'});recording(db,judge.id,{status:'failed',notify:0});
+ let now=Date.now();const sent:{id:string;kind:string;title:string;counts:ReadyCounts}[]=[];
+ const send=async(_email:string,id:string,counts:ReadyCounts,title:string,kind='ready')=>{sent.push({id,kind,title,counts});};
+ let worker=recordingMailWorker(db,send,()=>now);
+ try {
+  await worker.kick();await worker.kick();assert.deepEqual(sent,[{id,kind:'failed',title:'Your recording',counts:{person:0,note:0,todo:0,done:0}}]);
+  await worker.stop();const snapshot=db.serialize();db.close();db=openDatabase(snapshot);worker=recordingMailWorker(db,send,()=>now);
+  await worker.kick();assert.equal(sent.length,1);
+  db.prepare("UPDATE conversations SET status='reading' WHERE id=?").run(id);await worker.kick();assert.equal(sent.length,1);
+  db.prepare("UPDATE conversations SET status='failed' WHERE id=?").run(id);await worker.kick();assert.equal(sent.length,1);
+  db.prepare("UPDATE conversations SET status='ready',transcribed=1 WHERE id=?").run(id);await worker.kick();assert.equal(sent.length,2);assert.equal(sent[1].kind,'ready');
+  const stale=recording(db,judge.id,{status:'failed'});await worker.stop();
+  worker=recordingMailWorker(db,async()=>{throw new Error('Invented temporary mail failure')},()=>now);await worker.kick();await worker.stop();
+  db.prepare("UPDATE conversations SET status='ready' WHERE id=?").run(stale);now+=60001;
+  worker=recordingMailWorker(db,send,()=>now);await worker.kick();assert.equal(sent.filter(s=>s.id===stale&&s.kind==='failed').length,0);assert.equal(sent.filter(s=>s.id===stale&&s.kind==='ready').length,1);
+ }finally{await worker.stop();db.close()}
+});
+
+test('listening and reading failures wake the email worker without another page request',async()=>{
+ const db=openDatabase();seed(db);const judge=actor(db),directory=mkdtempSync('.data/mail-failures-');const sent:string[]=[];
+ const mail=recordingMailWorker(db,async(_email,_id,_counts,_title,kind)=>{sent.push(kind!)});
+ let queue=queueWorker(db,async()=>{throw new Error('Invented reading failure')},async()=>{throw new Error('Private invented provider detail')},()=>{void mail.kick()});
+ try {
+  await addAudio(db,judge.id,[{name:'invented.wav',buffer:testTone(),date:Date.now()}],directory);
+  await queue.kick();await mail.kick();assert.deepEqual(sent,['failed']);await queue.stop();
+  queue=queueWorker(db,async()=>{throw new Error('Private invented words')},fakeTranscriber,()=>{void mail.kick()});
+  await addAudio(db,judge.id,[{name:'invented.wav',buffer:testTone(),date:Date.now()}],directory);
+  await queue.kick();await mail.kick();assert.deepEqual(sent,['failed','failed']);
+ }finally{await queue.stop();await mail.stop();db.close();rmSync(directory,{recursive:true,force:true})}
+});
+
+test('failure email excludes content and uses a separate stable key from completion mail',async()=>{
+ const original=globalThis.fetch;const requests:{body:any;key:string}[]=[];
+ globalThis.fetch=async(input,init)=>{
+  if(String(input).endsWith('/gateway/list'))return Response.json(['https://api.sprites.dev/v1/gateway/resend/invented']);
+  requests.push({body:JSON.parse(String(init?.body)),key:new Headers(init?.headers).get('Idempotency-Key')!});return Response.json({id:'invented-email'});
+ };
+ try {
+  const send=resendReadySender('KAI <kai@example.invalid>','https://kai.example.invalid');const counts={person:2,note:4,todo:3,done:1};
+  await send('reader@example.invalid','invented-recording',counts,'Private invented title','failed');
+  await send('reader@example.invalid','invented-recording',counts,'Changed private title','failed');
+  await send('reader@example.invalid','invented-recording',counts,'Private invented title','ready');
+  assert.deepEqual(requests[0],requests[1]);assert.notEqual(requests[0].key,requests[2].key);
+  const message=requests[0].body;assert.match(message.subject,/another try/);assert.match(message.text,/recordings\/invented-recording/);assert.match(message.html,/#7f22fe/);
+  for(const value of [message.subject,message.text,message.html]){assert.ok(!value.includes('Private'));assert.ok(!value.includes('reader@example.invalid'));assert.ok(!value.includes('suggested'));}
+ }finally{globalThis.fetch=original}
+});
+
+
+test('mail queued just after an empty scan is sent without another request',async()=>{
+ const db=openDatabase();seed(db);const a=actor(db);let sends=0;
+ const worker=recordingMailWorker(db,async()=>{sends++});
+ try {const idle=worker.kick();recording(db,a.id,{status:'failed'});const queued=worker.kick();await Promise.all([idle,queued]);assert.equal(sends,1);}
+ finally{await worker.stop();db.close()}
+});
+
+test('failure sends use the same notebook and global caps as ready sends',async()=>{
+ const db=openDatabase();seed(db);const actors=Array.from({length:7},()=>actor(db));let sends=0;
+ for(const a of actors)for(let i=0;i<11;i++)recording(db,a.id,{status:i%2?'ready':'failed'});
+ const worker=recordingMailWorker(db,async()=>{sends++});
+ try {await worker.kick();assert.equal(sends,60);assert.ok((db.prepare('SELECT count(*) n FROM notification_sends GROUP BY workspace_id').all() as {n:number}[]).every(r=>r.n<=10));}
+ finally{await worker.stop();db.close()}
+});
+
+
+test('mail migration preserves ready delivery state and does not send it again',async()=>{
+ let db=openDatabase();seed(db);const a=actor(db),id=recording(db,a.id);const now=Date.now();
+ db.exec(`DROP TABLE recording_emails; CREATE TABLE recording_emails(id TEXT PRIMARY KEY REFERENCES conversations(id),workspace_id TEXT NOT NULL REFERENCES workspaces(id),counts TEXT NOT NULL,queued_at INTEGER NOT NULL,first_attempt_at INTEGER,attempts INTEGER NOT NULL DEFAULT 0,next_attempt_at INTEGER NOT NULL DEFAULT 0,sent_at INTEGER,closed INTEGER NOT NULL DEFAULT 0,title TEXT NOT NULL DEFAULT 'Your recording')`);
+ db.prepare('INSERT INTO recording_emails(id,workspace_id,counts,queued_at,first_attempt_at,attempts,sent_at,title) VALUES (?,?,?,?,?,?,?,?)').run(id,a.id,JSON.stringify({person:0,note:0,todo:0,done:0}),now,now,1,now,'Invented frozen title');
+ const snapshot=db.serialize();db.close();db=openDatabase(snapshot);let sends=0;const worker=recordingMailWorker(db,async()=>{sends++});
+ try {await worker.kick();assert.equal(sends,0);assert.deepEqual(db.prepare('SELECT kind,attempts,sent_at,title FROM recording_emails WHERE id=?').get(id),{kind:'ready',attempts:1,sent_at:now,title:'Invented frozen title'});}
+ finally{await worker.stop();db.close()}
 });

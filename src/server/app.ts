@@ -118,7 +118,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
       else if(error instanceof SyntaxError) res.status(400).json({error:'The recording dates could not be read.'});else throw error;
     }
   });
-  app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.status,c.error,c.progress,c.awaiting_person,c.awaiting_speakers,
+  app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.status,c.error,c.progress,c.awaiting_person,c.awaiting_speakers,c.recording_type,c.reserved_seconds,c.happened_on,
     (SELECT count(*) FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed') AS suggestion_count
     FROM conversations c WHERE c.workspace_id=? AND (c.status IN ('waiting','listening','reading','failed')
       OR c.batch_id IN (SELECT batch_id FROM conversations WHERE workspace_id=c.workspace_id AND status IN ('waiting','listening','reading'))

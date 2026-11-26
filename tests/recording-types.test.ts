@@ -79,3 +79,26 @@ test('a memo can propose and accept a personal task without inventing a contact'
   assert.equal((db.prepare('SELECT count(*) n FROM people WHERE workspace_id=?').get(a.id) as {n:number}).n,0);
  }finally{db.close();rmSync(dir,{recursive:true,force:true})}
 });
+
+
+test('a kick just after an empty queue scan still processes a newly queued recording',async()=>{
+ const db=openDatabase();seed(db);const a=createJudge(db),dir=mkdtempSync('.data/queue-wake-');let read=0;
+ const queue=queueWorker(db,async(_input,call)=>{read++;call('describe_recording',{title:'Invented',summary:'An invented recording.\nReady to review.'})},async()=> 'Invented words');
+ try {
+  const [id]=await addAudio(db,a.id,[{name:'invented.wav',buffer:testTone(),date:Date.now()}],dir,'shared',{awaitingPerson:true});
+  const idle=queue.kick();
+  db.prepare('UPDATE conversations SET awaiting_person=0 WHERE id=?').run(id);
+  const started=queue.kick();await Promise.all([idle,started]);
+  assert.equal(read,1);assert.equal((db.prepare('SELECT status FROM conversations WHERE id=?').get(id) as {status:string}).status,'ready');
+ }finally{await queue.stop();db.close();rmSync(dir,{recursive:true,force:true})}
+});
+
+test('listening failure categories retain no upstream content and leave audio retryable',async()=>{
+ const {ListeningFailure}=await import('../src/server/audio');const db=openDatabase();seed(db);const a=createJudge(db),dir=mkdtempSync('.data/listening-failure-');
+ const queue=queueWorker(db,async()=>{},async()=>{throw new ListeningFailure('speakers_missing')});
+ try {
+  const [id]=await addAudio(db,a.id,[{name:'invented.wav',buffer:testTone(),date:Date.now()}],dir,'recording',{person:{recording_type:'multiple'}});
+  await queue.kick();const r=db.prepare('SELECT failure_code,audio_path,status FROM conversations WHERE id=?').get(id) as {failure_code:string;audio_path:string;status:string};
+  assert.equal(r.failure_code,'speakers_missing');assert.equal(r.status,'failed');assert.ok(existsSync(r.audio_path));
+ }finally{await queue.stop();db.close();rmSync(dir,{recursive:true,force:true})}
+});
