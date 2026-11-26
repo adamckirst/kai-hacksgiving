@@ -58,3 +58,20 @@ test('Claude is asked for missing required metadata before a run can finish',asy
     assert.equal(described,true);assert.equal(requests,4);
   }finally{mock.mock.restore();}
 });
+
+test('reader failure diagnostics persist fixed categories, never provider messages or recording words',async()=>{
+ const {openDatabase,seed}=await import('../src/server/db');
+ const {readConversation}=await import('../src/server/reading');
+ const {ReaderFailure}=await import('../src/server/reader-failure');
+ const db=openDatabase();seed(db);
+ try {
+  await readConversation(db,'dana-call',async(_input,call)=>{
+   call('describe_recording',{title:'Invented title',summary:'Only one line'});
+   call('propose_person',{name:'Invented name',company:'Invented company',role:'Invented role',quote:'Unsupported quote'});
+   throw new ReaderFailure('provider_busy');
+  });
+  assert.deepEqual(db.prepare('SELECT status,failure_code,tool_error_counts FROM conversations WHERE id=?').get('dana-call'),{status:'failed',failure_code:'provider_busy',tool_error_counts:'{"summary_shape":1,"quote":1}'});
+  await readConversation(db,'dana-call',async()=>{throw new Error('Invented private words that must not be stored as diagnostics')});
+  assert.deepEqual(db.prepare('SELECT failure_code,tool_error_counts FROM conversations WHERE id=?').get('dana-call'),{failure_code:'reading_failed',tool_error_counts:'{}'});
+ }finally{db.close()}
+});

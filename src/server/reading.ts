@@ -1,3 +1,4 @@
+import {ReaderFailure} from './reader-failure';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { KaiDatabase } from './db';
@@ -63,14 +64,14 @@ export function retryReading(db:KaiDatabase,workspace:string,id:string) {
 }
 export async function readConversation(db:KaiDatabase,id:string,reader:Reader,signal?:AbortSignal) {
   const row=db.prepare('SELECT workspace_id,text,happened_on,source,person_id FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string;source:string;person_id:string|null};
-  db.prepare("UPDATE conversations SET status='reading',error=NULL,progress=NULL WHERE id=?").run(id);
+  db.prepare("UPDATE conversations SET status='reading',error=NULL,progress=NULL,failure_code=NULL,tool_error_counts='{}' WHERE id=?").run(id);
   let described=false, calls=0;const readPeople=new Set<string>();
   const personExists=(person:string) => !!db.prepare('SELECT id FROM people WHERE workspace_id=? AND id=?').get(row.workspace_id,person) || !!db.prepare("SELECT id FROM suggestions WHERE workspace_id=? AND conversation_id=? AND kind='person' AND status='proposed' AND id=?").get(row.workspace_id,id,person);
   try {
     const people=db.prepare('SELECT id,name,company,role FROM people WHERE workspace_id=?').all(row.workspace_id) as ReadInput['people'];
     const person=people.find(p=>p.id===row.person_id);
     const sender:ReadInput['sender']=person ? {kind:'person',person}:row.source==='sample' ? {kind:'owner'}:{kind:'unknown'};
-    await reader({...row,people,sender},(name,input)=> {
+    const handleTool=(name:string,input:unknown):ToolResult=> {
       signal?.throwIfAborted();
       if(++calls>50) throw new Error('Too many calls.');
       if(!(name in toolSchemas)) return {ok:false,error:'Unknown tool.'};
@@ -110,11 +111,23 @@ export async function readConversation(db:KaiDatabase,id:string,reader:Reader,si
       const suggestion=randomUUID();
       db.prepare("INSERT INTO suggestions VALUES (?,?,?,?,?,?,'proposed')").run(suggestion,row.workspace_id,id,name.slice('propose_'.length),JSON.stringify(payload),quote);
       return {ok:true,id:suggestion};
+    };
+    const errors:Record<string,number>={};
+    await reader({...row,people,sender},(name,input)=>{
+      const result=handleTool(name,input);
+      if(!result.ok) {
+        const category=result.error==='The quote must appear in the words exactly.' ? 'quote':result.error?.startsWith('Call get_person') ? 'person_context':result.error?.includes('known') ? 'person_reference':name==='describe_recording' ? 'summary_shape':'tool_validation';
+        errors[category]=(errors[category]??0)+1;
+        db.prepare('UPDATE conversations SET tool_error_counts=? WHERE id=?').run(JSON.stringify(errors),id);
+      }
+      return result;
     },signal);
     signal?.throwIfAborted();
-    if(!described) throw new Error('Missing summary.');
+    if(!described) throw new ReaderFailure('missing_summary');
     db.prepare("UPDATE conversations SET status='ready' WHERE id=?").run(id);
-  } catch {
+  } catch(error) {
+    const code=signal?.aborted ? 'reading_timeout':error instanceof ReaderFailure ? error.code:error instanceof SyntaxError ? 'invalid_response':'reading_failed';
+    db.prepare('UPDATE conversations SET failure_code=? WHERE id=?').run(code,id);
     if(signal?.aborted) return;
     db.prepare("UPDATE conversations SET status='failed',error='KAI could not finish reading. Try again.' WHERE id=?").run(id);
   }
