@@ -17,7 +17,10 @@ test('three audio sources show guidance and return from shortcut setup to the ch
  await expect(page).toHaveURL(/upload\/new\?source=whatsapp$/);
  await expect(page.getByRole('link',{name:'Open WhatsApp',exact:true})).toHaveAttribute('href','whatsapp://app');await assertPhone(page);
  await page.getByRole('button',{name:'Voice Memos',exact:true}).click();
- await expect(page.getByRole('link',{name:'Open Voice Memos',exact:true})).toHaveAttribute('href','voicememos://');
+ await expect(page.getByText('Open Voice Memos from your Home Screen and choose a recording.',{exact:true})).toBeVisible();
+ await expect(page.locator('a[href^="voicememos:"]')).toHaveCount(0);await assertPhone(page);
+ await page.getByRole('button',{name:'Choose saved audio',exact:true}).click();
+ await expect(page.getByLabel('Person for this recording')).toBeVisible();
  await page.getByRole('button',{name:'Files',exact:true}).click();
  const picker=page.getByLabel('Add recordings: choose up to five audio files');await expect(picker).toHaveAttribute('accept','.m4a,.opus,.ogg,.mp3,.wav');
  await picker.setInputFiles({name:'invented.txt',mimeType:'text/plain',buffer:Buffer.from('Invented words.')});

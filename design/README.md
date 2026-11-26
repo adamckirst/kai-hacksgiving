@@ -68,7 +68,7 @@ The dock at the foot of the screen holds it, except where noted.
 | Home, People, To-dos | "Add recordings": opens the upload page to choose a person, then files | "Try it yourself", to trial signup |
 | Recording | "Accept all · n"; "Try again" when it failed; "See people" when all is decided. Hidden while a suggestion is edited: "Save and accept" is then the one | "Back to Home" |
 | Person | "Review suggestions" when some wait; otherwise "Add recordings" | "Back to People" |
-| Upload | "Choose audio files", "Set up shortcut" or "Open Voice Memos / WhatsApp"; "Let KAI read" for a shared recording | "Try it yourself" |
+| Upload | "Choose audio files", "Set up shortcut" or "Open WhatsApp" or "Choose saved audio"; "Let KAI read" for a shared recording | "Try it yourself" |
 | Connect | "Copy your address", in the first card | "Try it yourself" |
 
 ### What the look shows that the server does not send yet
@@ -134,3 +134,6 @@ the person choice before reading. Remaining trial time is shown; when it
 is used, the notebook remains readable. The launch-post link is hidden
 until Copal supplies it. Shared recordings with already reserved time can
 still finish after the allowance reaches zero.
+
+Voice Memos shows sharing instructions after setup, with a Files fallback.
+Its rejected direct-launch address is not used. WhatsApp keeps its app link.
