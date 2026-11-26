@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 96 states. The phone suite checks all public and judge
+`check.mjs` checks all 97 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -76,9 +76,6 @@ The dock at the foot of the screen holds it, except where noted.
 Each is optional in `types.ts`, and the screen is whole without it.
 
 - `/api/home`: `due_on` and `person_name` on a to-do; `happened_on` on a recording.
-- `/api/readings/<id>`: `happened_on` and `source`, for the line over the title.
-- A suggestion's payload: `person_name`, for "Note about Dana" and "Dana
-  owes you". Without it the labels are "Note" and "Waiting on".
 - `/api/people/<id>`: `pendingCount`, for "Review suggestions · 4".
 - The red or amber dot on the To-dos tab (`due`) needs the two counts on
   every tab page.
@@ -153,3 +150,10 @@ with no recording title or contents. `email-failed.html` and
 `shots/email-failed.png` show the invented example. Home distinguishes
 unfinished recordings by type, duration and date, and shows when speaker
 identification is needed. Verified trial copy covers ready and failed mail.
+
+Recording pages put actionable suggestions above the linked person, summary
+and words. Pending suggestions stay before accepted/rejected ones. Each
+note and kept promise names the person it updates; a task distinguishes its
+owner from the person it is about. Personal tasks say “For you”. Names come
+from the same notebook's existing or newly proposed people, including before
+acceptance. These are display labels, not changes to the stored suggestions.

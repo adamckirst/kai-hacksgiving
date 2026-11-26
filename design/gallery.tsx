@@ -97,6 +97,11 @@ const speakerPassages=[{speaker:'A',text:'I will send the notes tomorrow.',start
 const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'recording/speakers':{title:'Recording · identify speakers',screen:()=> <Speakers people={data.people} utterances={speakerPassages} onSubmit={nothing}/>},
   'recording/speakers-loading':{title:'Recording · loading people',screen:()=> <Speakers people={null} utterances={speakerPassages} onSubmit={nothing}/>},
+  'recording/people-context': {title:'Recording · who each suggestion updates',screen:()=> <LiveRecording first={{...data.recordings.ready,text:'I need to write a call checklist. Ellis will send Dana the clinic schedule. '+data.recordings.ready.text,suggestions:[
+    {id:'personal',kind:'todo',payload:JSON.stringify({person_id:null,owner_person_id:null,text:'Write a call checklist',due_on:null}),quote:'I need to write a call checklist.',status:'proposed'},
+    {id:'different-owner',kind:'todo',person_name:'Dana Whitfield',owner_name:'Ellis Rowan',payload:JSON.stringify({person_id:'dana',owner_person_id:'ellis',text:'Send the clinic schedule',due_on:null}),quote:'Ellis will send Dana the clinic schedule.',status:'proposed'},
+    ...data.recordings.ready.suggestions
+  ]}}/>},
   'recording/speakers-ready':{title:'Recording · speakers selected',screen:()=> <Speakers people={data.people} utterances={speakerPassages} initialChoices={{A:{kind:'owner'},B:{kind:'person',person_id:data.people[0].id}}} onSubmit={nothing}/>},
   'recording/speakers-new':{title:'Recording · new speaker',screen:()=> <Speakers people={data.people} utterances={speakerPassages} initialChoices={{A:{kind:'owner'},B:{kind:'new',person:{id:'invented',name:'Avery Fern',company:'',role:''}}}} onSubmit={nothing}/>},
   'recording/speakers-error':{title:'Recording · speakers not saved',screen:()=> <Speakers people={data.people} utterances={speakerPassages} error="The speakers could not be saved. Try again." onSubmit={nothing}/>},

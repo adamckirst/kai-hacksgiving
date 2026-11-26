@@ -14,14 +14,15 @@ const SOURCE: Record<Source, { label: string; icon: IconName }> = {
 /** What a suggestion is, in a few plain words, and what it says. */
 function describe(suggestion: Suggestion, today: string) {
   const payload = JSON.parse(suggestion.payload) as Payload
-  const who = payload.person_name?.split(' ')[0]
+  const who = suggestion.person_name
+  const owner = suggestion.owner_name
   const due = payload.due_on ? ` · ${dueWords(payload.due_on, today)}` : ''
   if (suggestion.kind === 'person')
     return { icon: 'people' as const, kind: 'New person', title: payload.name ?? '', detail: [payload.role, payload.company].filter(Boolean).join(' at ') }
-  if (suggestion.kind === 'note') return { icon: 'doc' as const, kind: who ? `Note about ${who}` : 'Note', title: payload.text ?? '' }
-  if (suggestion.kind === 'done') return { icon: 'check' as const, kind: 'Kept promise', title: `Mark “${payload.text}” done` }
-  if (payload.owner_person_id) return { icon: 'todo' as const, kind: (who ? `${who} owes you` : 'Waiting on') + due, title: payload.text ?? '' }
-  return { icon: 'todo' as const, kind: 'Your to-do' + due, title: payload.text ?? '' }
+  if (suggestion.kind === 'note') return { icon: 'doc' as const, kind: who ? `Note about ${who}` : 'Note · person unavailable', title: payload.text ?? '' }
+  if (suggestion.kind === 'done') return { icon: 'check' as const, kind: 'Kept promise', title: `Mark “${suggestion.todo_text ?? payload.text ?? 'this to-do'}” done`, detail: who ? `On ${who}’s page` : 'Person unavailable' }
+  if (payload.owner_person_id) return { icon: 'todo' as const, kind: (owner ? `${owner} owes you` : 'Waiting on · person unavailable') + due, title: payload.text ?? '', detail: who && who !== owner ? `About ${who}` : undefined }
+  return { icon: 'todo' as const, kind: 'Your to-do' + due, title: payload.text ?? '', detail: who ? `About ${who}` : payload.person_id ? 'Person unavailable' : 'For you' }
 }
 
 /** One suggestion: what KAI heard, and Accept, Edit or Reject. */
@@ -265,18 +266,6 @@ export function Recording({
           {recording.status === 'failed' && <Notice tone="error">{recording.error ?? 'KAI could not read this recording.'}</Notice>}
           {actionError && !edited && <Notice tone="error">{actionError}</Notice>}
 
-          {recording.person && <Card className="p-5"><p className="text-base font-semibold text-zinc-600">Linked to</p><TextLink href={'/people/'+recording.person.id}>{recording.person.name}</TextLink></Card>}
-
-          {recording.summary && (
-            <Card className="p-5">
-              <p className="flex items-center gap-1.5 text-base font-extrabold text-violet-700">
-                <Icon name="sparkle" />
-                KAI’s summary
-              </p>
-              <p className="mt-2 text-lg/8 font-medium whitespace-pre-line text-zinc-800">{recording.summary}</p>
-            </Card>
-          )}
-
           {(recording.suggestions.length > 0 || recording.status === 'ready') && (
             <div>
               <SectionLabel tone="kai" count={proposed.length || undefined}>
@@ -284,7 +273,7 @@ export function Recording({
               </SectionLabel>
               {recording.suggestions.length > 0 ? (
                 <ul className="divide-y divide-zinc-100 overflow-hidden rounded-3xl bg-white shadow-card ring-2 ring-violet-200">
-                  {recording.suggestions.map((suggestion) => (
+                  {[...proposed, ...recording.suggestions.filter(s=>s.status!=='proposed')].map((suggestion) => (
                     <SuggestionRow
                       key={suggestion.id}
                       suggestion={suggestion}
@@ -301,6 +290,18 @@ export function Recording({
                 <Card className="p-5 text-base font-medium text-zinc-600">KAI found no suggestions in these words.</Card>
               )}
             </div>
+          )}
+
+          {recording.person && <Card className="p-5"><p className="text-base font-semibold text-zinc-600">Linked to</p><TextLink href={'/people/'+recording.person.id}>{recording.person.name}</TextLink></Card>}
+
+          {recording.summary && (
+            <Card className="p-5">
+              <p className="flex items-center gap-1.5 text-base font-extrabold text-violet-700">
+                <Icon name="sparkle" />
+                KAI’s summary
+              </p>
+              <p className="mt-2 text-lg/8 font-medium whitespace-pre-line text-zinc-800">{recording.summary}</p>
+            </Card>
           )}
 
           {recording.status === 'ready' && proposed.length === 0 && waitlist}

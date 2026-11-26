@@ -49,6 +49,10 @@ export type PersonPage = {
 export type SuggestionKind = 'person' | 'note' | 'todo' | 'done'
 
 export type Suggestion = {
+  /** Resolved inside this notebook, including proposed people. */
+  person_name?: string | null
+  owner_name?: string | null
+  todo_text?: string
   id: string
   kind: SuggestionKind
   /** JSON, as the server stores it. */
