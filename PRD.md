@@ -468,3 +468,45 @@ visitor without the link sees Welcome only); then editing
 a suggestion; then "Waiting on"; then several recordings at once (one at a
 time); then "Send to KAI" (the file picker stays); then MCP. Recordings
 and "KAI remembers" are never cut.
+
+## 12 · Public recording trial (Copal, 26 November)
+
+Copal asked to “open up the demo with one hour of recording quota for
+anyone who wants to sign up for the wait list” and approved updating the
+PRD for “one 60-minute trial per email, linked to a private notebook,
+while keeping the existing overall daily spending caps.” This replaces
+§3's exclusion of signup, §4's public entry action, §5's prohibition on a
+waitlist/workspace link, and §6's waitlist-only public write exception.
+
+- Welcome offers “Try it yourself” to join the waitlist and “Look around”
+  to browse. The public notebook says “Read-only demo” quietly in its
+  header. Its main action leads to the trial signup. No video yet.
+- Joining for a trial creates an empty private notebook in this browser.
+  Its access, upload and read-only MCP work like a judge's copy. Existing
+  judge links still open their seeded notebooks without signup.
+- One hour total of uploaded recording duration per email, rounded up to
+  whole seconds per file, reserved atomically for the whole batch before
+  processing. Failed batches reserve nothing; retries of the same accepted
+  upload do not consume the hour again. A new upload consumes time even
+  if transcription fails. Remaining time appears on Home.
+- The waitlist alone links an email to a notebook. Addresses never enter
+  model input, MCP results, app logs or notebook APIs. An email alone never
+  reopens a notebook; only its existing browser cookie can. No email login
+  or recovery, and no messages sent. Another email in the same browser
+  cannot refill its allowance. Existing waitlist-only signups can claim
+  their first trial; repeated claims from a different browser are refused.
+- The existing daily caps (10 recordings/30 readings per notebook,
+  60 recordings/150 readings overall), file limits, waitlist fences and
+  provider limits stay unchanged. The hour may span days. No extra Sprite,
+  connector, account or paid upgrade. Signup itself calls no provider.
+- Visitors may add their own recordings, private on the Sprite, just as
+  judges may (§10 exception). Audio is deleted after transcription; all
+  notebooks are deleted on 8 December. Signup explains the linked email,
+  one future product note, browser-only access, and daily limits.
+- Checks: `npm run check`; gallery at 375 px; signup yields an empty,
+  isolated notebook; public browsing stays read-only; email cannot reopen
+  another notebook; duplicates and concurrency cannot refill time; duration
+  quota survives restart and covers browser and shared uploads; rejected
+  batches reserve nothing; existing daily caps still apply; email stays out
+  of notebook APIs and MCP. Verify signup and isolation on the Sprite with
+  invented data, without calling paid providers.

@@ -57,6 +57,9 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   }
   if (!columns.some(c=>c.name==='reading_day')) db.exec("ALTER TABLE workspaces ADD COLUMN reading_day TEXT; ALTER TABLE workspaces ADD COLUMN readings_today INTEGER NOT NULL DEFAULT 0;");
   if (!columns.some(c=>c.name==='recording_day')) db.exec("ALTER TABLE workspaces ADD COLUMN recording_day TEXT; ALTER TABLE workspaces ADD COLUMN recordings_today INTEGER NOT NULL DEFAULT 0;");
+  if(!columns.some(c=>c.name==='trial_seconds')) db.exec('ALTER TABLE workspaces ADD COLUMN trial_seconds INTEGER');
+  const waitlist=db.prepare('PRAGMA table_info(waitlist)').all() as {name:string}[];
+  if(!waitlist.some(c=>c.name==='workspace_id')) db.exec('ALTER TABLE waitlist ADD COLUMN workspace_id TEXT REFERENCES workspaces(id)');
   const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
   if(!conversations.some(c=>c.name==='audio_path')) db.exec("ALTER TABLE conversations ADD COLUMN audio_path TEXT; ALTER TABLE conversations ADD COLUMN happened_at INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN transcribed INTEGER NOT NULL DEFAULT 0;");
   if(!conversations.some(c=>c.name==='batch_id')) db.exec('ALTER TABLE conversations ADD COLUMN batch_id TEXT');
@@ -75,12 +78,13 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   return db;
 }
 export type KaiDatabase = ReturnType<typeof openDatabase>;
-export function seed(db: KaiDatabase, now = new Date(), workspace = 'public') {
+export function seed(db: KaiDatabase, now = new Date(), workspace = 'public', populated = true) {
   const id = (name: string) => workspace === 'public' ? name : `${workspace}:${name}`;
   const day = (offset: number) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset)).toISOString().slice(0,10);
   db.transaction(() => {
     if (db.prepare('SELECT id FROM workspaces WHERE id = ?').get(workspace)) return;
     db.prepare('INSERT INTO workspaces (id,workspace_id,kind,mcp_token,upload_token,created_at,session_secret) VALUES (?, ?, ?, ?, ?, ?, ?)').run(workspace, workspace, workspace === 'public' ? 'public' : 'judge', workspace === 'public' ? null : randomBytes(32).toString('hex'), workspace === 'public' ? null : randomBytes(32).toString('hex'), now.toISOString(),workspace === 'public' ? null : randomBytes(32).toString('hex'));
+    if(!populated)return;
     const person = db.prepare('INSERT INTO people VALUES (?, ?, ?, ?, ?)');
     person.run(id('dana'),workspace,'Dana Whitfield','Willow Dental','Operations lead');
     person.run(id('ellis'),workspace,'Ellis Rowan','Harbour Dental','Clinic owner');

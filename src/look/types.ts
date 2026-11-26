@@ -5,7 +5,7 @@
  * not send yet; the README lists them.
  */
 
-export type Access = { kind: 'judge' | 'public'; videoUrl: string | null }
+export type Access = { kind: 'judge' | 'public'; videoUrl: string | null; trialSeconds?: number | null }
 
 export type Person = {
   id: string
@@ -91,6 +91,7 @@ export type Recording = {
 export type QueueItem = { id: string; title: string; status: RecordingStatus; error: string | null; progress?: string | null; awaiting_person?: number; suggestion_count?: number }
 
 export type HomeData = {
+  trialSeconds?: number | null
   hasRecordings?: boolean
   peopleCount: number
   todos: { id: string; text: string; due_on?: string | null; person_name?: string | null }[]

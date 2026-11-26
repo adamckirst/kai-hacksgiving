@@ -31,7 +31,7 @@ test('waitlist fences public writes, attempts, capacity, privacy and operator do
     assert.equal((await post(first,'a'.repeat(250)+'@example.invalid')).status,400);
     assert.equal((await post(first,email)).status,200);assert.equal((await post(first,inventedAddress())).status,429);assert.equal(count(),1);
     for(const method of ['POST','PUT','DELETE'])assert.equal((await fetch(base+'/api/people',{method,headers:{Cookie:first,'Content-Type':'application/json'},body:'{}'})).status,403);
-    assert.deepEqual((db.prepare('PRAGMA table_info(waitlist)').all() as {name:string}[]).map(c=>c.name),['email','created_at']);
+    assert.deepEqual((db.prepare('PRAGMA table_info(waitlist)').all() as {name:string}[]).map(c=>c.name),['email','created_at','workspace_id']);
     for(const table of ['workspaces','people','notes','todos','conversations','suggestions'])assert.ok(!JSON.stringify(db.prepare('SELECT * FROM '+table).all()).includes(email));
     const mcp=db.prepare('SELECT mcp_token FROM workspaces WHERE id=?').get(judge.id) as {mcp_token:string};
     await client.connect(new StreamableHTTPClientTransport(new URL(base+'/mcp/'+mcp.mcp_token)));

@@ -13,25 +13,33 @@ export type Transcriber=(audio:Buffer,signal:AbortSignal)=>Promise<string>;
 export const fakeTranscriber:Transcriber=async()=>samples[0].text;
 export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[],directory:string,source:'recording'|'shared'='recording',options:{person?:unknown;awaitingPerson?:boolean}={}) {
   if(files.length<1 || files.length>5) throw new ReadingError('Choose between one and five recordings.');
+  let seconds=0;
   for(const file of files) {
     if(!/\.(m4a|opus|ogg|mp3|wav)$/i.test(file.name) || !file.buffer.length || file.buffer.length>maxAudioBytes) throw new ReadingError('Use m4a, opus, ogg, mp3 or wav files, each up to 10 MB.');
     if(!Number.isFinite(file.date) || file.date<0 || file.date>Date.now()+86400000) throw new ReadingError('The recording date is not valid.');
     try {
       const {format}=await parseBuffer(file.buffer,{path:file.name,size:file.buffer.length},{duration:true,skipCovers:true});
       if(!format.duration || !Number.isFinite(format.duration) || format.duration>300 || !format.numberOfChannels) throw new Error();
+      seconds+=Math.ceil(format.duration);
     } catch {throw new ReadingError('Use an audio recording up to five minutes long.');}
   }
   mkdirSync(directory,{recursive:true,mode:0o700});
   const written:string[]=[];const batch=randomUUID();
   try {
-    return db.transaction(()=>files.slice().sort((a,b)=>a.date-b.date).map(file=> {
+    return db.transaction(()=> {
+      const trial=db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(workspace) as {trial_seconds:number|null}|undefined;
+      if(trial?.trial_seconds!=null) {
+        if(seconds>trial.trial_seconds)throw new ReadingError('This exceeds your remaining recording time. Choose a shorter recording.',429);
+        db.prepare('UPDATE workspaces SET trial_seconds=trial_seconds-? WHERE id=?').run(seconds,workspace);
+      }
+      return files.slice().sort((a,b)=>a.date-b.date).map(file=> {
       reserveRecording(db,workspace);reserveReading(db,workspace);
       const id=randomUUID(),audioPath=path.resolve(directory,id+'.audio');
       writeFileSync(audioPath,file.buffer,{mode:0o600,flag:'wx'});written.push(audioPath);
       db.prepare('INSERT INTO conversations (id,workspace_id,title,summary,source,text,happened_on,status,audio_path,happened_at,batch_id,awaiting_person,reserved_on) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(id,workspace,'New recording','',source,'',new Date(file.date).toISOString().slice(0,10),'waiting',audioPath,file.date,batch,options.awaitingPerson ? 1:0,new Date().toISOString().slice(0,10));
       if(options.person!==undefined)linkRecordingPerson(db,workspace,id,options.person);
       return id;
-    }))();
+    });})();
   } catch(error) {for(const file of written) if(existsSync(file)) unlinkSync(file);throw error;}
 }
 export const assemblyTranscriber:Transcriber=async(audio,signal)=> {

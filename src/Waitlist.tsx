@@ -1,16 +1,18 @@
+import { Trial } from './look/screens/Trial';
 import { useEffect,useState } from 'react';
 import { Waitlist as WaitlistView,Operator as OperatorView } from './look/screens/Waitlist';
-export function Waitlist() {
+export function Waitlist({trial=false}:{trial?:boolean}) {
   const [ready,setReady]=useState(false),[busy,setBusy]=useState(false),[saved,setSaved]=useState(false),[error,setError]=useState(''),[post,setPost]=useState<string|null>(null);
   useEffect(()=> {fetch('/api/waitlist').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>{setPost(data.xPostUrl);setReady(true);}).catch(()=>setError('The list could not load. Reload this page to try again.'));},[]);
   async function submit(email:string) {
     setBusy(true);setError('');
     try {
       const visitor=await fetch('/api/waitlist');if(!visitor.ok)throw new Error('The list is busy. Please try again later.');
-      const response=await fetch('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});const data=await response.json();
-      if(!response.ok)throw new Error(data.error);setSaved(true);
+      const response=await fetch('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,...(trial ? {trial:true}:{})})});const data=await response.json();
+      if(!response.ok)throw new Error(data.error);if(trial){location.assign('/home');return;}setSaved(true);
     }catch(e){setError(e instanceof Error ? e.message:'Please try again.');}finally{setBusy(false);}
   }
+  if(trial)return <Trial busy={!ready || busy} error={error} onSubmit={email=>void submit(email)}/>;
   return <WaitlistView postUrl={post} saved={saved} busy={!ready || busy} error={error} onSubmit={email=>void submit(email)}/>;
 }
 

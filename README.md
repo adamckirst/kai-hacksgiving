@@ -16,8 +16,9 @@ me to build it, from scratch, this week.
 ## Status
 
 [Open the live demo](https://kai-b6whz.sprites.app/). Everyone can browse the
-read-only notebook. A private judge invitation opens an editable copy, with
-recording uploads and its own assistant connection. Video waits for Copal’s
+read-only notebook, or join the waitlist for an empty private notebook with
+one hour of recording time and its own assistant connection. Existing judge
+invitations still open seeded editable copies. Video waits for Copal’s
 approval of the final product.
 
 ## How it is built
@@ -48,7 +49,7 @@ then `npm run check`. The check runs TypeScript, database/API unit tests,
 a production build, and the phone browser checks at 375 px on every tab.
 
 `npm run build && npm start` serves the app at `http://127.0.0.1:18500`.
-Welcome opens a read-only copy of Mara’s invented notebook. Home shows her
+Welcome offers a private recording trial or a look around Mara’s invented notebook. Home shows her
 people count, open to-dos and past recordings. People lists her contacts.
 Stop the server with Ctrl-C. Local runs use an in-memory database, keeping
 access secrets out of files; all local changes disappear on restart.
@@ -305,15 +306,15 @@ X post when he provides it; until then the card says the link is pending.
 [Open the demo](https://kai-b6whz.sprites.app/) to try the read-only notebook
 and join the waitlist.
 
-The waitlist remains exactly two columns: `email` and `created_at`. The
+The waitlist stores `email`, `created_at` and an optional `workspace_id` for
+trial claims. The
 route accepts one well-formed address up to 254 characters, normalizes case
 and surrounding whitespace, ignores repeats, and refuses row 2,001. It
 never echoes an address. An anonymous HttpOnly, SameSite browser cookie
 identifies a visitor for five attempts in a rolling hour, including invalid
 submissions. The cookie's attempt times live separately in the public
 workspace's `waitlist_visitors` JSON field and survive service restarts.
-No address, IP, device information or judge-workspace association is stored
-there. Clearing cookies creates a new anonymous visitor; this is a browser
+No address, IP or device information is stored in the visitor counters. Clearing cookies creates a new anonymous visitor; this is a browser
 limit, not proof of a person's identity. Inactive counters expire after an
 hour; the form renews an expired visit before submitting. At most 2,000
 active visitor entries are kept, so anonymous GETs cannot grow this field
@@ -402,3 +403,21 @@ keeps that page’s loading screen instead of showing Welcome.
 show the reference. No usable connection address appears in those pictures.
 The Sprite URL is public; writes and assistant access still require a private
 judge copy. Video work waits for Copal’s product approval.
+
+### Public recording trial
+
+“Try it yourself” leads to waitlist signup and an empty notebook. One email
+can claim one trial; an email is never used to authenticate a browser or
+recover an existing notebook. Keep the original browser cookie. Changing
+email in that browser cannot refill the trial. Addresses are not verified;
+the existing global daily caps remain the spending boundary against new
+addresses and browsers. No email is sent.
+
+The database reserves 3,600 seconds per trial, using whole seconds rounded
+up per uploaded file. Browser and shortcut uploads share the same atomic
+reservation; a rejected batch rolls back its time and daily counters.
+Retries reuse an already accepted upload without charging the hour again.
+Time remains spent if that upload fails transcription. Home shows what is
+left. The existing 10-recording daily per-notebook cap means a full hour
+may take more than one day. All overall caps and provider limits stay as
+before, on the same Sprite. Signup makes no provider calls.

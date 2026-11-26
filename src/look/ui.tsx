@@ -353,7 +353,7 @@ export function Notice({ children, tone = 'plain' }: { children: ReactNode; tone
   )
 }
 
-export const READ_ONLY = 'A read-only demo with made-up data.'
+export const READ_ONLY = 'Read-only demo'
 
 const FIELD = clsx(
   'block w-full rounded-2xl bg-white px-4 text-base text-zinc-900 ring-1 ring-zinc-200 placeholder:text-zinc-500',
@@ -428,7 +428,7 @@ export function TabPage({
   current,
   title,
   subtitle,
-  owner = 'Mara’s notebook',
+  owner = 'Your notebook',
   readOnly,
   due,
   dock,
@@ -448,7 +448,7 @@ export function TabPage({
       <div className="sticky top-0 z-20 -mx-4 bg-gradient-to-b from-page from-70% to-page/0 px-4 pt-3 pb-4">
         <div className="mb-2 flex items-center justify-between gap-3 px-1">
           <span className="text-xl font-extrabold tracking-tight text-violet-700">KAI</span>
-          <span className="truncate text-base font-semibold text-zinc-500">{owner}</span>
+          <span className="truncate text-base font-semibold text-zinc-500">{readOnly ? READ_ONLY : owner}</span>
         </div>
         <Tabs current={current} due={due} />
       </div>
@@ -457,11 +457,6 @@ export function TabPage({
           <h1 className="text-[32px]/10 font-extrabold tracking-tight">{title}</h1>
           {subtitle && <p className="mt-1 text-base font-medium text-zinc-600">{subtitle}</p>}
         </header>
-        {readOnly && (
-          <div className="mb-5">
-            <Notice>{READ_ONLY}</Notice>
-          </div>
-        )}
         <div className="space-y-6">{children}</div>
       </main>
       <Footer />
@@ -491,7 +486,7 @@ export function PushedPage({
         <span className="px-1 text-xl font-extrabold tracking-tight text-violet-700">KAI</span>
       </div>
       <main className="animate-kai-in space-y-6">
-        {readOnly && <Notice>{READ_ONLY}</Notice>}
+        {readOnly && <p className="px-1 text-base font-medium text-zinc-500">{READ_ONLY}</p>}
         {children}
       </main>
       <Footer />
@@ -548,8 +543,8 @@ export function RecordingPicker({ onFiles, busy, disabled }: { onFiles: (files: 
 /** The action of a tab page in the read-only copy. */
 export function WhatIsKai() {
   return (
-    <Button variant="primary" href="/">
-      What is KAI?
+    <Button variant="primary" href="/try">
+      Try it yourself
     </Button>
   )
 }

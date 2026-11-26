@@ -45,7 +45,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use((_req,_res,next)=>{void work();next();});
   app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
-  app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null}));
+  app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null,trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds}));
   app.get('/api/connect',(_req,res)=> {
     const row=db.prepare("SELECT upload_token,mcp_token FROM workspaces WHERE id=? AND kind='judge'").get(res.locals.workspace) as {upload_token:string;mcp_token:string}|undefined;
     if(!row){res.status(403).json({error:'Open your own copy to connect your phone.'});return;}
@@ -72,6 +72,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
   });
   app.get('/api/home',(_req,res) => res.json({
+    trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds,
     todos:db.prepare("SELECT t.id,t.text,t.due_on,p.name AS person_name FROM todos t LEFT JOIN people p ON p.id=t.person_id AND p.workspace_id=t.workspace_id WHERE t.workspace_id = ? AND t.status = 'open' AND t.owner_person_id IS NULL ORDER BY t.due_on IS NULL,t.due_on").all(res.locals.workspace),
     conversations:db.prepare('SELECT id,title,summary,happened_on FROM conversations WHERE workspace_id = ? ORDER BY happened_on DESC').all(res.locals.workspace),
     hasRecordings:Boolean(db.prepare("SELECT 1 FROM conversations WHERE workspace_id=? AND source IN ('recording','shared') LIMIT 1").get(res.locals.workspace)),
@@ -139,7 +140,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/home', '/upload', '/upload/:id', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get(['/', '/try', '/home', '/upload', '/upload/:id', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose up to five recordings, each up to 10 MB.'});return;}
     res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});
