@@ -6,7 +6,7 @@ import { equalSecret, createJudge, workspaceFor, cookieName as sessionCookie } f
 const hour=3600000,cookieName='kai_visitor';
 type Visitor={seen:number;attempts:number[]};
 type Visitors=Record<string,Visitor>;
-type Options={downloadSecret?:string;judgeSecret?:string;secureCookies?:boolean;xPostUrl?:string;now?:()=>number};
+type Options={trialsPaused?:boolean;downloadSecret?:string;judgeSecret?:string;secureCookies?:boolean;xPostUrl?:string;now?:()=>number};
 function cookie(req:Request) {
   const value=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith(cookieName+'='))?.slice(cookieName.length+1);
   return value && /^[a-f0-9]{64}$/.test(value) ? value:undefined;
@@ -54,6 +54,7 @@ export function mountWaitlist(app:Express,db:KaiDatabase,options:Options) {
   },express.json({limit:'1kb'}),(req,res)=> {
     const parsed=address.safeParse(req.body);
     if(!parsed.success){res.status(400).json({error:'Enter an email address of at most 254 characters.'});return;}
+    if(parsed.data.trial && options.trialsPaused){res.status(503).json({error:'Trial signups are paused while email verification is added. Please look around for now.'});return;}
     const result=db.transaction(()=> {
       const {email,trial}=parsed.data;
       const existing=db.prepare('SELECT workspace_id FROM waitlist WHERE email=?').get(email) as {workspace_id:string|null}|undefined;

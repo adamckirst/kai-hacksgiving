@@ -13,7 +13,7 @@ import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
 import { mountWaitlist } from './waitlist';
 import { linkRecordingPerson } from './recording-person';
-export type AppOptions = {judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
+export type AppOptions = {trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
   const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber);

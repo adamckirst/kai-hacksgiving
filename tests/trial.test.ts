@@ -64,3 +64,15 @@ test('duration reservation is atomic across uploads, survives restart, and prese
   await assert.rejects(()=>addAudio(db,judge.id,[file],dir),/today’s recording limit/);assert.equal(remaining(),3600);
  }finally{db.close();rmSync(dir,{recursive:true,force:true})}
 });
+
+
+test('paused trials cannot create a notebook or claim credit',async()=>{
+ const db=openDatabase();seed(db);const app=createApp(db,{secureCookies:false,trialsPaused:true});
+ const server=app.listen(18573,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));const base='http://127.0.0.1:18573';
+ try {
+  const visit=await fetch(base+'/api/waitlist');const cookie=visit.headers.get('set-cookie')!.split(';')[0];
+  const r=await fetch(base+'/api/waitlist',{method:'POST',headers:{Cookie:cookie,'Content-Type':'application/json'},body:JSON.stringify({email:randomUUID()+'@example.invalid',trial:true})});
+  assert.equal(r.status,503);assert.equal((db.prepare('SELECT count(*) n FROM workspaces').get() as {n:number}).n,1);
+  assert.equal((db.prepare('SELECT count(*) n FROM waitlist').get() as {n:number}).n,0);
+ }finally{await app.locals.queue.stop();await new Promise<void>(r=>server.close(()=>r()));db.close()}
+});
