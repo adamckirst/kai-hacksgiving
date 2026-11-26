@@ -406,18 +406,39 @@ notebook opened through a judge invitation or waitlist trial. Video work waits f
 
 ### Public recording trial
 
-“Try it yourself” leads to waitlist signup and an empty notebook. One email
-can claim one trial; an email is never used to authenticate a browser or
-recover an existing notebook. Keep the original browser cookie. Changing
-email in that browser cannot refill the trial. Addresses are not verified;
-the existing global daily caps remain the spending boundary against new
-addresses and browsers. No email is sent.
+“Try it yourself” leads to email verification and an empty private notebook.
+A six-digit code sent through the existing Resend Sprite connector expires
+in ten minutes and permits five guesses. Codes are protected with a keyed
+digest and never logged or stored as plaintext. Sending is limited to once
+per email per minute, three per IP per hour and 100 overall in a rolling
+day; failed deliveries consume the send allowance too. Resend request
+idempotency prevents duplicate delivery on retry.
 
-The database reserves 3,600 seconds per trial, using whole seconds rounded
-up per uploaded file. Browser and shortcut uploads share the same atomic
-reservation; a rejected batch rolls back its time and daily counters.
-Retries reuse an already accepted upload without charging the hour again.
-Time remains spent if that upload fails transcription. Home shows what is
-left. The existing 10-recording daily per-notebook cap means a full hour
-may take more than one day. All overall caps and provider limits stay as
-before, on the same Sprite. Signup makes no provider calls.
+One normalized email and public IP can receive one trial, with 100 verified
+trials in total. The database checks all three limits in the same grant
+transaction. Raw IP addresses are not stored: the app keeps a keyed digest.
+The Fly-Client-IP header must be confirmed at the deployed proxy before
+public signup is enabled. The operator-only network check returns a digest,
+never the IP. Shared Wi-Fi shares an allowance; changing networks can bypass
+an IP rule, so the global caps remain the spending boundary.
+
+A trial gets 3,600 seconds, rounded up per uploaded file and reserved
+atomically with the daily counters. Rejected batches roll back; accepted
+uploads consume time even when transcription fails. Retries of that upload
+do not deduct its duration again. Existing unverified trials retain their
+notebooks and remaining time but cannot call providers until verified.
+Private judge invitations remain separate. Keep the original browser;
+this verification flow does not recover another browser’s notebook.
+
+Daily caps, file limits and provider limits are unchanged. A full hour may
+span days. One hundred hours is an allowance for new uploaded audio, not a
+guarantee about the full bill: retries, Claude, email and compute also count.
+Transcription requests do not enable keyterms or other paid add-ons.
+
+The sender is configured only on the Sprite in `kai-state/mail-from`.
+No Resend key enters the app; the connector keeps it. A marker at
+`kai-state/trial-network-verified` enables signup only after the operator’s
+proxy check. Missing configuration fails closed. Two server-only tables
+keep short-lived code challenges and bounded send counters. The waitlist
+holds the verified date, private notebook link and protected IP digest;
+none of these enter notebook/MCP responses.

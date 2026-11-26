@@ -24,11 +24,11 @@ test('fresh judge seeding tolerates optional columns added by a later step',()=>
     assert.equal((db.pragma('foreign_key_check') as unknown[]).length,0);
   }finally{db.close();}
 });
-test('seven tables, Mara’s accepted data, relative dates, and safe reseeding', () => {
+test('nine tables, Mara’s accepted data, relative dates, and safe reseeding', () => {
   const db = openDatabase();
   try {
     seed(db,new Date('2026-12-01T12:00:00Z'));
-    assert.equal((db.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type='table'").get() as {n:number}).n,7);
+    assert.equal((db.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type='table'").get() as {n:number}).n,9);
     assert.deepEqual(db.prepare('SELECT name FROM people ORDER BY name').all(),[{name:'Dana Whitfield'},{name:'Ellis Rowan'},{name:'Nia Calder'}]);
     assert.deepEqual(db.prepare("SELECT due_on FROM todos WHERE id='pricing'").get(),{due_on:'2026-11-29'});
     assert.deepEqual(db.prepare("SELECT happened_on FROM conversations WHERE id='dana-call'").get(),{happened_on:'2026-11-27'});

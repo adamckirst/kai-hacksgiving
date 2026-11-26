@@ -41,6 +41,8 @@ export function openDatabase(path:string|Buffer = ':memory:') {
       FOREIGN KEY(workspace_id,owner_person_id) REFERENCES people(workspace_id,id),
       FOREIGN KEY(workspace_id,conversation_id) REFERENCES conversations(workspace_id,id)
     );
+    CREATE TABLE IF NOT EXISTS trial_challenges (email TEXT PRIMARY KEY,id TEXT NOT NULL,ip_hash TEXT NOT NULL,code_hash TEXT NOT NULL,expires_at INTEGER NOT NULL,attempts INTEGER NOT NULL,delivered INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS trial_sends (id TEXT PRIMARY KEY,ip_hash TEXT NOT NULL,email_hash TEXT NOT NULL,sent_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created_at TEXT NOT NULL);
   `);
   db.transaction(()=> {
@@ -60,6 +62,8 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   if(!columns.some(c=>c.name==='trial_seconds')) db.exec('ALTER TABLE workspaces ADD COLUMN trial_seconds INTEGER');
   const waitlist=db.prepare('PRAGMA table_info(waitlist)').all() as {name:string}[];
   if(!waitlist.some(c=>c.name==='workspace_id')) db.exec('ALTER TABLE waitlist ADD COLUMN workspace_id TEXT REFERENCES workspaces(id)');
+  if(!columns.some(c=>c.name==='trial_verified'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_verified INTEGER NOT NULL DEFAULT 0');
+  if(!waitlist.some(c=>c.name==='verified_at'))db.exec('ALTER TABLE waitlist ADD COLUMN verified_at TEXT; ALTER TABLE waitlist ADD COLUMN trial_ip TEXT; CREATE UNIQUE INDEX waitlist_trial_ip ON waitlist(trial_ip) WHERE trial_ip IS NOT NULL');
   const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
   if(!conversations.some(c=>c.name==='audio_path')) db.exec("ALTER TABLE conversations ADD COLUMN audio_path TEXT; ALTER TABLE conversations ADD COLUMN happened_at INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN transcribed INTEGER NOT NULL DEFAULT 0;");
   if(!conversations.some(c=>c.name==='batch_id')) db.exec('ALTER TABLE conversations ADD COLUMN batch_id TEXT');

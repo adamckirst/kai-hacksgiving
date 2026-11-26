@@ -81,7 +81,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber)
     active=(async()=> {
       for(;;) {
         if(stopped) return;
-        const job=db.prepare("SELECT * FROM conversations WHERE status='waiting' AND awaiting_person=0 ORDER BY happened_at,rowid LIMIT 1").get() as Job|undefined;
+        const job=db.prepare("SELECT * FROM conversations WHERE status='waiting' AND awaiting_person=0 AND workspace_id IN (SELECT id FROM workspaces WHERE trial_seconds IS NULL OR trial_verified=1) ORDER BY happened_at,rowid LIMIT 1").get() as Job|undefined;
         if(!job) return;
         const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(120000)]);
         db.prepare('UPDATE conversations SET attempts=attempts+1 WHERE id=?').run(job.id);

@@ -1,8 +1,9 @@
 import express,{type Express,type Request,type Response} from 'express';
-import { randomBytes } from 'node:crypto';
+import {normalizeIp} from './trial';
+import { randomBytes,createHmac } from 'node:crypto';
 import { z } from 'zod';
 import type { KaiDatabase } from './db';
-import { equalSecret, createJudge, workspaceFor, cookieName as sessionCookie } from './access';
+import { equalSecret } from './access';
 const hour=3600000,cookieName='kai_visitor';
 type Visitor={seen:number;attempts:number[]};
 type Visitors=Record<string,Visitor>;
@@ -54,36 +55,25 @@ export function mountWaitlist(app:Express,db:KaiDatabase,options:Options) {
   },express.json({limit:'1kb'}),(req,res)=> {
     const parsed=address.safeParse(req.body);
     if(!parsed.success){res.status(400).json({error:'Enter an email address of at most 254 characters.'});return;}
-    if(parsed.data.trial && options.trialsPaused){res.status(503).json({error:'Trial signups are paused while email verification is added. Please look around for now.'});return;}
-    const result=db.transaction(()=> {
-      const {email,trial}=parsed.data;
-      const existing=db.prepare('SELECT workspace_id FROM waitlist WHERE email=?').get(email) as {workspace_id:string|null}|undefined;
-      const current=workspaceFor(db,req);
-      // An email is not proof of identity: it can never reopen another browser's notebook.
-      if(trial && existing?.workspace_id && existing.workspace_id!==current)return {error:'This trial cannot be opened here. Use the browser where you started it.',status:409};
-      if(!existing) {
-        if((db.prepare('SELECT count(*) AS n FROM waitlist').get() as {n:number}).n>=2000)return {error:'The list is full. Please try again later.',status:409};
-        db.prepare('INSERT INTO waitlist(email,created_at) VALUES (?,?)').run(email,new Date(now()).toISOString());
-      }
-      if(!trial)return {};
-      if(current!=='public') {
-        // Adding another address never resets the current browser's allowance.
-        db.prepare('UPDATE waitlist SET workspace_id=? WHERE email=?').run(current,email);
-        return {};
-      }
-      const judge=createJudge(db,false);
-      db.prepare('UPDATE workspaces SET trial_seconds=3600 WHERE id=?').run(judge.id);
-      db.prepare('UPDATE waitlist SET workspace_id=? WHERE email=?').run(judge.id,email);
-      return {cookie:judge.cookie};
+    if(parsed.data.trial){res.status(503).json({error:'Trial signups are paused while email verification is added. Please look around for now.'});return;}
+    const saved=db.transaction(()=> {
+      const {email}=parsed.data;
+      if(db.prepare('SELECT 1 FROM waitlist WHERE email=?').get(email))return true;
+      if((db.prepare('SELECT count(*) AS n FROM waitlist').get() as {n:number}).n>=2000)return false;
+      db.prepare('INSERT INTO waitlist(email,created_at) VALUES (?,?)').run(email,new Date(now()).toISOString());return true;
     })();
-    if('error' in result){res.status(result.status!).json({error:result.error});return;}
-    if(result.cookie)res.cookie(sessionCookie,result.cookie,{httpOnly:true,secure:options.secureCookies ?? true,sameSite:'strict',path:'/',maxAge:14*24*hour});
+    if(!saved){res.status(409).json({error:'The list is full. Please try again later.'});return;}
     res.json({ok:true});
   });
   function operator(req:Request,res:Response) {
     const supplied=req.get('x-kai-download');
     if(!options.downloadSecret || options.downloadSecret===options.judgeSecret || !supplied || !equalSecret(supplied,options.downloadSecret)) {res.status(404).json({error:'Not found.'});return false;}return true;
   }
+  app.get('/api/operator/network',(req,res)=> {
+    if(!operator(req,res))return;
+    const ip=normalizeIp(req.get('fly-client-ip')??'');
+    res.json({valid:Boolean(ip),fingerprint:ip ? createHmac('sha256',options.downloadSecret!).update('network-check:'+ip).digest('hex'):null});
+  });
   app.get('/api/operator/count',(req,res)=> {
     if(!operator(req,res))return;
     res.json({count:(db.prepare('SELECT count(*) AS n FROM waitlist').get() as {n:number}).n});

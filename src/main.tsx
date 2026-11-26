@@ -35,7 +35,7 @@ function App() {
     return <Opening page={page} failed={failed} onRetry={()=>location.reload()}/>;
   }
   const readOnly=access.kind==='public';
-  if(route==='/try')return readOnly ? <Waitlist trial/> : <HomeScreen readOnly={false}/>;
+  if(route==='/try')return <Waitlist trial/>;
   if(route==='/upload' || route.startsWith('/upload/'))return <UploadPage readOnly={readOnly}/>;
   if(route==='/home')return <HomeScreen readOnly={readOnly}/>;
   if(route==='/people')return <PeopleScreen readOnly={readOnly}/>;

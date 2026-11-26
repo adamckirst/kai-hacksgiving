@@ -1,4 +1,5 @@
 import express from 'express';
+import {mountTrial,type TrialOptions} from './trial';
 import path from 'node:path';
 import type { KaiDatabase } from './db';
 import { addReading, retryReading, reserveReading, reserveRecording, ReadingError, type Reader } from './reading';
@@ -13,7 +14,7 @@ import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
 import { mountWaitlist } from './waitlist';
 import { linkRecordingPerson } from './recording-person';
-export type AppOptions = {trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
+export type AppOptions = TrialOptions & {trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
   const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber);
@@ -23,6 +24,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
   mountMcp(app,db);
+  mountTrial(app,db,options);
   mountWaitlist(app,db,options);
   // A 20,000-character transcript can need 120 KB when JSON escapes it.
   app.use(express.json({limit:'128kb'}));
@@ -72,6 +74,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
   });
   app.get('/api/home',(_req,res) => res.json({
+    trialVerified:Boolean((db.prepare('SELECT trial_verified FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_verified:number}).trial_verified),
     trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds,
     todos:db.prepare("SELECT t.id,t.text,t.due_on,p.name AS person_name FROM todos t LEFT JOIN people p ON p.id=t.person_id AND p.workspace_id=t.workspace_id WHERE t.workspace_id = ? AND t.status = 'open' AND t.owner_person_id IS NULL ORDER BY t.due_on IS NULL,t.due_on").all(res.locals.workspace),
     conversations:db.prepare('SELECT id,title,summary,happened_on FROM conversations WHERE workspace_id = ? ORDER BY happened_on DESC').all(res.locals.workspace),

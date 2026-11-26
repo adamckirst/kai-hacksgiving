@@ -1,4 +1,5 @@
-import { mkdirSync } from 'node:fs';
+import { resendSender } from './trial-mail';
+import { mkdirSync,existsSync,readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { databasePath, persistentJudgeSecret, persistentDownloadSecret } from './config';
 import { createApp } from './app';
@@ -11,6 +12,9 @@ if (file !== ':memory:') mkdirSync(dirname(file), {recursive:true});
 const db = openDatabase(file);
 seed(db);
 const fake=process.env.KAI_MODEL === 'fake' || process.env.NODE_ENV !== 'production';
-const app=createApp(db,{trialsPaused:process.env.NODE_ENV === 'production',downloadSecret:process.env.NODE_ENV === 'production' ? persistentDownloadSecret(db) : process.env.KAI_DOWNLOAD_SECRET,xPostUrl:process.env.X_POST_URL,audioDirectory:file === ':memory:' ? '.data/audio' : dirname(file)+'/audio',transcriber:fake ? fakeTranscriber : assemblyTranscriber,reader:fake ? fakeReader : claudeReader,judgeSecret:process.env.NODE_ENV === 'production' ? persistentJudgeSecret(db) : process.env.KAI_JUDGE_SECRET,videoUrl:process.env.VIDEO_URL,videoFile:file===':memory:' ? undefined:dirname(file)+'/demo.mp4',secureCookies:process.env.NODE_ENV === 'production'});
+const senderFile=dirname(file)+'/mail-from';
+const mailFrom=existsSync(senderFile) ? readFileSync(senderFile,'utf8').trim():undefined;
+const verifiedNetwork=existsSync(dirname(file)+'/trial-network-verified');
+const app=createApp(db,{trialsPaused:!mailFrom || !verifiedNetwork,trustFlyProxy:process.env.NODE_ENV === 'production',sendCode:mailFrom ? resendSender(mailFrom):undefined,downloadSecret:process.env.NODE_ENV === 'production' ? persistentDownloadSecret(db) : process.env.KAI_DOWNLOAD_SECRET,xPostUrl:process.env.X_POST_URL,audioDirectory:file === ':memory:' ? '.data/audio' : dirname(file)+'/audio',transcriber:fake ? fakeTranscriber : assemblyTranscriber,reader:fake ? fakeReader : claudeReader,judgeSecret:process.env.NODE_ENV === 'production' ? persistentJudgeSecret(db) : process.env.KAI_JUDGE_SECRET,videoUrl:process.env.VIDEO_URL,videoFile:file===':memory:' ? undefined:dirname(file)+'/demo.mp4',secureCookies:process.env.NODE_ENV === 'production'});
 const server = app.listen(Number(process.env.PORT ?? 18500), process.env.HOST ?? '127.0.0.1', () => console.log('KAI is ready'));
 for (const signal of ['SIGTERM','SIGINT']) process.on(signal, () => server.close(async() => {await app.locals.queue.stop();db.close(); process.exit(0);}));

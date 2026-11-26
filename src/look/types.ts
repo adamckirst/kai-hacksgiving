@@ -91,6 +91,7 @@ export type Recording = {
 export type QueueItem = { id: string; title: string; status: RecordingStatus; error: string | null; progress?: string | null; awaiting_person?: number; suggestion_count?: number }
 
 export type HomeData = {
+  trialVerified?: boolean
   trialSeconds?: number | null
   hasRecordings?: boolean
   peopleCount: number
