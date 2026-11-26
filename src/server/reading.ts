@@ -18,7 +18,8 @@ export type ReadInput={sender?:{kind:'person'|'owner'|'unknown';person?:{id:stri
 export type Reader=(input:ReadInput,call:(name:string,input:unknown)=>ToolResult,signal?:AbortSignal)=>Promise<void>;
 export class ReadingError extends Error {constructor(message:string,public status=400){super(message);}}
 export function reserveReading(db:KaiDatabase,workspace:string,now=new Date()) {
-  const verification=db.prepare('SELECT trial_seconds,trial_verified FROM workspaces WHERE id=?').get(workspace) as {trial_seconds:number|null;trial_verified:number}|undefined;
+  const verification=db.prepare('SELECT trial_seconds,trial_verified,trial_ended FROM workspaces WHERE id=?').get(workspace) as {trial_seconds:number|null;trial_verified:number;trial_ended:number}|undefined;
+  if(verification?.trial_ended)throw new ReadingError('This trial has ended because a recording exceeded its reserved time.',403);
   if(verification?.trial_seconds!=null && !verification.trial_verified)throw new ReadingError('Verify your email before adding more recordings or transcripts.',403);
   const day=now.toISOString().slice(0,10);
   const row=db.prepare('SELECT kind,reading_day,readings_today FROM workspaces WHERE id=?').get(workspace) as {kind:string;reading_day:string;readings_today:number}|undefined;
@@ -29,7 +30,8 @@ export function reserveReading(db:KaiDatabase,workspace:string,now=new Date()) {
   db.prepare('UPDATE workspaces SET reading_day=?,readings_today=? WHERE id=?').run(day,count+1,workspace);
 }
 export function reserveRecording(db:KaiDatabase,workspace:string,now=new Date()) {
-  const verification=db.prepare('SELECT trial_seconds,trial_verified FROM workspaces WHERE id=?').get(workspace) as {trial_seconds:number|null;trial_verified:number}|undefined;
+  const verification=db.prepare('SELECT trial_seconds,trial_verified,trial_ended FROM workspaces WHERE id=?').get(workspace) as {trial_seconds:number|null;trial_verified:number;trial_ended:number}|undefined;
+  if(verification?.trial_ended)throw new ReadingError('This trial has ended because a recording exceeded its reserved time.',403);
   if(verification?.trial_seconds!=null && !verification.trial_verified)throw new ReadingError('Verify your email before adding more recordings or transcripts.',403);
   const day=now.toISOString().slice(0,10);
   const row=db.prepare('SELECT kind,recording_day,recordings_today FROM workspaces WHERE id=?').get(workspace) as {kind:string;recording_day:string;recordings_today:number}|undefined;

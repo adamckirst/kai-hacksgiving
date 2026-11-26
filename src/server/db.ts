@@ -62,11 +62,13 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   if(!columns.some(c=>c.name==='trial_seconds')) db.exec('ALTER TABLE workspaces ADD COLUMN trial_seconds INTEGER');
   const waitlist=db.prepare('PRAGMA table_info(waitlist)').all() as {name:string}[];
   if(!waitlist.some(c=>c.name==='workspace_id')) db.exec('ALTER TABLE waitlist ADD COLUMN workspace_id TEXT REFERENCES workspaces(id)');
+  if(!columns.some(c=>c.name==='trial_ended'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_ended INTEGER NOT NULL DEFAULT 0');
   if(!columns.some(c=>c.name==='trial_verified'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_verified INTEGER NOT NULL DEFAULT 0');
   if(!waitlist.some(c=>c.name==='verified_at'))db.exec('ALTER TABLE waitlist ADD COLUMN verified_at TEXT; ALTER TABLE waitlist ADD COLUMN trial_ip TEXT; CREATE UNIQUE INDEX waitlist_trial_ip ON waitlist(trial_ip) WHERE trial_ip IS NOT NULL');
   const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
   if(!conversations.some(c=>c.name==='audio_path')) db.exec("ALTER TABLE conversations ADD COLUMN audio_path TEXT; ALTER TABLE conversations ADD COLUMN happened_at INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN transcribed INTEGER NOT NULL DEFAULT 0;");
   if(!conversations.some(c=>c.name==='batch_id')) db.exec('ALTER TABLE conversations ADD COLUMN batch_id TEXT');
+  if(!conversations.some(c=>c.name==='reserved_seconds'))db.exec('ALTER TABLE conversations ADD COLUMN reserved_seconds INTEGER');
   if(!conversations.some(c=>c.name==='reserved_on')) db.exec('ALTER TABLE conversations ADD COLUMN reserved_on TEXT');
   if(!conversations.some(c=>c.name==='awaiting_person')) db.exec('ALTER TABLE conversations ADD COLUMN awaiting_person INTEGER NOT NULL DEFAULT 0');
   if(!conversations.some(c=>c.name==='person_id')) db.exec('ALTER TABLE conversations ADD COLUMN person_id TEXT REFERENCES people(id)');

@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {Client,StreamableHTTPClientTransport} from '@modelcontextprotocol/client';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {openDatabase,seed} from '../src/server/db';
@@ -21,6 +22,17 @@ test('verification gates grants, protects codes, bounds attempts and prevents em
   const cookie=good.headers.get('set-cookie')!.split(';')[0];
   assert.equal((await post('verify',{email,code:codes.get(email)})).status,409);
   const home=await(await fetch(base+'/api/home',{headers:{Cookie:cookie}})).json();assert.equal(home.trialSeconds,3600);assert.equal(home.peopleCount,0);assert.equal(home.trialVerified,true);
+  for(const route of ['home','people','todos','access','connect']) {
+   const response=await fetch(base+'/api/'+route,{headers:{Cookie:cookie}});assert.equal(response.status,200);
+   assert.ok(!(await response.text()).includes(email));
+  }
+  const connection=await(await fetch(base+'/api/connect',{headers:{Cookie:cookie}})).json();
+  const client=new Client({name:'Verified trial privacy check',version:'1.0.0'});
+  try {
+   await client.connect(new StreamableHTTPClientTransport(new URL(base+connection.mcpPath)));
+   const replies=[await client.listTools(),await client.callTool({name:'list_people',arguments:{}}),await client.callTool({name:'get_person',arguments:{person_id:'missing'}}),await client.callTool({name:'list_todos',arguments:{}}),await client.callTool({name:'search',arguments:{query:email}})];
+   assert.ok(!JSON.stringify(replies).includes(email));
+  }finally{await client.close()}
   const another=address();assert.equal((await post('code',{email:another})).status,200);assert.ok(!codes.has(another));assert.equal(count(),1);
   assert.equal((await post('code',{email},'192.0.2.2')).status,429);now+=61000;
   assert.equal((await post('code',{email},'192.0.2.2')).status,200);assert.equal(sends,1);
