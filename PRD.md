@@ -547,3 +547,48 @@ for verification messages only. No new paid plan is authorised.
   without a refill. Confirm real email receipt and code entry with Copal;
   check the Sprite proxy overwrites spoofed IP headers before enabling
   public trials. Until then new claims remain paused.
+
+
+## 13 · Recording-ready email (Copal, 26 November)
+
+Copal requested “notifications through email that the upload has been
+transcribed and summarized” in “a friendly tone as update from Kai”,
+instead of phone notifications. He approved “one friendly email per
+completed recording, sent only to its notebook’s verified address, with
+suggestion counts and a ‘Review in KAI’ link (keeping transcript and
+personal details inside KAI)” with “Yes, counts and a review link”.
+
+This is a second, narrow exception to §§3, 4, 10 and 12’s no-sending rules
+and to §12’s verification-only email exception. It supersedes §10’s
+single-purpose restriction for verified trial addresses only. KAI still
+sends no promises, follow-ups or messages to a person mentioned in a recording.
+
+- For new audio uploads, including shared voice notes, send one friendly
+  completion message after transcription, summary and suggestion creation
+  have all finished successfully. Do not send for old recordings, pasted
+  transcripts, samples, failures or waitlist-only/unverified addresses.
+- Send only to the verified email attached to that notebook, through the
+  existing Resend connector. Include counts of proposed people, notes,
+  to-dos and kept promises; include no names, titles, words, summary text,
+  quotes or suggested actions. With zero suggestions, say the transcript
+  and summary are ready. Say the person decides what to keep.
+- “Review in KAI” opens that recording in the existing notebook browser.
+  It contains no access secret and grants no access in another browser.
+  Email is not notebook recovery. Explain the browser requirement.
+- Persist delivery state across restarts, use provider idempotency and
+  bounded retries, and never change recording success because mail fails.
+  At most three attempts per recording within 23 hours of the first
+  attempt, 10 recording-email attempts per notebook and 60 overall per
+  rolling day. Verification and recording mail share the existing overall
+  cap of 100 send attempts per rolling day. No new connector or paid plan.
+- Explain these messages in trial signup and on the verified trial’s Home
+  screen. Existing waitlist-only subscriptions keep their original promise.
+- Checks: `npm run check`; gallery at 375 px; one message for a ready
+  verified recording, including shared uploads and zero suggestions;
+  none for failures, old recordings, samples, pasted words or unverified
+  addresses; correct notebook/recipient isolation; no content or secrets
+  in the email; duplicate kicks, retries and restarts do not create another
+  logical message; sending failure leaves suggestions intact; all attempt
+  limits hold. Check the new queue on the Sprite using a fake mail sender
+  and invented data, without sending to a real address. Copal confirms
+  receipt after uploading his own invented recording.

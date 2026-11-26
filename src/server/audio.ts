@@ -38,6 +38,7 @@ export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[
       writeFileSync(audioPath,file.buffer,{mode:0o600,flag:'wx'});written.push(audioPath);
       db.prepare('INSERT INTO conversations (id,workspace_id,title,summary,source,text,happened_on,status,audio_path,happened_at,batch_id,awaiting_person,reserved_on) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(id,workspace,'New recording','',source,'',new Date(file.date).toISOString().slice(0,10),'waiting',audioPath,file.date,batch,options.awaitingPerson ? 1:0,new Date().toISOString().slice(0,10));
       db.prepare('UPDATE conversations SET reserved_seconds=? WHERE id=?').run(durations.get(file),id);
+      db.prepare('UPDATE conversations SET notify_ready=1 WHERE id=? AND EXISTS (SELECT 1 FROM waitlist WHERE workspace_id=? AND verified_at IS NOT NULL)').run(id,workspace);
       if(options.person!==undefined)linkRecordingPerson(db,workspace,id,options.person);
       return id;
     });})();
@@ -68,7 +69,7 @@ export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=
   }
 };
 type Job={id:string;workspace_id:string;audio_path:string|null;status:string;attempts:number;text:string;transcribed:number;reserved_seconds:number|null};
-export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber) {
+export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,onReady:()=>void=()=>{}) {
   let active:Promise<void>|undefined,stopped=false;
   const controller=new AbortController();
   function retryInterrupted(job:Job) {
@@ -105,6 +106,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber)
             db.prepare('UPDATE conversations SET audio_path=NULL WHERE id=?').run(job.id);
           }
           await readConversation(db,job.id,reader,signal);
+          onReady();
           if(signal.aborted && !stopped) retryInterrupted(db.prepare('SELECT * FROM conversations WHERE id=?').get(job.id) as Job);
         } catch(error) {
           if(error instanceof AudioDurationError) {

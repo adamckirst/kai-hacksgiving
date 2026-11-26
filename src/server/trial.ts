@@ -42,7 +42,7 @@ export function mountTrial(app:Express,db:KaiDatabase,options:TrialOptions) {
    db.prepare('DELETE FROM trial_sends WHERE sent_at<?').run(at-24*hour);
    db.prepare('DELETE FROM trial_challenges WHERE expires_at<?').run(at);
    const recent=db.prepare('SELECT count(*) n FROM trial_sends WHERE ip_hash=? AND sent_at>?').get(network,at-hour) as {n:number};
-   const total=db.prepare('SELECT count(*) n FROM trial_sends').get() as {n:number};
+   const total=db.prepare('SELECT (SELECT count(*) FROM trial_sends) + (SELECT count(*) FROM notification_sends WHERE sent_at>?) n').get(at-24*hour) as {n:number};
    const latest=db.prepare('SELECT sent_at FROM trial_sends WHERE email_hash=? ORDER BY sent_at DESC LIMIT 1').get(digest('email',email)) as {sent_at:number}|undefined;
    if(recent.n>=3 || total.n>=100 || (latest && latest.sent_at>at-60000))return 'limited';
    if(grants()>=100)return 'full';

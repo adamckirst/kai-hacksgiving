@@ -1,3 +1,4 @@
+import {recordingMailWorker,type SendReady} from './recording-mail';
 import express from 'express';
 import {mountTrial,type TrialOptions} from './trial';
 import path from 'node:path';
@@ -14,11 +15,13 @@ import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
 import { mountWaitlist } from './waitlist';
 import { linkRecordingPerson } from './recording-person';
-export type AppOptions = TrialOptions & {trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
+export type AppOptions = TrialOptions & {sendReady?:SendReady;trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
-  const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber);
-  const work=queue.kick;app.locals.queue=queue;void work();
+  const mail=recordingMailWorker(db,options.sendReady,options.now);
+  const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber,()=>{void mail.kick();});
+  const work=()=>{void mail.kick();return queue.kick();};
+  app.locals.queue={kick:work,stop:async()=>{await queue.stop();await mail.stop();}};void work();
   const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:5,fields:2,fieldSize:2048,parts:7}}).array('recordings',5);
   app.disable('x-powered-by');
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
