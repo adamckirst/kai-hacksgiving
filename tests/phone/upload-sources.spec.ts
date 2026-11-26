@@ -20,7 +20,7 @@ test('three audio sources show guidance and return from shortcut setup to the ch
  await expect(page.getByText('Open Voice Memos from your Home Screen and choose a recording.',{exact:true})).toBeVisible();
  await expect(page.locator('a[href^="voicememos:"]')).toHaveCount(0);await assertPhone(page);
  await page.getByRole('button',{name:'Choose saved audio',exact:true}).click();
- await expect(page.getByRole('heading',{name:'What kind of recording?'})).toBeVisible();await page.getByRole('button',{name:/^Memo from me/}).click();
+ await expect(page.getByRole('heading',{name:'What kind of recording?'})).toBeVisible();await page.getByRole('button',{name:/^My memo/}).click();
  await page.getByRole('button',{name:'Files',exact:true}).click();
  const picker=page.getByLabel('Add recordings: choose up to five audio files');await expect(picker).toHaveAttribute('accept','.m4a,.opus,.ogg,.mp3,.wav');
  await picker.setInputFiles({name:'invented.txt',mimeType:'text/plain',buffer:Buffer.from('Invented words.')});
@@ -34,7 +34,7 @@ test('remaining time refuses an oversized duration, hides a missing post, and le
  const cookie=(await page.context().cookies()).find(c=>c.name==='kai_session')!;const id=cookie.value.split('.')[0];
  kai.db.prepare('UPDATE workspaces SET trial_verified=1,trial_seconds=1 WHERE id=?').run(id);
  await page.goto('/upload/new');await expect(page.getByText('0 min 1 sec of recording time left',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:/^Memo from me/}).click();
+ await page.getByRole('button',{name:/^My memo/}).click();
  await page.getByLabel('Add recordings: choose up to five audio files').setInputFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
  await expect(page.getByText(/remaining recording time/)).toBeVisible();
  expect((kai.db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(id) as {trial_seconds:number}).trial_seconds).toBe(1);
@@ -42,7 +42,7 @@ test('remaining time refuses an oversized duration, hides a missing post, and le
  const connection=await (await page.request.get('/api/connect')).json();
  const r=await page.request.post(connection.uploadPath,{multipart:{recordings:{name:'invented.wav',mimeType:'audio/wav',buffer:testTone()},date:new Date().toISOString()}});expect(r.status()).toBe(202);const {ids}=await r.json();
  // The last two seconds are already reserved. The attached recording must still be startable.
- await page.goto('/upload/'+ids[0]);await page.getByRole('button',{name:/^Memo from me/}).click();await expect(page.getByRole('button',{name:'Let KAI read',exact:true})).toBeEnabled();await assertPhone(page);
+ await page.goto('/upload/'+ids[0]);await page.getByRole('button',{name:/^My memo/}).click();await expect(page.getByRole('button',{name:'Let KAI read',exact:true})).toBeEnabled();await assertPhone(page);
  await page.getByRole('button',{name:'Let KAI read',exact:true}).click();await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();
  await page.goto('/upload/new');await expect(page.getByRole('heading',{name:'Your hour is complete'})).toBeVisible();await expect(page.getByRole('link',{name:'Show KAI some love'})).toHaveCount(0);await assertPhone(page);
  await page.goto('/home');await expect(page.getByRole('link',{name:'Show KAI some love'})).toHaveCount(0);

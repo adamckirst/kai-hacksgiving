@@ -5,8 +5,8 @@ test('recording type makes speaker timing explicit; meetings wait for speaker na
  await page.goto('/');await page.evaluate(s=>{history.replaceState(null,'','/#judge='+s);location.reload()},kai.secret);
  await page.getByRole('link',{name:'Try it yourself',exact:true}).click();await page.goto('/upload/new');
  const picker=page.getByLabel('Add recordings: choose up to five audio files');await expect(picker).toBeDisabled();
- await page.getByRole('button',{name:/^Memo from me/}).click();await expect(picker).toBeEnabled();await expect(page.getByLabel('Who is speaking?',{exact:true})).toHaveCount(0);await assertPhone(page);
- await page.getByRole('button',{name:/^Voice note from someone else/}).click();await expect(picker).toBeDisabled();await expect(page.getByLabel('Who is speaking?',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:/^My memo/}).click();await expect(picker).toBeEnabled();await expect(page.getByLabel('Who is speaking?',{exact:true})).toHaveCount(0);await assertPhone(page);
+ await page.getByRole('button',{name:/^Someone else/}).click();await expect(picker).toBeDisabled();await expect(page.getByLabel('Who is speaking?',{exact:true})).toBeVisible();
  await page.getByLabel('Who is speaking?',{exact:true}).selectOption('new');await page.getByLabel('Name',{exact:true}).fill('Avery Fern');await expect(picker).toBeEnabled();await assertPhone(page);
  await page.getByRole('button',{name:/^Multiple speakers/}).click();await expect(page.getByLabel('Who is speaking?',{exact:true})).toHaveCount(0);await expect(picker).toBeEnabled();await assertPhone(page);
  await picker.setInputFiles({name:'invented-meeting.wav',mimeType:'audio/wav',buffer:testTone()});

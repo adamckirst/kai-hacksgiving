@@ -8,8 +8,8 @@ for(const route of ['/people','/todos','/people/dana']) {
     const workspace=(await page.context().cookies()).find(c=>c.name==='kai_session')!.value.split('.')[0];
     await page.goto(route==='/people/dana' ? '/people/'+workspace+':dana':route);
     await page.getByRole('link',{name:'Add recordings',exact:true}).click();
-    await page.getByRole('button',{name:/^Voice note from someone else/}).click();await expect(page.getByLabel('Who is speaking?')).toBeVisible();
-    await page.getByRole('button',{name:/^Voice note from someone else/}).click();await page.getByLabel('Who is speaking?').selectOption(workspace+':dana');
+    await page.getByRole('button',{name:/^Someone else/}).click();await expect(page.getByLabel('Who is speaking?')).toBeVisible();
+    await page.getByRole('button',{name:/^Someone else/}).click();await page.getByLabel('Who is speaking?').selectOption(workspace+':dana');
     const chooser=page.waitForEvent('filechooser');
     await page.getByLabel('Add recordings: choose up to five audio files').click();
     await (await chooser).setFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});

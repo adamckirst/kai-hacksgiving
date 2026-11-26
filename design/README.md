@@ -144,3 +144,6 @@ before transcription. Multiple speakers pauses at “Who said what?” with
 labelled passages and Me/existing/new-person choices before suggestions.
 Memo recordings stay in the library without a speaker picker, and personal
 tasks can be accepted without creating a contact.
+
+The three recording types use one compact segmented selector, with a short
+explanation beneath the selected choice, as Copal requested.

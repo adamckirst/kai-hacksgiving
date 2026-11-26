@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { LinkedPerson, PersonChoice,RecordingType } from '../types'
-import { Button, Card, Field, FOCUS, Notice, PushedPage, RecordingPicker, WhatIsKai } from '../ui'
+import { Button, Card, Field, FOCUS, Notice, PushedPage, RecordingPicker, Segmented, WhatIsKai } from '../ui'
 import {Icon,type IconName} from '../icons'
 export type UploadSource='voice-memos'|'whatsapp'|'files'
 const sources:{id:UploadSource;label:string;icon:IconName}[]=[{id:'voice-memos',label:'Voice Memos',icon:'mic'},{id:'whatsapp',label:'WhatsApp',icon:'chat'},{id:'files',label:'Files',icon:'folder'}]
@@ -47,13 +47,10 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
       {!incoming && source==='voice-memos' && shortcutReady && <Notice>Prefer Files? In Voice Memos, tap Share, then Save to Files. Come back here and choose your saved audio.</Notice>}
       {!incoming && source!=='files' && !(source==='voice-memos' && shortcutReady) && <Notice>{shortcutReady ? 'Open the app, share your recording to Send to KAI, then choose the recording type here. If the app does not open, open it from your Home Screen.' : 'First, add Send to KAI to your iPhone’s shortcuts. Then share a recording from the app.'}</Notice>}
       {incoming && <Card className="p-5"><p className="text-base font-bold text-violet-700">Shared from your phone</p><h2 className="mt-1 text-lg font-extrabold">{incoming.title}</h2><p className="mt-2 text-base/7 font-medium text-zinc-600">Your recording is attached and waiting for you.</p></Card>}
-      {(incoming || source==='files') && <Card className="space-y-3 p-5"><h2 className="text-lg font-extrabold">What kind of recording?</h2>{([
-        ['memo','Memo from me','Your own thoughts or a recap. No speaker to choose.'],
-        ['voice','Voice note from someone else','Choose who is speaking before KAI reads.'],
-        ['multiple','Multiple speakers','Transcribe first, then identify who said what.']
-      ] as const).map(([value,title,detail])=><button key={value} type="button" disabled={busy} aria-pressed={recordingType===value} onClick={()=>setRecordingType(value)} className={`${FOCUS} block min-h-14 w-full rounded-2xl p-3 text-left text-base ${recordingType===value ? 'bg-violet-50 ring-1 ring-violet-200':'bg-zinc-50'}`}><span className="block font-bold">{title}</span><span className="mt-1 block leading-6 text-zinc-600">{detail}</span></button>)}</Card>}
-      {(incoming || source==='files') && recordingType==='memo' && <Notice>This is your memo. It stays in your library; KAI can suggest people and tasks mentioned in it.</Notice>}
-      {(incoming || source==='files') && recordingType==='multiple' && <Notice>KAI will separate the speakers’ words. You’ll identify each speaker before it suggests people updates and tasks.</Notice>}
+      {(incoming || source==='files') && <Card className="space-y-4 p-4"><h2 className="px-1 text-lg font-extrabold">What kind of recording?</h2>
+        <fieldset disabled={busy}><Segmented<RecordingType|''> label="Recording type" value={recordingType ?? ''} onChange={value=>setRecordingType(value || undefined)} items={[{key:'memo',label:'My memo'},{key:'voice',label:'Someone else'},{key:'multiple',label:'Multiple speakers'}]}/></fieldset>
+        <p className="px-1 text-base/7 text-zinc-600">{recordingType==='memo' ? 'Your own thoughts or a recap. No speaker to choose; it stays in your library.' : recordingType==='voice' ? 'A voice note from one person. Choose who sent it before KAI reads.' : recordingType==='multiple' ? 'Transcribe first, then identify who said what before KAI creates suggestions.' : 'Choose one to tell KAI whose words these are.'}</p>
+      </Card>}
       {(incoming || source==='files') && recordingType==='voice' && <Card className="space-y-4 p-5">
         <label htmlFor="upload-person" className="block text-base font-bold text-zinc-700">Who is speaking?</label>
         <select id="upload-person" disabled={busy} value={selected} onChange={e=>setSelected(e.target.value)} className="min-h-14 w-full rounded-2xl bg-zinc-50 px-4 py-3 text-base text-zinc-900 ring-1 ring-zinc-300 focus:ring-2 focus:ring-violet-500">
