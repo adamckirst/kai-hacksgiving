@@ -110,3 +110,6 @@ Phone setup is three compact steps: copy the private address, add the iOS
 shortcut, then try it. Manual setup is a closed disclosure under step 2.
 The private address is a separate disclosure, opened automatically if copying
 fails. Both expanded states are included in the gallery.
+
+Verified trial Home and signup explain recording-ready emails: suggestion
+counts and a review link, with recording content kept in KAI.

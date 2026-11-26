@@ -8,7 +8,7 @@ export function Trial({busy,error,codeSent,onSubmit,onVerify,onResend}:{busy?:bo
   <Card className="p-5"><form className="space-y-4" onSubmit={event=>{event.preventDefault();if(codeSent)onVerify?.(code);else onSubmit(email)}}>
    {codeSent ? <Field label="Verification code" id="trial-code" type="password" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} required value={code} onChange={e=>setCode(e.target.value)}/> : <>
     <Field label="Email" id="trial-email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={event=>setEmail(event.target.value)}/>
-    <p className="text-base/7 text-zinc-600">We’ll send a verification code through Resend. Your email reserves one trial, and I’ll write once if KAI becomes a product. Ask me and I delete it.</p>
+    <p className="text-base/7 text-zinc-600">We’ll send a verification code through Resend. Your email reserves one trial. KAI will email you when a recording is ready, with suggestion counts and a link to review. I’ll also write once if KAI becomes a product. Ask me and I delete it.</p>
    </>}
    {error && <Notice tone="error">{error}</Notice>}
    <Button variant="primary" wide type="submit" disabled={busy}>{busy ? 'Please wait…':codeSent ? 'Verify and open notebook':'Send verification code'}</Button>

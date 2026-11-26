@@ -41,6 +41,13 @@ export function openDatabase(path:string|Buffer = ':memory:') {
       FOREIGN KEY(workspace_id,owner_person_id) REFERENCES people(workspace_id,id),
       FOREIGN KEY(workspace_id,conversation_id) REFERENCES conversations(workspace_id,id)
     );
+    CREATE TABLE IF NOT EXISTS recording_emails (
+      id TEXT PRIMARY KEY REFERENCES conversations(id), workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+      counts TEXT NOT NULL CHECK(json_valid(counts)), queued_at INTEGER NOT NULL,
+      first_attempt_at INTEGER, attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER NOT NULL DEFAULT 0,
+      sent_at INTEGER, closed INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS notification_sends (id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id), sent_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS trial_challenges (email TEXT PRIMARY KEY,id TEXT NOT NULL,ip_hash TEXT NOT NULL,code_hash TEXT NOT NULL,expires_at INTEGER NOT NULL,attempts INTEGER NOT NULL,delivered INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS trial_sends (id TEXT PRIMARY KEY,ip_hash TEXT NOT NULL,email_hash TEXT NOT NULL,sent_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created_at TEXT NOT NULL);
@@ -68,6 +75,7 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
   if(!conversations.some(c=>c.name==='audio_path')) db.exec("ALTER TABLE conversations ADD COLUMN audio_path TEXT; ALTER TABLE conversations ADD COLUMN happened_at INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN transcribed INTEGER NOT NULL DEFAULT 0;");
   if(!conversations.some(c=>c.name==='batch_id')) db.exec('ALTER TABLE conversations ADD COLUMN batch_id TEXT');
+  if(!conversations.some(c=>c.name==='notify_ready'))db.exec('ALTER TABLE conversations ADD COLUMN notify_ready INTEGER NOT NULL DEFAULT 0');
   if(!conversations.some(c=>c.name==='reserved_seconds'))db.exec('ALTER TABLE conversations ADD COLUMN reserved_seconds INTEGER');
   if(!conversations.some(c=>c.name==='reserved_on')) db.exec('ALTER TABLE conversations ADD COLUMN reserved_on TEXT');
   if(!conversations.some(c=>c.name==='awaiting_person')) db.exec('ALTER TABLE conversations ADD COLUMN awaiting_person INTEGER NOT NULL DEFAULT 0');
