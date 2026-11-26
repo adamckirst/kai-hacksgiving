@@ -519,6 +519,7 @@ export function AddRecordings({ personId, hideNotifications }: { onFiles?: (file
   return <div className="flex w-full items-center gap-3">
     {!hideNotifications && <div className="relative shrink-0"><RoundLink href="/notifications" label={unread ? `Notifications, ${unread} unread`:'Notifications'} icon="bell"/>{unread>0 && <span aria-hidden="true" className="absolute right-1 top-1 size-3 rounded-full bg-rose-600 ring-2 ring-white"/>}</div>}
     <div className="min-w-0 flex-1"><Button variant="primary" wide icon="plus" href={'/upload/new'+(personId ? '?person='+encodeURIComponent(personId) : '')}>Add recordings</Button></div>
+    <div className="shrink-0"><RoundLink href="/search" label="Search" icon="search"/></div>
   </div>
 }
 
@@ -548,9 +549,5 @@ export function RecordingPicker({ onFiles, busy, disabled, label='Add recordings
 
 /** The action of a tab page in the read-only copy. */
 export function WhatIsKai() {
-  return (
-    <Button variant="primary" href="/try">
-      Try it yourself
-    </Button>
-  )
+  return <div className="flex w-full items-center gap-3"><div className="min-w-0 flex-1"><Button variant="primary" wide href="/try">Try it yourself</Button></div><div className="shrink-0"><RoundLink href="/search" label="Search" icon="search"/></div></div>
 }

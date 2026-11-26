@@ -1,8 +1,10 @@
+import {registerSearch} from './search';
 import Database from 'better-sqlite3';
 import { randomBytes } from 'node:crypto';
 
 export function openDatabase(path:string|Buffer = ':memory:') {
   const db = new Database(path);
+  registerSearch(db);
   db.pragma('foreign_keys = ON');
   db.pragma('journal_mode = WAL');
   db.exec(`

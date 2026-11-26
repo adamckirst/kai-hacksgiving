@@ -1,3 +1,5 @@
+import {SearchScreen} from './Search';
+import {TaskScreen} from './Task';
 import React,{useEffect,useState} from 'react';
 import { createRoot } from 'react-dom/client';
 import './look/kai.css';
@@ -33,7 +35,7 @@ function App() {
   if(route==='/operator')return <Operator secret={downloadSecret}/>;
   if(route==='/')return <Welcome access={access} failed={failed}/>;
   if(!access) {
-    const page=route.startsWith('/upload') ? 'Add recordings':route.startsWith('/recordings/') ? 'Recording':route.startsWith('/people/') ? 'Person':route==='/people' ? 'People':route==='/todos' ? 'Tasks':route==='/library' ? 'Library':route==='/notifications' ? 'Notifications':route==='/connect' ? 'Connections':'Home';
+    const page=route.startsWith('/upload') ? 'Add recordings':route.startsWith('/recordings/') ? 'Recording':route.startsWith('/people/') ? 'Person':route==='/people' ? 'People':route.startsWith('/todos/') ? 'Task':route==='/search' ? 'Search':route==='/todos' ? 'Tasks':route==='/library' ? 'Library':route==='/notifications' ? 'Notifications':route==='/connect' ? 'Connections':'Home';
     return <Opening page={page} failed={failed} onRetry={()=>location.reload()}/>;
   }
   return <Notebook access={access}/>;
@@ -43,6 +45,8 @@ function Notebook({access}:{access:Access}) {
   const [unread,setUnread]=useState(0);
   useEffect(()=>{if(readOnly)return;let alive=true;async function refresh(){try{const r=await fetch('/api/notifications');if(r.ok){const data=await r.json();if(alive)setUnread(data.unread)}}catch{}}void refresh();const timer=setInterval(()=>void refresh(),5000);return()=>{alive=false;clearInterval(timer)}},[readOnly]);
   function screen() {
+    if(route==='/search')return <SearchScreen readOnly={readOnly}/>;
+    if(route.startsWith('/todos/'))return <TaskScreen readOnly={readOnly}/>;
     if(route==='/library')return <LibraryScreen readOnly={readOnly}/>;
     if(route==='/notifications')return <LibraryScreen readOnly={readOnly} notifications/>;
   if(route==='/try')return <Waitlist trial/>;

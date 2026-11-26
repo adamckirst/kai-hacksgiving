@@ -15,3 +15,11 @@ export function finishTodo(db:KaiDatabase,workspace:string,id:string) {
   const result=db.prepare("UPDATE todos SET status='done' WHERE workspace_id=? AND id=?").run(workspace,id);
   if(!result.changes)throw new ReadingError('To-do not found.',404);
 }
+
+export function getTodo(db:KaiDatabase,workspace:string,id:string) {
+ return db.prepare(`SELECT t.id,t.text,t.status,t.due_on,t.owner_person_id,t.person_id,t.quote,t.conversation_id,
+ p.name person_name,o.name owner_name FROM todos t
+ LEFT JOIN people p ON p.workspace_id=t.workspace_id AND p.id=t.person_id
+ LEFT JOIN people o ON o.workspace_id=t.workspace_id AND o.id=t.owner_person_id
+ WHERE t.workspace_id=? AND t.id=?`).get(workspace,id);
+}
