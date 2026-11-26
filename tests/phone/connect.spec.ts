@@ -6,7 +6,7 @@ test('Connect explains the shortcut at 375 px and copies an address without show
   const placeholder='/in/'+('layout-example-'.repeat(5));
   await page.route('**/api/connect',route=>route.fulfill({json:{uploadPath:placeholder,mcpPath:'/mcp/'+('layout-example-'.repeat(5))}}));
   await page.goto('/');await page.evaluate(value=>{history.replaceState(null,'',`/#judge=${value}`);location.reload();},kai.secret);
-  await page.getByRole('link',{name:'Try it yourself'}).click();await page.getByRole('link',{name:'Connect',exact:true}).click();
+  await page.getByRole('link',{name:'Try it yourself'}).click();await page.getByRole('link',{name:'Connections',exact:true}).click();
   await expect(page.getByRole('button',{name:'Copy your address',exact:true})).toBeEnabled();
   await expect(page.locator('ol[aria-label="Phone setup"] > li > h3')).toHaveText(['1. Copy your address','2. Add the iOS shortcut','3. Try it']);
   await expect(page.getByText('Show in Share Sheet',{exact:false})).toBeHidden();

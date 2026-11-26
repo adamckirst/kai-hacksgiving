@@ -604,3 +604,47 @@ link. Use a white card, lavender background and one violet “Review in KAI”
 button. Keep a plain-text alternative. Escape the title in HTML and remove
 line breaks from the subject; freeze the title with the counts for retries.
 No transcript, summary text or suggestion text is added.
+
+
+## 14 · Notebook navigation and adding recordings (Copal, 26 November)
+
+Copal requested a “notifications tab accessible through a button on the
+left side of the add recordings”, and the main sections “home, library,
+people, and tasks”, moving Connect out of the main tabs. He confirmed
+“Build it fresh in KAI’s style”; no Kosmos-AI code or design is used.
+
+- Main tabs are Home, Library, People and Tasks. Library lists all of the
+  notebook’s recordings. Home keeps current progress, tasks and recent items.
+- A bell beside Add recordings opens recording-ready and failed-reading
+  updates. New updates are visibly unread until their recording is opened.
+  All reads and read-state changes are confined to the current notebook.
+- Connections is reached through a settings button. Home offers shortcut
+  setup until the person marks it done or KAI receives a shared recording.
+  The browser cannot inspect installed shortcuts; the state is a user
+  confirmation or a successful share, not an installation claim.
+- Add recordings offers Voice Memos, WhatsApp and Files. Each app has an
+  information button with its sharing steps. App sharing goes through the
+  iOS shortcut; people without completed setup are directed to Connections.
+  Files opens an audio-only picker. Keep the person choice before reading.
+- Keep the one-hour trial. Show remaining time and enforce it on the server,
+  along with the existing 10 MB/five-minute file and daily limits. The hour
+  does not increase per-file limits. When exhausted, keep the notebook
+  readable and offer “Show KAI some love” only when the launch X post is set.
+  Copal says that post is not published yet and will announce the app to judges.
+- Navigation PR checks: `npm run check`; gallery at 375 px; the four tabs
+  and settings route; Library and notifications stay within a notebook;
+  read-state and shortcut setup survive reload; public writes remain refused.
+- Upload follow-up PR checks: `npm run check`; gallery at 375 px; three
+  upload sources, their guidance and setup routing; non-audio and over-quota
+  files are refused; no missing-post link is shown. Phone app launches and
+  sharing need Copal’s iPhone check.
+
+### After the video and finished demo: own provider keys (stretch only)
+
+Copal requested that people eventually “add their own API key from Assembly
+AI and the AI model for processing summaries and todos when their quota
+expires”, explicitly “a stretch on the PRD after the video is created and
+the demo is ready.” Do not build, collect or store those keys now. After
+those prerequisites and Copal’s go-ahead, agree a secure credential design
+and provider rules before implementation. The current one-hour trial and
+connector setup remain in force.

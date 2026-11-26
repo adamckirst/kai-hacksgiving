@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Icon, type IconName } from '../icons'
 import type { Connection } from '../types'
-import { Button, Card, FOCUS, Notice, TabPage, WhatIsKai } from '../ui'
+import { Button, Card, FOCUS, Notice, PushedPage, WhatIsKai } from '../ui'
 
 /** An address to copy: shown whole, selectable, never a field you type in. */
 function Address({ label, id, value }: { label: string; id: string; value: string }) {
@@ -60,7 +60,13 @@ export function Connect({
   onCopy,
   showManual,
   showAddress,
+  onSetupDone,
+  setupBusy,
+  back = "/home",
 }: {
+  onSetupDone?: () => void
+  setupBusy?: boolean
+  back?: string
   showManual?: boolean
   showAddress?: boolean
   connection: Connection | null
@@ -73,7 +79,8 @@ export function Connect({
 }) {
   const feedback = (which: 'upload' | 'home' | 'assistant') => copyError?.at === which ? <Notice tone="error">{copyError.text}</Notice> : copied === which && <Notice tone="good">Copied.</Notice>
   return (
-    <TabPage current="/connect" title="Connect" subtitle="Send recordings in from your phone, and let your assistant read what you kept." readOnly={readOnly} due={due} dock={readOnly ? <WhatIsKai /> : undefined}>
+    <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
+      <header className="px-1"><h1 className="text-[32px]/10 font-extrabold">Connections</h1><p className="mt-2 text-base/7 text-zinc-600">Set up your phone or let an assistant read what you kept.</p></header>
       {error && <Notice tone="error">{error}</Notice>}
 
       <Card className="space-y-5 p-5">
@@ -144,6 +151,7 @@ export function Connect({
                 <p className="text-base/7 font-medium text-zinc-500">One file at a time, up to 10 MB and five minutes.</p>
               </li>
             </ol>
+            {connection.shortcutReady ? <Notice tone="good">Your phone shortcut is set up.</Notice> : onSetupDone && <Button variant="outline" wide disabled={setupBusy} onClick={onSetupDone}>{setupBusy ? 'Saving…':'I’ve added the shortcut'}</Button>}
           </>
         )}
       </Card>
@@ -180,6 +188,6 @@ export function Connect({
           )
         )}
       </Card>
-    </TabPage>
+    </PushedPage>
   )
 }

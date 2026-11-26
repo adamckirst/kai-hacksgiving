@@ -46,7 +46,7 @@ export function Todos({
   return (
     <TabPage
       current="/todos"
-      title="To-dos"
+      title="Tasks"
       subtitle={
         todos ? (
           <>

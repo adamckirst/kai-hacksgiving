@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 66 states. The phone suite checks all public and judge
+`check.mjs` checks all 77 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -119,3 +119,11 @@ violet call-to-action as the app. `email-ready.html` and `email-empty.html`
 are invented-data captures from `src/email/ready.ts`; their phone pictures
 are `shots/email-ready.png` and `shots/email-empty.png`. The entry title is
 shown in the subject and body, as Copal requested.
+
+
+Notebook navigation is Home, Library, People and Tasks. Connections moves to
+an always-available settings button; a Home card offers phone setup until
+it is marked done or a shared recording arrives. The notification bell sits
+left of Add recordings and opens ready/failed recording updates. Opening an
+update marks only its current status read; Library keeps the full history.
+These views are newly written in KAI’s style. No other repository was opened.

@@ -52,9 +52,29 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
   app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null,trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds}));
   app.get('/api/connect',(_req,res)=> {
-    const row=db.prepare("SELECT upload_token,mcp_token FROM workspaces WHERE id=? AND kind='judge'").get(res.locals.workspace) as {upload_token:string;mcp_token:string}|undefined;
+    const row=db.prepare("SELECT upload_token,mcp_token,shortcut_ready FROM workspaces WHERE id=? AND kind='judge'").get(res.locals.workspace) as {upload_token:string;mcp_token:string;shortcut_ready:number}|undefined;
     if(!row){res.status(403).json({error:'Open your own copy to connect your phone.'});return;}
-    res.json({uploadPath:'/in/'+row.upload_token,mcpPath:'/mcp/'+row.mcp_token});
+    res.json({uploadPath:'/in/'+row.upload_token,mcpPath:'/mcp/'+row.mcp_token,shortcutReady:Boolean(row.shortcut_ready)});
+  });
+  app.post('/api/connect/shortcut',(req,res)=>{
+    if(typeof req.body?.ready!=='boolean'){res.status(400).json({error:'Choose whether your shortcut is set up.'});return;}
+    db.prepare('UPDATE workspaces SET shortcut_ready=? WHERE id=?').run(Number(req.body.ready),res.locals.workspace);
+    res.json({ok:true});
+  });
+  const recordings=(workspace:string)=>db.prepare(`SELECT c.id,c.title,c.summary,c.happened_on,c.status,c.error,c.awaiting_person,
+    CASE WHEN c.notification_seen_status=c.status THEN 1 ELSE 0 END seen,
+    (SELECT count(*) FROM suggestions s WHERE s.conversation_id=c.id AND s.workspace_id=c.workspace_id AND s.status='proposed') suggestion_count
+    FROM conversations c WHERE c.workspace_id=? ORDER BY c.happened_at DESC,c.rowid DESC`).all(workspace) as {status:string;seen:number}[];
+  app.get('/api/library',(_req,res)=>res.json(recordings(res.locals.workspace)));
+  app.get('/api/notifications',(_req,res)=>{
+    const items=res.locals.workspace==='public' ? []:recordings(res.locals.workspace).filter(r=>['ready','failed'].includes(r.status));
+    res.json({items,unread:items.filter(r=>!r.seen).length});
+  });
+  app.post('/api/notifications/:id/seen',(req,res)=>{
+    if(!['ready','failed'].includes(req.body?.status)){res.status(400).json({error:'Open a finished recording to read its update.'});return;}
+    const result=db.prepare('UPDATE conversations SET notification_seen_status=status WHERE id=? AND workspace_id=? AND status=?').run(req.params.id,res.locals.workspace,req.body.status);
+    if(!result.changes){res.status(404).json({error:'This update is no longer here.'});return;}
+    res.json({ok:true});
   });
   app.get('/api/people', (_req,res) => res.json(peopleList(db,res.locals.workspace)));
   app.get('/api/todos',(_req,res)=>res.json(listTodos(db,res.locals.workspace)));
@@ -77,6 +97,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
   });
   app.get('/api/home',(_req,res) => res.json({
+    shortcutReady:Boolean((db.prepare('SELECT shortcut_ready FROM workspaces WHERE id=?').get(res.locals.workspace) as {shortcut_ready:number}).shortcut_ready),
     trialVerified:Boolean((db.prepare('SELECT trial_verified FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_verified:number}).trial_verified),
     trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds,
     todos:db.prepare("SELECT t.id,t.text,t.due_on,p.name AS person_name FROM todos t LEFT JOIN people p ON p.id=t.person_id AND p.workspace_id=t.workspace_id WHERE t.workspace_id = ? AND t.status = 'open' AND t.owner_person_id IS NULL ORDER BY t.due_on IS NULL,t.due_on").all(res.locals.workspace),
@@ -146,7 +167,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/try', '/home', '/upload', '/upload/:id', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get(['/', '/try', '/home', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose up to five recordings, each up to 10 MB.'});return;}
     res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});

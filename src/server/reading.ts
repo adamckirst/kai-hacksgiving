@@ -59,7 +59,7 @@ export function retryReading(db:KaiDatabase,workspace:string,id:string) {
     if(row.status!=='failed') throw new ReadingError('This recording is not ready to retry.',409);
     reserveReading(db,workspace);if(row.audio_path && !row.transcribed) reserveRecording(db,workspace);
     db.prepare("DELETE FROM suggestions WHERE conversation_id=? AND workspace_id=? AND status='proposed'").run(id,workspace);
-    db.prepare("UPDATE conversations SET status='waiting',error=NULL,progress=NULL,attempts=0 WHERE id=? AND workspace_id=?").run(id,workspace);
+    db.prepare("UPDATE conversations SET status='waiting',error=NULL,progress=NULL,notification_seen_status=NULL,attempts=0 WHERE id=? AND workspace_id=?").run(id,workspace);
   })();
 }
 export async function readConversation(db:KaiDatabase,id:string,reader:Reader,signal?:AbortSignal) {

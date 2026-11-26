@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '../src/look/kai.css'
 import * as data from './fixtures'
 import { Opening } from '../src/look/screens/Opening'
+import {Library,Notifications} from '../src/look/screens/Library'
 import { Upload } from '../src/look/screens/Upload'
 import { Connect } from '../src/look/screens/Connect'
 import { Home } from '../src/look/screens/Home'
@@ -83,13 +84,27 @@ function LiveTodos({ view, readOnly = false, empty = false }: { view?: 'mine' | 
 
 function LiveConnect() {
   const [copied, setCopied] = useState<'upload' | 'home' | 'assistant' | null>(null)
-  return <Connect connection={data.connection} readOnly={false} due="overdue" copied={copied} onCopy={(which) => setCopied(which)} />
+  return <Connect connection={data.connection} readOnly={false} due="overdue" copied={copied} onCopy={(which) => setCopied(which)} onSetupDone={nothing} />
 }
 
 const homeProps = { home: data.home, samples: data.samples, today, due: 'overdue' as const, onFiles: nothing, onRead: nothing, onSample: nothing }
 
+const libraryItems=data.home.conversations.map((c,i)=>({...c,happened_on:today,status:'ready' as const,error:null,awaiting_person:0,seen:i ? 1:0,suggestion_count:i ? 0:3}))
+
 /** Every state, by its address. The first word is the screen. */
 const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
+  library:{title:'Library',screen:()=> <Library items={libraryItems} readOnly={false}/>},
+  'library/empty':{title:'Library · empty',screen:()=> <Library items={[]} readOnly={false}/>},
+  'library/loading':{title:'Library · loading',screen:()=> <Library items={null} readOnly={false}/>},
+  'library/failed':{title:'Library · could not load',screen:()=> <Library items={null} readOnly={false} error="Your recordings could not load. Reload this page to try again."/>},
+  'library/public':{title:'Library · read-only',screen:()=> <Library items={libraryItems} readOnly/>},
+  notifications:{title:'Notifications',screen:()=> <Notifications items={[{...libraryItems[0],status:'failed',seen:0},...libraryItems.slice(1)]} readOnly={false}/>},
+  'notifications/empty':{title:'Notifications · empty',screen:()=> <Notifications items={[]} readOnly={false}/>},
+  'notifications/loading':{title:'Notifications · loading',screen:()=> <Notifications items={null} readOnly={false}/>},
+  'notifications/failed':{title:'Notifications · could not load',screen:()=> <Notifications items={null} readOnly={false} error="Your recordings could not load. Reload this page to try again."/>},
+  'connect/ready':{title:'Connections · phone set up',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} readOnly={false} onCopy={nothing}/>},
+  'home/connected':{title:'Home · phone set up',screen:()=> <Home {...homeProps} home={{...data.home,shortcutReady:true}} readOnly={false}/>},
+
   'try/code': {title:'Trial · verification code',screen:()=> <Trial codeSent onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
   'try/code-error': {title:'Trial · wrong code',screen:()=> <Trial codeSent error='Check the code and try again.' onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
   try: {title:'Trial · join',screen:()=> <Trial onSubmit={nothing}/>},
