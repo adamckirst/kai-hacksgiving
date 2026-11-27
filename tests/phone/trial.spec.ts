@@ -43,3 +43,14 @@ test('Home card reuses its email, requires popup consent and verifies into the s
  await dialog.getByLabel('Verification code').fill(kai.codes.get(email)!);await dialog.getByRole('button',{name:'Verify and open notebook'}).click();
  await expect(page.getByText('Your notebook starts here')).toBeVisible();await expect(page.getByText('30 min 0 sec left')).toBeVisible();
 });
+
+
+test('public trial action yields at the lower viewport edge on phone and desktop',async({page})=>{
+ for(const width of [375,1280]){
+  await page.setViewportSize({width,height:812});await page.goto('/home');
+  const floating=page.getByRole('link',{name:'Try it yourself',exact:true});await expect(floating).toBeVisible();
+  const card=page.getByRole('button',{name:'Try it myself',exact:true});await expect(card).toBeEnabled();
+  await card.evaluate(el=>el.scrollIntoView({block:'end'}));await expect(floating).toHaveCount(0);await assertPhone(page);
+  await page.evaluate(()=>scrollTo(0,0));await expect(floating).toBeVisible();await assertPhone(page);
+ }
+});

@@ -25,7 +25,7 @@ export function Waitlist({
   const {enabled,active,setActive}=useContext(SignupCardContext)
   const action=useRef<HTMLDivElement>(null)
   const [visible,setVisible]=useState(false)
-  useEffect(()=>{const node=action.current;if(!enabled || !node || saved){setVisible(false);return}const observer=new IntersectionObserver(entries=>setVisible(entries[0].isIntersecting),{rootMargin:'-160px 0px -100px 0px'});observer.observe(node);return()=>observer.disconnect()},[enabled,saved])
+  useEffect(()=>{const node=action.current;if(!enabled || !node || saved){setVisible(false);return}const observer=new IntersectionObserver(entries=>setVisible(entries[0].isIntersecting),{rootMargin:'-160px 0px 0px 0px'});observer.observe(node);return()=>observer.disconnect()},[enabled,saved])
   useEffect(()=>{setActive(Boolean(enabled && (visible || trialOpen)));return()=>setActive(false)},[enabled,visible,trialOpen,setActive])
   return (
     <section aria-label="Keep me posted" className="rounded-3xl border border-dashed border-violet-300 bg-transparent p-5">
