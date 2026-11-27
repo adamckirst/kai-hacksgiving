@@ -44,7 +44,9 @@ are technical decisions, each with its reason.
 
 **Usability** (checked in a browser test at 375 px wide, on every screen):
 
-- U6. No sideways scroll. Text at least 16 px. Tap targets at least 44 px.
+- U6. No sideways scroll. Body text at least 16 px. Non-interactive status
+  badges, including overdue/due-soon labels and their counts, may use 14 px
+  (Copal). Tap targets stay at least 44 px.
 - U7. Exactly one filled violet button: the screen's one obvious action.
   Exception (Copal): private recording pages may omit the main action while
   loading, waiting, listening or reading before the first suggestion, and
@@ -885,3 +887,41 @@ Implement in order: this plan PR, email sign-in PR, then personal-instance
 setup/guide and continuation UI PR. Each goes through the existing review
 loop, merge and deployment. The secret and connector-only rules stay intact;
 AGENTS.md and the review scripts need no change for this plan.
+
+
+## 19 · Quieter email card and compact status labels (Copal)
+
+Copal approved “Allow 14 px status badges” and “Update the card flow in the
+PRD” after requesting smaller overdue labels and a secondary-looking email
+card with a dashed outline. These rules supersede §3's waitlist-only card
+and U6's former blanket 16 px minimum; all other access and spending rules
+stay unchanged.
+
+- Use 14 px type only for non-interactive status badges and counts, such as
+  overdue and due-soon labels. Body text remains at least 16 px; interactive
+  targets remain at least 44 px. Update the phone and gallery checks to
+  recognize only this narrow typography exception.
+- Give the email card a quiet dashed outline. On public Home it offers a
+  main “Try it myself” and a secondary “Keep me posted” action. Signed-in
+  notebooks keep the waitlist-only action; the trial does not replace their
+  notebook or replenish their allowance.
+- “Try it myself” uses the email already entered in that card, then opens
+  an information and terms-agreement popup before requesting a verification
+  code. The popup does not ask for the email again. It explains the existing
+  demo allowance, eligibility, privacy, email uses and deletion; its terms
+  link and required checkbox precede sending. The same email-code proof and
+  current grant limits apply before opening the empty private notebook.
+- Hide the floating public trial button while the card's trial action is
+  in view, and restore it on scrolling away. Keep one filled violet action;
+  while the popup is open, its submit action is the filled one. Search stays
+  available. Keep me posted still only joins the waitlist and grants no trial.
+- Keep the entered address in transient component state, never a URL,
+  browser storage, a log or a model call. Closing the popup retains the
+  card's input and does not grant access or send a code before agreement.
+- Checks: npm run check; gallery at 375 px; status badges are 14 px while
+  body text and tap targets retain their minimums; phone and desktop scrolling
+  hand off the trial action without duplicates; card signup reuses the email,
+  requires agreement and verifies through the existing flow; cancellation
+  preserves input; waitlist-only signup still creates no trial. Verify the
+  deployed public layout and run isolated signup checks on the Sprite with
+  invented data and fake providers; do not use real tester addresses.
