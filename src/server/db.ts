@@ -58,6 +58,14 @@ export function openDatabase(path:string|Buffer = ':memory:') {
       first_attempt_at INTEGER, attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER NOT NULL DEFAULT 0,
       sent_at INTEGER, closed INTEGER NOT NULL DEFAULT 0, UNIQUE(workspace_id,fingerprint)
     );
+    CREATE TABLE IF NOT EXISTS login_challenges (
+      email TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id), id TEXT NOT NULL,
+      code_hash TEXT NOT NULL, browser_hash TEXT NOT NULL, expires_at INTEGER NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0, delivered INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS browser_sessions (
+      digest TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id), expires_at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created_at TEXT NOT NULL);
   `);
   db.transaction(()=> {

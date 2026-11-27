@@ -37,7 +37,7 @@ test('recording mail isolates verified recipients, sends counts only, and skips 
   assert.deepEqual(sent.find(s=>s.id===empty),{email:second.email,id:empty,counts:{person:0,note:0,todo:0,done:0}});
   for(const result of sent) {
    const text=readyMessage('https://kai.example.invalid',result.id,result.counts);
-   assert.ok(text.includes('/recordings/'+result.id));assert.ok(text.includes('browser where you started'));
+   assert.ok(text.includes('/recordings/'+result.id));assert.ok(text.includes('sign in with a fresh email code'));
    for(const privateText of ['Private invented',first.email,second.email,first.cookie,second.cookie])assert.ok(!text.includes(privateText));
   }
   assert.match(readyMessage('https://kai.example.invalid',empty,sent.find(s=>s.id===empty)!.counts),/no new suggestions/);

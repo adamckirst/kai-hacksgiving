@@ -19,7 +19,8 @@ export function Trial({busy,error,codeSent,onSubmit,onVerify,onResend}:{busy?:bo
   </form></Card>
   <p className="px-1 text-base/7 text-zinc-600">One trial per email and public IP address. People sharing a network share one allowance. We keep a protected fingerprint of the address to enforce this.</p>
   <p className="px-1 text-base/7 text-zinc-600">30 minutes total, with up to 10 recordings a day, under 30 minutes each. Daily demo limits may mean trying again tomorrow. No payment needed.</p>
-  <p className="px-1 text-base/7 text-zinc-600">Keep using this browser to return to your notebook. Verifying again won’t refill your time. Your notebook is deleted on 8 December.</p>
+  <p className="px-1 text-base/7 text-zinc-600">Sign in with a fresh email code to return to the same notebook on another device. Signing in won’t refill your time. Your notebook is deleted on 8 December.</p>
+  <Button variant="quiet" href="/login">Already tried KAI? Sign in</Button>
   <Button variant="quiet" href="/home">Look around or join the waitlist</Button>
  </PushedPage>
 }

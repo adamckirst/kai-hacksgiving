@@ -429,8 +429,8 @@ atomically with the daily counters. Rejected uploads roll back; accepted
 uploads consume time even when transcription fails. Retries of that upload
 do not deduct its duration again. Existing unverified trials retain their
 notebooks and remaining time but cannot call providers until verified.
-Private judge invitations remain separate. Keep the original browser;
-this verification flow does not recover another browser’s notebook.
+Private judge invitations remain separate. Verified testers can use Sign in
+to reopen their existing notebook on another browser, with a fresh email code.
 
 Daily caps and provider limits are unchanged. Files remain capped at 10 MB
 and must be shorter than 30 minutes. The 30 minutes may span days. Fifty
@@ -450,3 +450,21 @@ Trial signup requires agreement to the demo terms. Existing trial time is
 reduced once to a 30-minute total, counting time already used. Accepted
 recordings keep their reservations. Quota-rejected uploads queue a private
 notice within the existing email limits, without retaining the rejected audio.
+
+### Sign in to the same notebook
+
+Welcome and Connections offer email sign-in for existing verified testers.
+Codes expire after ten minutes, allow five guesses, and work only in the
+browser that requested them. Login and signup challenges are separate and
+share the existing send limits with recording emails. Unknown addresses,
+unverified subscriptions and failed deliveries get the same request reply.
+Login works from another network and after all trial grants have been used;
+it creates no new notebook, trial, IP grant, subscription or recording time.
+
+Each sign-in creates an independent, revocable 14-day browser session, stored
+as a digest. At most ten such sessions are kept per notebook. Connections
+offers Sign out here or Sign out everywhere; both keep upload/MCP addresses.
+Existing invitation cookies stay valid until sign-out, but have no email
+recovery unless the notebook already has a verified trial address. Switching
+notebooks requires signing out explicitly. Recording email links ask for
+sign-in when needed and return to the recording after verification.

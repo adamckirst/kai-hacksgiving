@@ -56,6 +56,7 @@ export function Welcome({ access, failed }: { access: Access | null; failed?: bo
           )}
           {!opening && access?.kind !== 'judge' && <>
             <p className="text-center text-base font-medium text-zinc-600">Join the waitlist. Try 30 minutes of your own recordings.</p>
+            <Button variant="quiet" wide href="/login">Sign in</Button>
             <Button variant="quiet" wide href="/home">Look around</Button>
           </>}
         </div>
