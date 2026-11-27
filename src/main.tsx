@@ -4,6 +4,7 @@ import {SearchScreen} from './Search';
 import {TaskScreen} from './Task';
 import React,{useEffect,useState} from 'react';
 import { createRoot } from 'react-dom/client';
+import {flushSync} from 'react-dom';
 import './look/kai.css';
 import { Opening } from './look/screens/Opening';
 import { Welcome } from './look/screens/Welcome';
@@ -33,7 +34,24 @@ const accessRequest = openAccess();
 function App() {
   const [access,setAccess]=useState<Access|null>(null),[failed,setFailed]=useState(false);
   useEffect(()=>{accessRequest.then(setAccess).catch(()=>setFailed(true));},[]);
-  const route=location.pathname;
+  const [route,setRoute]=useState(location.pathname);
+  useEffect(()=>{
+    if(!access)return;
+    function openSearch(event:MouseEvent) {
+      if(event.defaultPrevented || event.button!==0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)return;
+      const link=event.target instanceof Element ? event.target.closest('a'):null;
+      if(link?.getAttribute('href')!=='/search' || link.hasAttribute('download') || (link.target && link.target!=='_self'))return;
+      event.preventDefault();
+      history.pushState(null,'','/search');
+      // Safari needs the real input focused inside the tap, before any async work.
+      flushSync(()=>setRoute('/search'));
+      document.getElementById('search-query')?.focus();
+    }
+    const restoreRoute=()=>setRoute(location.pathname);
+    document.addEventListener('click',openSearch);
+    window.addEventListener('popstate',restoreRoute);
+    return()=>{document.removeEventListener('click',openSearch);window.removeEventListener('popstate',restoreRoute)};
+  },[access]);
   if(route==='/terms')return <Terms fromHome={new URLSearchParams(location.search).get('from')==='home'}/>;
   if(route==='/operator')return <Operator secret={downloadSecret}/>;
   if(route==='/')return <Welcome access={access} failed={failed}/>;
