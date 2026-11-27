@@ -16,7 +16,7 @@ export function TrialPopup({open,onClose,busy,error,codeSent,onSubmit,onVerify,o
    {error && <Notice tone="error">{error}</Notice>}
    <Button variant="primary" wide type="submit" disabled={busy || (!codeSent && !agreed)}>{busy?'Please wait…':codeSent?'Verify and open notebook':'Send verification code'}</Button>
    {codeSent && <Button variant="quiet" wide disabled={busy} onClick={onResend}>Send another code</Button>}
-   <Button variant="quiet" wide onClick={onClose}>Back to browsing</Button>
+   <Button variant="quiet" wide disabled={busy} onClick={onClose}>Back to browsing</Button>
   </form>
  </Dialog>
 }

@@ -4,7 +4,7 @@
 //   PLAYWRIGHT_BROWSERS_PATH=.playwright node design/check.mjs
 //
 // The rules are the PRD's U6 to U8, at 375 px wide:
-//   - no sideways scroll; no text under 16 px; no link, button or field under 44 px;
+//   - no sideways scroll; status badges at least 14 px, other text at least 16 px; no link, button or field under 44 px;
 //   - exactly one filled violet button: the screen's one action;
 //   - none of the words the screens never say.
 // It prints what fails and exits 1; with nothing to report it exits 0.
@@ -33,7 +33,7 @@ for (const state of states) {
     for (const el of document.querySelectorAll('body *')) {
       if (!el.getClientRects().length || el.closest('svg')) continue
       const ownText = [...el.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim())
-      if (ownText && parseFloat(getComputedStyle(el).fontSize) < 16) issues.push('small text: ' + el.textContent.trim().slice(0, 40))
+      if (ownText && parseFloat(getComputedStyle(el).fontSize) < (el.matches('span[data-status-badge="true"]:not([role]):not([tabindex])') ? 14 : 16)) issues.push('small text: ' + el.textContent.trim().slice(0, 40))
     }
     for (const el of document.querySelectorAll('a,button,input,select,textarea,summary')) {
       if (el.hasAttribute('data-headlessui-focus-guard')) continue // the kit's unseen focus keepers

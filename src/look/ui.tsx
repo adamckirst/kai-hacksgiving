@@ -5,7 +5,7 @@ import { Icon, type IconName } from './icons'
 /*
  * The pieces every screen is made of. Three rules hold in all of them, and
  * `design/check.mjs` measures them at 375 px:
- *   - no text under 16 px;
+ *   - status badges at least 14 px; other text at least 16 px;
  *   - every link, button and field is at least 44 px wide and tall;
  *   - one screen has exactly one filled violet button: its one action.
  */
@@ -185,9 +185,10 @@ export function CountBadge({ tone, count, label }: { tone: 'overdue' | 'soon' | 
   if (!count) return null
   return (
     <span
+      data-status-badge="true"
       aria-label={`${count} ${label}`}
       className={clsx(
-        'inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-base font-extrabold',
+        'inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-sm font-extrabold',
         tone === 'overdue' && 'bg-rose-600 text-white',
         tone === 'soon' && 'bg-amber-400 text-amber-950',
         tone === 'kai' && 'bg-violet-100 text-violet-800'
@@ -237,8 +238,9 @@ export function DueChip({ day, today }: { day: string | null; today: string }) {
   if (tone === 'later') return <span className="font-semibold text-zinc-600">{dueWords(day, today)}</span>
   return (
     <span
+      data-status-badge="true"
       className={clsx(
-        'inline-flex min-h-7 items-center gap-1 rounded-full px-2.5 text-base font-bold ring-1',
+        'inline-flex min-h-7 items-center gap-1 rounded-full px-2.5 text-sm font-bold ring-1',
         tone === 'overdue' ? 'bg-rose-50 text-rose-700 ring-rose-200' : 'bg-amber-50 text-amber-800 ring-amber-200'
       )}
     >

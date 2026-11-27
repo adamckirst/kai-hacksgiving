@@ -24,7 +24,7 @@ export function Waitlist({trial=false}:{trial?:boolean}) {
   async function verify(code:string){setBusy(true);setError('');try{const r=await fetch('/api/trial/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:codeEmail,code,termsVersion:TERMS_VERSION})});const data=await r.json();if(!r.ok)throw new Error(data.error);location.assign('/home');}catch(e){setError(e instanceof Error ? e.message:'The code could not be checked.');}finally{setBusy(false);}}
   if(trial)return <Trial busy={busy} codeSent={Boolean(codeEmail)} error={error} onSubmit={email=>void submit(email)} onVerify={code=>void verify(code)} onResend={()=>void submit(codeEmail)}/>;
   return <><WaitlistView postUrl={post} saved={saved} busy={!ready || busy} error={trialOpen?undefined:error} trialOpen={trialOpen} onTry={email=>{setTrialEmail(email);setError('');setCodeEmail('');setTrialOpen(true)}} onSubmit={email=>void submit(email)}/>
-   {trialOpen && <TrialPopup open onClose={()=>{setTrialOpen(false);setError('')}} busy={busy} error={error} codeSent={Boolean(codeEmail)} onSubmit={()=>void submit(trialEmail,true)} onVerify={code=>void verify(code)} onResend={()=>void submit(trialEmail,true)}/>}
+   {trialOpen && <TrialPopup open onClose={()=>{if(busy)return;setTrialOpen(false);setError('')}} busy={busy} error={error} codeSent={Boolean(codeEmail)} onSubmit={()=>void submit(trialEmail,true)} onVerify={code=>void verify(code)} onResend={()=>void submit(trialEmail,true)}/>}
   </>;
 }
 
