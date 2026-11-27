@@ -27,7 +27,7 @@ export function mountLogin(app:Express,db:KaiDatabase,options:LoginOptions) {
   const parsed=z.object({everywhere:z.boolean()}).strict().safeParse(req.body),workspace=workspaceFor(db,req);
   if(!parsed.success){res.status(400).json({error:'Choose where to sign out.'});return;}
   if(workspace!=='public')db.transaction(()=>revokeBrowserSessions(db,req,workspace,parsed.data.everywhere))();
-  res.clearCookie(cookieName,cookies);res.clearCookie(challengeCookie,cookies);res.json({ok:true});
+  res.clearCookie(cookieName,cookies);res.clearCookie(challengeCookie,cookies);res.clearCookie('kai_entry',cookies);res.json({ok:true});
  });
  app.post('/api/login/code',async(req,res)=>{
   const parsed=requestSchema.safeParse(req.body);

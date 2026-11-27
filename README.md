@@ -408,7 +408,8 @@ notebook opened through a judge invitation or waitlist trial. Video work waits f
 
 ### Public recording trial
 
-“Try it yourself” leads to email verification and an empty private notebook.
+“Try it yourself” verifies an email first. A returning owner reopens their
+notebook; a new tester agrees to terms before an empty notebook is created.
 A six-digit code sent through the existing Resend Sprite connector expires
 in ten minutes and permits five guesses. Codes are protected with a keyed
 digest and never logged or stored as plaintext. Sending is limited to once
@@ -441,12 +442,12 @@ Transcription requests do not enable keyterms or other paid add-ons.
 The sender is configured only on the Sprite in `kai-state/mail-from`.
 No Resend key enters the app; the connector keeps it. A marker at
 `kai-state/trial-network-verified` enables signup only after the operator’s
-proxy check. Missing configuration fails closed. Two server-only tables
+proxy check. Missing configuration fails closed. Server-only tables
 keep short-lived code challenges and bounded send counters. The waitlist
 holds the verified date, private notebook link and protected IP digest;
 none of these enter notebook/MCP responses.
 
-Trial signup requires agreement to the demo terms. Existing trial time is
+Trial signup requires agreement to the demo terms after email verification. Existing trial time is
 reduced once to a 30-minute total, counting time already used. Accepted
 recordings keep their reservations. Quota-rejected uploads queue a private
 notice within the existing email limits, without retaining the rejected audio.
@@ -455,9 +456,12 @@ notice within the existing email limits, without retaining the rejected audio.
 
 Welcome and Connections offer email sign-in for existing verified testers.
 Codes expire after ten minutes, allow five guesses, and work only in the
-browser that requested them. Login and signup challenges are separate and
-share the existing send limits with recording emails. Unknown addresses,
-unverified subscriptions and failed deliveries get the same request reply.
+browser that requested them. The public card, /try and /login share one
+verification-first flow and the existing send limits with recording emails.
+Unknown addresses, unverified subscriptions and failed deliveries get the
+same request reply. Notebook ownership is resolved only after code proof.
+Current agreements keep their original acceptance time; missing or outdated
+agreements require explicit consent after proof, before opening the notebook.
 Login works from another network and after all trial grants have been used;
 it creates no new notebook, trial, IP grant, subscription or recording time.
 
@@ -468,3 +472,10 @@ Existing invitation cookies stay valid until sign-out, but have no email
 recovery unless the notebook already has a verified trial address. Switching
 notebooks requires signing out explicitly. Recording email links ask for
 sign-in when needed and return to the recording after verification.
+
+The public email card explains trying personal recordings with 30 minutes
+and the separate Keep me posted option. Code entry opens immediately, using
+the email already entered. New users have ten minutes from their code request
+to complete verification and consent. Cancelling creates no notebook or trial.
+Legacy login/signup endpoints remain compatible with already-open pages; their
+old codes cannot be used in the shared entry flow.

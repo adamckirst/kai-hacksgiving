@@ -63,6 +63,12 @@ export function openDatabase(path:string|Buffer = ':memory:') {
       code_hash TEXT NOT NULL, browser_hash TEXT NOT NULL, expires_at INTEGER NOT NULL,
       attempts INTEGER NOT NULL DEFAULT 0, delivered INTEGER NOT NULL DEFAULT 0
     );
+    CREATE TABLE IF NOT EXISTS entry_challenges (
+      email TEXT PRIMARY KEY, id TEXT NOT NULL UNIQUE, ip_hash TEXT NOT NULL,
+      browser_hash TEXT NOT NULL UNIQUE, origin_workspace TEXT NOT NULL REFERENCES workspaces(id),
+      code_hash TEXT NOT NULL, expires_at INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
+      delivered INTEGER NOT NULL DEFAULT 0, verified INTEGER NOT NULL DEFAULT 0
+    );
     CREATE TABLE IF NOT EXISTS browser_sessions (
       digest TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id), expires_at INTEGER NOT NULL
     );

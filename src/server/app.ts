@@ -1,3 +1,4 @@
+import {mountEmailEntry} from './email-entry';
 import {mountLogin,type LoginOptions} from './login';
 import {quotaMailWorker,type SendQuota} from './quota-mail';
 import {searchNotebook} from './search';
@@ -35,6 +36,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   mountMcp(app,db);
   mountTrial(app,db,options);
   mountLogin(app,db,options);
+  mountEmailEntry(app,db,options);
   mountWaitlist(app,db,options);
   // A 20,000-character transcript can need 120 KB when JSON escapes it.
   app.use(express.json({limit:'128kb'}));
