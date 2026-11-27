@@ -184,3 +184,5 @@ Overdue/due-soon badges and status counts use 14 px type. Only the marked non-in
 The public email card introduces both choices: try personal recordings with 30 minutes of demo time, or receive one future product email. Signed-in and saved waitlist cards retain their waitlist-only wording.
 
 The public card, trial and sign-in share email, code and post-verification terms states. Returning owners with current terms go straight to their notebook without a repeated checkbox. Updated terms have their own full-page and popup states.
+
+Welcome follows recordings → personal knowledge → assistant access. It uses “never replayed,” describes finding people, ideas and next steps, and puts the 30-minute trial before the waitlist. Try it yourself is the single signup/sign-in entry; the separate Welcome sign-in link is removed.

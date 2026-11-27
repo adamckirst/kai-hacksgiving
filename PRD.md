@@ -810,9 +810,11 @@ restriction and the earlier exclusion of an in-app setup/code link.
   codes cannot cross flows or be reused. Return generic code-request replies
   rather than disclosing whether an address owns a notebook. Never log or
   persist a plaintext code or expose addresses in notebook APIs or MCP.
-- Add Sign in on Welcome and in settings, Sign out for this browser, and
-  Sign out everywhere for the notebook. Browser revocation does not rotate
-  upload/MCP addresses. Do not silently switch a signed-in browser to a
+- Keep Sign in in settings. On Welcome, Try it yourself handles both new
+  and returning testers through §20; omit the separate Sign in action
+  **(Copal: “Update the PRD and remove Welcome’s Sign in”)**. Keep Sign out
+  for this browser and Sign out everywhere for the notebook. Browser revocation
+  does not rotate upload/MCP addresses. Do not silently switch a signed-in browser to a
   different notebook; make the change explicit before verifying it.
 - Update terms, signup and email-link wording for verified email recovery;
   increment the terms version. Existing judge invitations remain valid and

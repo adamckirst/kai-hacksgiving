@@ -13,18 +13,18 @@ export function Welcome({ access, failed }: { access: Access | null; failed?: bo
       <span className="text-2xl font-extrabold tracking-tight text-violet-700">KAI</span>
       <main className="flex flex-1 animate-kai-in flex-col justify-center py-8">
         <h1 className="text-[40px]/[1.1] font-extrabold tracking-tight">
-          The recordings you never replay, <span className="text-violet-700">put to work.</span>
+          The recordings you never replayed, <span className="text-violet-700">put to work.</span>
         </h1>
         <p className="mt-4 text-lg/8 font-medium text-zinc-600">
-          Share a voice note in. KAI finds the people, the notes and the promises in it, each with the words it heard. You decide what to keep.
+          Share a recording. KAI brings the people, ideas and next steps together, so you can find what matters and pick up where you left off.
         </p>
 
         <ul className="mt-6 space-y-3">
           {(
             [
-              ['mic', 'Voice memos and WhatsApp voice notes'],
-              ['sparkle', 'KAI remembers who you already know'],
-              ['todo', 'Nothing is kept until you accept it'],
+              ['mic', 'Voice memos, WhatsApp notes and meetings'],
+              ['folder', 'Build your personal knowledge base'],
+              ['link', 'Connect your assistant to your knowledge'],
             ] as const
           ).map(([icon, text]) => (
             <li key={text} className="flex items-center gap-3 text-base font-semibold text-zinc-800">
@@ -55,8 +55,7 @@ export function Welcome({ access, failed }: { access: Access | null; failed?: bo
             </Button>
           )}
           {!opening && access?.kind !== 'judge' && <>
-            <p className="text-center text-base font-medium text-zinc-600">Join the waitlist. Try 30 minutes of your own recordings.</p>
-            <Button variant="quiet" wide href="/login">Sign in</Button>
+            <p className="text-center text-base font-medium text-zinc-600">Try 30 minutes of your own recordings and join the waitlist.</p>
             <Button variant="quiet" wide href="/home">Look around</Button>
           </>}
         </div>
