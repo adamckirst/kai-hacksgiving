@@ -235,7 +235,7 @@ recording's date is its file's date, and "by Friday" is counted from it.
   Mara's data, with its own upload and MCP tokens. Without it, a visitor
   sees one shared copy, and every route that writes or calls a provider
   refuses. The waitlist is the one exception.
-- **A judge's own recording is theirs.** On Home only, beside "Add recordings", KAI says **(Copal)**:
+- **A judge's own recording is theirs.** On Upload and in the signup terms only, KAI says **(Copal)**:
   "Your recording is transcribed by AssemblyAI and read by Claude. It stays
   in your own copy of this demo, which is deleted on 8 December."
 - **The waitlist is fenced.** It takes one well-formed address of at most
@@ -717,3 +717,46 @@ This supersedes §13's exclusion of failures.
   failures and restarts produce one logical failure message; success after
   retry can still notify; stale failure messages are suppressed; shared
   send caps hold; the gallery includes the failure email and Home states.
+
+## 16 · Demo information and signup terms (Copal)
+
+- Home shows its email-update explanation behind an info control only while
+  a recording is processing. Support tap, keyboard focus and hover. Waiting
+  for recording type or speaker identification is not processing.
+- Put remaining trial time in a compact Demo info card. Move the recording
+  privacy notice from Home to Upload and the terms.
+- Signup links to plain-language demo terms and requires agreement before
+  granting access. Explain the hour, first-100 and network limits, providers,
+  notebook deletion date, email uses, browser access and reviewing suggestions.
+  Record the accepted terms version and time with the verified trial.
+- Checks: npm run check; gallery at 375 px; processing-only info and readable
+  quota; signup cannot grant access without terms agreement; no change to
+  existing grants or limits.
+
+### Thirty-minute trial and longer recordings (Copal)
+
+Copal requested “lower the demo allowance to 30 minutes instead of 60”
+and accepting audio “smaller than 30 minutes”, refusing uploads beyond
+remaining time with a friendly email. Asked about file-size changes he
+chose “Keep 10 MB; extend duration”. These rules supersede earlier hour
+and five-minute limits; the 10 MB file limit stays.
+
+- New trials get 1,800 seconds. Existing trials deduct time already used
+  from the new 30-minute allowance, once, never below zero. Existing accepted
+  uploads keep their reservation and can finish or retry without another charge.
+- Each file must be under 30 minutes and at most 10 MB. All selected files
+  must fit the remaining allowance; reject the whole batch without charging.
+  Keep five files per upload, 100 users, existing daily and provider caps.
+- Audio transcripts may be up to 60,000 characters; pasted text stays at
+  20,000. A longer audio job may run up to ten minutes; short jobs keep
+  their two-minute timeout. Provider duration is still capped by the reservation.
+- A quota-rejected batch queues one friendly email to its verified owner:
+  explain remaining time, thank them for their interest and confirm that
+  Kopal will let them know if KAI becomes a product. No recording contents,
+  names or private addresses in the email. Repeated identical submissions
+  do not create more messages. Use the same sending caps, retry count and
+  idempotency window as other recording emails. Rejected audio is not retained.
+- Checks: migration deducts used time only once; a 5m35 recording under
+  10 MB is accepted when quota permits; a 30-minute file and over-quota
+  batch are refused; both upload routes queue quota mail for verified owners
+  only; duplicates, restarts and retries preserve mail limits and reservations.
