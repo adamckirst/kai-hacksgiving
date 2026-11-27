@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 122 states. The phone suite checks all public and judge
+`check.mjs` checks all 138 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -174,5 +174,7 @@ The trial now includes 30 minutes total; files stay at 10 MB and must be under 3
 Demo imports accept one recording at a time. The Files picker, upload guidance and terms show the single-file limit; recording types and the existing queue are unchanged.
 
 Email sign-in has initial, code, busy, error and explicit notebook-switch states. Connections includes browser sign-out and confirmation states, including the invitation warning. The same notebook reopens with a fresh verified email code; signing in adds no trial time.
+
+The exhausted demo offers Run your own KAI, keeping notification and search controls. The public setup screen explains copying instructions into a coding agent, Fly’s monthly allowance and separate provider costs, with copy/download states. Personal installations show their own Welcome, setup verification, sign-in, terms, empty notebook, Upload and Connections states. They have no public signup, waitlist, demo allowance or automatic demo deletion promise.
 
 Sign-in keeps its email explanation short. The agreement includes its terms/privacy link in the label; its 20 px check retains a 44 px touch target on phones and desktop.

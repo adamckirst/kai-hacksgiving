@@ -1,7 +1,7 @@
 import {RECORDING_NOTICE} from './DemoInfo'
 import { useState } from 'react'
 import type { LinkedPerson, PersonChoice,RecordingType } from '../types'
-import { Button, Card, Field, FOCUS, Notice, PushedPage, RecordingPicker, Segmented, WhatIsKai } from '../ui'
+import { Button, Card, Field, FOCUS, Notice, PushedPage, RecordingPicker, Segmented, WhatIsKai,usePersonalInstance } from '../ui'
 import {Icon,type IconName} from '../icons'
 export type UploadSource='voice-memos'|'whatsapp'|'files'
 const sources:{id:UploadSource;label:string;icon:IconName}[]=[{id:'voice-memos',label:'Voice Memos',icon:'mic'},{id:'whatsapp',label:'WhatsApp',icon:'chat'},{id:'files',label:'Files',icon:'folder'}]
@@ -30,6 +30,7 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
   onStart: (person: PersonChoice) => void
   onRetry: () => void
 }) {
+  const personal=usePersonalInstance()
   const [source,setSource]=useState<UploadSource>(initialSource),[guide,setGuide]=useState<UploadSource|null>(initialGuide ?? null)
   const shownGuide=source==='voice-memos' && shortcutReady ? 'voice-memos':guide
   const exhausted=remainingSeconds===0 && !incoming
@@ -44,7 +45,7 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
     <header className="px-1"><h1 className="text-[30px]/9 font-extrabold tracking-tight">Add recordings</h1><p className="mt-2 text-base/7 font-medium text-zinc-600">{incoming ? 'Tell KAI whose words these are.':'Where is your recording?'}</p></header>
     {readOnly ? <Card className="p-5 text-base/7 font-medium text-zinc-600">Open your own copy to add recordings.</Card> : loadError ? <Notice tone="error">{loadError}</Notice> : !people ? <Notice>Opening your upload…</Notice> : exhausted ? <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Your trial time is complete</h2><p className="text-base/7 text-zinc-600">You’ve used your recording time. Your people, tasks and past recordings are still here.</p></Card> : <>
       {!incoming && <Card className="p-3"><div role="group" aria-label="Recording source" className="space-y-2">{sources.map(item=><div key={item.id} className="flex items-center gap-2"><button type="button" aria-pressed={source===item.id} disabled={busy} onClick={()=>{setSource(item.id);setGuide(null)}} className={`${FOCUS} flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl px-4 text-left text-base font-bold ${source===item.id ? 'bg-violet-50 text-violet-700 ring-1 ring-violet-200':'text-zinc-700 hover:bg-zinc-50'}`}><Icon name={item.icon}/><span className="flex-1">{item.label}</span>{source===item.id && <Icon name="check"/>}</button><button type="button" aria-label={'How to add from '+item.label} aria-expanded={shownGuide===item.id} aria-controls="source-guide" onClick={()=>{setSource(item.id);setGuide(guide===item.id ? null:item.id)}} className={`${FOCUS} flex size-12 shrink-0 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100`}><Icon name="info"/></button></div>)}</div></Card>}
-      {shownGuide && !incoming && <Card id="source-guide" className="p-5"><h2 className="text-lg font-extrabold">From {sources.find(s=>s.id===shownGuide)!.label}</h2><ol className="mt-3 list-decimal space-y-3 pl-5 text-base/7 text-zinc-600">{shownGuide!=='files' && !shortcutReady && <li>Set up Send to KAI using the button below.</li>}{guides[shownGuide].map(step=><li key={step}>{step}</li>)}</ol></Card>}
+      {shownGuide && !incoming && <Card id="source-guide" className="p-5"><h2 className="text-lg font-extrabold">From {sources.find(s=>s.id===shownGuide)!.label}</h2><ol className="mt-3 list-decimal space-y-3 pl-5 text-base/7 text-zinc-600">{shownGuide!=='files' && !shortcutReady && <li>Set up Send to KAI using the button below.</li>}{(personal && shownGuide==='files' ? [...guides.files.slice(0,2),'KAI checks the file length and daily limits before starting.']:guides[shownGuide]).map(step=><li key={step}>{step}</li>)}</ol></Card>}
       {!incoming && source==='voice-memos' && shortcutReady && <Notice>Prefer Files? In Voice Memos, tap Share, then Save to Files. Come back here and choose your saved audio.</Notice>}
       {!incoming && source!=='files' && !(source==='voice-memos' && shortcutReady) && <Notice>{shortcutReady ? 'Open the app, share your recording to Send to KAI, then choose the recording type here. If the app does not open, open it from your Home Screen.' : 'First, add Send to KAI to your iPhone’s shortcuts. Then share a recording from the app.'}</Notice>}
       {incoming && <Card className="p-5"><p className="text-base font-bold text-violet-700">Shared from your phone</p><h2 className="mt-1 text-lg font-extrabold">{incoming.title}</h2><p className="mt-2 text-base/7 font-medium text-zinc-600">Your recording is attached and waiting for you.</p></Card>}
@@ -70,6 +71,6 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
       {!incoming && <p className="px-1 text-base/7 font-medium text-zinc-600">One recording at a time, up to 10 MB and under 30 minutes. {source!=='files' && 'Choose the recording type after sharing.'} {remainingSeconds!=null && 'The recording must fit your remaining time.'}</p>}
       {error && <Notice tone="error">{error}</Notice>}
     </>}
-    {!readOnly && <p className="px-1 text-base/7 text-zinc-500">{RECORDING_NOTICE}</p>}
+    {!readOnly && <p className="px-1 text-base/7 text-zinc-500">{personal?'Your recording is transcribed by AssemblyAI and read by Claude through your own connectors. Audio is deleted from KAI after transcription. You control notebook storage and deletion.':RECORDING_NOTICE}</p>}
   </PushedPage>
 }

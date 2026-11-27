@@ -13,7 +13,7 @@ export function recordingMailWorker(db:KaiDatabase,send:SendReady|undefined,now:
   active=(async()=>{
    for(;;) {
     if(stopped)return;
-   const ready=db.prepare(`SELECT c.id,c.workspace_id,c.title,c.status kind FROM conversations c JOIN waitlist w ON w.workspace_id=c.workspace_id
+   const ready=db.prepare(`SELECT c.id,c.workspace_id,c.title,c.status kind FROM conversations c JOIN notebook_owners w ON w.workspace_id=c.workspace_id
     JOIN workspaces n ON n.id=c.workspace_id
     WHERE c.notify_ready=1 AND (c.status='failed' OR (c.status='ready' AND c.transcribed=1)) AND c.source IN ('recording','shared')
      AND w.verified_at IS NOT NULL AND n.trial_verified=1 AND n.trial_ended=0
@@ -31,7 +31,7 @@ export function recordingMailWorker(db:KaiDatabase,send:SendReady|undefined,now:
      const notifications=db.prepare('SELECT count(*) n FROM notification_sends').get() as {n:number};
      if(total.n>=100 || notifications.n>=60)return;
      const row=db.prepare(`SELECT e.id,e.kind,e.workspace_id,e.counts,e.title,w.email FROM recording_emails e
-      JOIN waitlist w ON w.workspace_id=e.workspace_id JOIN workspaces n ON n.id=e.workspace_id
+      JOIN notebook_owners w ON w.workspace_id=e.workspace_id JOIN workspaces n ON n.id=e.workspace_id
       JOIN conversations c ON c.id=e.id AND c.workspace_id=e.workspace_id
       WHERE e.sent_at IS NULL AND e.closed=0 AND e.next_attempt_at<=? AND w.verified_at IS NOT NULL
        AND n.trial_verified=1 AND n.trial_ended=0 AND c.status=e.kind

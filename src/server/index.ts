@@ -1,3 +1,4 @@
+import {personalInstance} from './personal';
 import { resendSender,resendLoginSender,resendReadySender,resendQuotaSender } from './trial-mail';
 import { mkdirSync,existsSync,readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -10,6 +11,7 @@ import { openDatabase, seed } from './db';
 const file = databasePath(process.env);
 if (file !== ':memory:') mkdirSync(dirname(file), {recursive:true});
 const db = openDatabase(file);
+if(process.env.NODE_ENV==='production' && Boolean(personalInstance(db))!==(process.env.KAI_INSTANCE==='personal'))throw Error('Instance mode does not match its initialized database.');
 seed(db);
 const fake=process.env.KAI_MODEL === 'fake' || process.env.NODE_ENV !== 'production';
 const senderFile=dirname(file)+'/mail-from';

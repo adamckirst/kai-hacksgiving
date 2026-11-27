@@ -16,6 +16,9 @@ import { Icon, type IconName } from './icons'
 const HrefContext = createContext<(path: string) => string>((path) => path)
 export const HrefProvider = HrefContext.Provider
 export const useHref = () => useContext(HrefContext)
+const PersonalContext=createContext(false)
+export const InstanceProvider=PersonalContext.Provider
+export const usePersonalInstance=()=>useContext(PersonalContext)
 const NotebookStatusContext=createContext({unread:0})
 export const NotebookStatusProvider=NotebookStatusContext.Provider
 
@@ -512,11 +515,11 @@ export function Footer() {
  * "Add recordings": the action of every tab page in your own copy. The file
  * field lies over the pill, so one tap opens the phone's own picker.
  */
-export function AddRecordings({ personId, hideNotifications }: { onFiles?: (files: File[]) => void; busy?: boolean; personId?: string; hideNotifications?: boolean }) {
+export function AddRecordings({ personId, hideNotifications, continueOwn }: { onFiles?: (files: File[]) => void; busy?: boolean; personId?: string; hideNotifications?: boolean; continueOwn?:boolean }) {
   const {unread}=useContext(NotebookStatusContext)
   return <div className="flex w-full items-center gap-3">
     {!hideNotifications && <div className="relative shrink-0"><RoundLink href="/notifications" label={unread ? `Notifications, ${unread} unread`:'Notifications'} icon="bell"/>{unread>0 && <span aria-hidden="true" className="absolute right-1 top-1 size-3 rounded-full bg-rose-600 ring-2 ring-white"/>}</div>}
-    <div className="min-w-0 flex-1"><Button variant="primary" wide icon="plus" href={'/upload/new'+(personId ? '?person='+encodeURIComponent(personId) : '')}>Add recordings</Button></div>
+    <div className="min-w-0 flex-1"><Button variant="primary" wide icon="plus" href={continueOwn?'/your-own-kai':'/upload/new'+(personId ? '?person='+encodeURIComponent(personId) : '')}>{continueOwn?'Run your own KAI':'Add recordings'}</Button></div>
     <div className="shrink-0"><RoundLink href="/search" label="Search" icon="search"/></div>
   </div>
 }

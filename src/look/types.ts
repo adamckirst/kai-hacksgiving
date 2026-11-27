@@ -5,7 +5,7 @@
  * not send yet; the README lists them.
  */
 
-export type Access = { kind: 'judge' | 'public'; videoUrl: string | null; trialSeconds?: number | null }
+export type Access = { personal?:boolean; kind: 'judge' | 'public'; videoUrl: string | null; trialSeconds?: number | null }
 
 export type Person = {
   id: string

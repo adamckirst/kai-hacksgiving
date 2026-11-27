@@ -1,3 +1,6 @@
+import {SelfHostScreen} from './SelfHost';
+import {PersonalWelcome,PersonalTerms} from './look/screens/Personal';
+import {InstanceProvider} from './look/ui';
 import {LoginScreen} from './Login';
 import {Terms} from './look/screens/Terms';
 import {SearchScreen} from './Search';
@@ -16,8 +19,9 @@ import {LibraryScreen} from './Library';
 import {NotebookStatusProvider} from './look/ui';
 import { ConnectScreen } from './Connect';
 import { Operator,Waitlist } from './Waitlist';
+const setupSecret=location.pathname==='/setup'?new URLSearchParams(location.hash.slice(1)).get('setup'):null;
 const downloadSecret=location.pathname==='/operator' ? new URLSearchParams(location.hash.slice(1)).get('download'):null;
-type Access = {kind:'public'|'judge';videoUrl:string|null};
+type Access = {personal?:boolean;kind:'public'|'judge';videoUrl:string|null};
 async function openAccess(): Promise<Access> {
   const secret = new URLSearchParams(location.hash.slice(1)).get('judge');
   if (location.hash) history.replaceState(null,'',location.pathname);
@@ -34,14 +38,21 @@ function App() {
   const [access,setAccess]=useState<Access|null>(null),[failed,setFailed]=useState(false);
   useEffect(()=>{accessRequest.then(setAccess).catch(()=>setFailed(true));},[]);
   const route=location.pathname;
-  if(route==='/terms')return <Terms fromHome={new URLSearchParams(location.search).get('from')==='home'}/>;
-  if(route==='/operator')return <Operator secret={downloadSecret}/>;
-  if(route==='/')return <Welcome access={access} failed={failed}/>;
+  if(route==='/' && !access)return <Welcome access={access} failed={failed}/>;
   if(!access) {
     const page=route==='/login'?'Sign in':route.startsWith('/upload') ? 'Add recordings':route.startsWith('/recordings/') ? 'Recording':route.startsWith('/people/') ? 'Person':route==='/people' ? 'People':route.startsWith('/todos/') ? 'Task':route==='/search' ? 'Search':route==='/todos' ? 'Tasks':route==='/library' ? 'Library':route==='/notifications' ? 'Notifications':route==='/connect' ? 'Connections':'Home';
     return <Opening page={page} failed={failed} onRetry={()=>location.reload()}/>;
   }
-  if(route==='/login' || (access.kind==='public' && /^\/recordings\/[a-f0-9-]{36}$/.test(route)))return <LoginScreen signedIn={access.kind==='judge'}/>;
+  return <InstanceProvider value={Boolean(access.personal)}><ResolvedApp access={access}/></InstanceProvider>;
+}
+function ResolvedApp({access}:{access:Access}){
+  const route=location.pathname;
+  if(route==='/terms')return access.personal?<PersonalTerms/>:<Terms fromHome={new URLSearchParams(location.search).get('from')==='home'}/>;
+  if(route==='/your-own-kai')return <SelfHostScreen/>;
+  if(route==='/setup')return <LoginScreen signedIn={access.kind==='judge'} setup setupSecret={setupSecret}/>;
+  if(route==='/')return access.personal?<PersonalWelcome signedIn={access.kind==='judge'}/>:<Welcome access={access}/>;
+  if(route==='/operator' && !access.personal)return <Operator secret={downloadSecret}/>;
+  if((access.personal && (access.kind==='public' || route==='/try')) || route==='/login' || (access.kind==='public' && /^\/recordings\/[a-f0-9-]{36}$/.test(route)))return <LoginScreen signedIn={access.kind==='judge'}/>;
   return <Notebook access={access}/>;
 }
 function Notebook({access}:{access:Access}) {

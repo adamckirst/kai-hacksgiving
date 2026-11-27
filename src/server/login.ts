@@ -1,3 +1,4 @@
+import {personalInstance,validSetup,claimPersonalOwner,setupCookie} from './personal';
 import express,{type Express,type Request} from 'express';
 import {createHmac,randomBytes,randomInt,randomUUID} from 'node:crypto';
 import {z} from 'zod';
@@ -11,17 +12,18 @@ const hour=3600000,challengeCookie='kai_login';
 const requestSchema=z.object({email:z.string().trim().max(254).email().transform(s=>s.toLowerCase()),termsVersion:z.literal(TERMS_VERSION)}).strict();
 const verifySchema=requestSchema.extend({code:z.string().regex(/^\d{6}$/)});
 export function mountLogin(app:Express,db:KaiDatabase,options:LoginOptions) {
+ const personal=personalInstance(db);
  const now=options.now??Date.now,secret=persistentJudgeSecret(db);
  const digest=(kind:string,value:string)=>createHmac('sha256',secret).update(kind+':'+value).digest('hex');
  const cookies={httpOnly:true,secure:options.secureCookies??true,sameSite:'strict' as const,path:'/'};
- const owner=(email:string)=>db.prepare(`SELECT w.workspace_id FROM waitlist w JOIN workspaces n ON n.id=w.workspace_id WHERE w.email=? AND w.verified_at IS NOT NULL AND n.trial_verified=1 AND n.kind='judge'`).get(email) as {workspace_id:string}|undefined;
+ const owner=(email:string)=>db.prepare(`SELECT w.workspace_id FROM notebook_owners w JOIN workspaces n ON n.id=w.workspace_id WHERE w.email=? AND w.verified_at IS NOT NULL AND n.trial_verified=1 AND n.kind='judge'`).get(email) as {workspace_id:string}|undefined;
  const browser=(req:Request)=>req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith(challengeCookie+'='))?.slice(challengeCookie.length+1)??'';
- app.use('/api/login',express.json({limit:'1kb'}),(req,res,next)=>{
+ app.use(['/api/login','/api/setup'],express.json({limit:'1kb'}),(req,res,next)=>{
   const origin=req.get('origin');if(origin && origin!==`${options.secureCookies===false?req.protocol:'https'}://${req.get('host')}`){res.status(403).json({error:'This request is not allowed.'});return;}next();
  });
  app.get('/api/login/session',(req,res)=>{
   const workspace=workspaceFor(db,req);
-  res.json({signedIn:workspace!=='public',recoverable:Boolean(db.prepare('SELECT 1 FROM waitlist WHERE workspace_id=? AND verified_at IS NOT NULL').get(workspace))});
+  res.json({signedIn:workspace!=='public',recoverable:Boolean(db.prepare('SELECT 1 FROM notebook_owners WHERE workspace_id=? AND verified_at IS NOT NULL').get(workspace))});
  });
  app.post('/api/login/sign-out',(req,res)=>{
   const parsed=z.object({everywhere:z.boolean()}).strict().safeParse(req.body),workspace=workspaceFor(db,req);
@@ -29,9 +31,11 @@ export function mountLogin(app:Express,db:KaiDatabase,options:LoginOptions) {
   if(workspace!=='public')db.transaction(()=>revokeBrowserSessions(db,req,workspace,parsed.data.everywhere))();
   res.clearCookie(cookieName,cookies);res.clearCookie(challengeCookie,cookies);res.json({ok:true});
  });
- app.post('/api/login/code',async(req,res)=>{
+ app.post(['/api/login/code','/api/setup/code'],async(req,res)=>{
+  const setup=req.path.startsWith('/api/setup');
+  if(setup && !validSetup(db,req)){res.status(403).json({error:'Open your private setup link to continue.'});return;}
   const parsed=requestSchema.safeParse(req.body);
-  if(!parsed.success){res.status(400).json({error:'Enter a valid email and agree to the current demo terms.'});return;}
+  if(!parsed.success){res.status(400).json({error:'Enter a valid email and agree to the current terms.'});return;}
   if(workspaceFor(db,req)!=='public'){res.status(409).json({error:'Sign out of this browser before opening another notebook.'});return;}
   if(!options.sendLogin){res.status(503).json({error:'Sign-in emails are unavailable. Please try again later.'});return;}
   const network=normalizeIp((options.trustSpriteProxy?req.get('sprite-client-ip'):req.socket.remoteAddress)??'');
@@ -46,9 +50,9 @@ export function mountLogin(app:Express,db:KaiDatabase,options:LoginOptions) {
    const latest=db.prepare('SELECT sent_at FROM trial_sends WHERE email_hash=? ORDER BY sent_at DESC LIMIT 1').get(emailHash) as {sent_at:number}|undefined;
    if(recent.n>=3 || total.n>=100 || (latest && latest.sent_at>at-60000))return 'limited';
    db.prepare('INSERT INTO trial_sends VALUES (?,?,?,?)').run(id,ipHash,emailHash,at);
-   const notebook=owner(email);if(!notebook)return 'unknown';
-   // Only verified notebook owners occupy the challenge table; at most one per address.
-   db.prepare(`INSERT INTO login_challenges(email,workspace_id,id,code_hash,browser_hash,expires_at) VALUES (?,?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET workspace_id=excluded.workspace_id,id=excluded.id,code_hash=excluded.code_hash,browser_hash=excluded.browser_hash,expires_at=excluded.expires_at,attempts=0,delivered=0`).run(email,notebook.workspace_id,id,digest('login-code',id+':'+code),digest('login-browser',proof),at+600000);
+   const notebook=setup?personal:owner(email);if(!notebook)return 'unknown';
+   // Known owners or private first-owner setup only; at most one challenge per address.
+   db.prepare(`INSERT INTO login_challenges(email,workspace_id,id,code_hash,browser_hash,expires_at) VALUES (?,?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET workspace_id=excluded.workspace_id,id=excluded.id,code_hash=excluded.code_hash,browser_hash=excluded.browser_hash,expires_at=excluded.expires_at,attempts=0,delivered=0`).run(email,notebook.workspace_id,id,digest(setup?'setup-code':'login-code',id+':'+code),digest(setup?'setup-browser':'login-browser',proof),at+600000);
    return 'send';
   })();
   if(result==='limited'){res.status(429).json({error:'Please wait before asking for another code.'});return;}
@@ -60,22 +64,27 @@ export function mountLogin(app:Express,db:KaiDatabase,options:LoginOptions) {
   // Same response for unknown addresses, unverified subscriptions and delivery failure.
   res.json({ok:true});
  });
- app.post('/api/login/verify',(req,res)=>{
+ app.post(['/api/login/verify','/api/setup/verify'],(req,res)=>{
+  const setup=req.path.startsWith('/api/setup');
+  if(setup && !validSetup(db,req)){res.status(403).json({error:'Open your private setup link to continue.'});return;}
   const parsed=verifySchema.safeParse(req.body);
-  if(!parsed.success){res.status(400).json({error:'Check the code and agree to the current demo terms.'});return;}
+  if(!parsed.success){res.status(400).json({error:'Check the code and agree to the current terms.'});return;}
   if(workspaceFor(db,req)!=='public'){res.status(409).json({error:'Sign out of this browser before opening another notebook.'});return;}
   const {email,code}=parsed.data,at=now(),proof=browser(req);
   const session=db.transaction(()=>{
    const row=db.prepare('SELECT id,workspace_id,code_hash,browser_hash,expires_at,attempts,delivered FROM login_challenges WHERE email=?').get(email) as {id:string;workspace_id:string;code_hash:string;browser_hash:string;expires_at:number;attempts:number;delivered:number}|undefined;
-   if(!row || row.expires_at<=at || row.attempts>=5 || !row.delivered || !equalSecret(row.browser_hash,digest('login-browser',proof)))return;
+   if(!row || row.expires_at<=at || row.attempts>=5 || !row.delivered || !equalSecret(row.browser_hash,digest(setup?'setup-browser':'login-browser',proof)))return;
    db.prepare('UPDATE login_challenges SET attempts=attempts+1 WHERE email=?').run(email);
-   if(!equalSecret(row.code_hash,digest('login-code',row.id+':'+code)) || owner(email)?.workspace_id!==row.workspace_id)return;
+   if(!equalSecret(row.code_hash,digest(setup?'setup-code':'login-code',row.id+':'+code)))return;
+   if(setup){if(!validSetup(db,req) || !claimPersonalOwner(db,email,row.workspace_id,at))return;}
+   else if(owner(email)?.workspace_id!==row.workspace_id)return;
    const value=createBrowserSession(db,row.workspace_id,at);
    db.prepare('DELETE FROM login_challenges WHERE email=?').run(email);
    db.prepare('UPDATE waitlist SET terms_version=?,terms_accepted_at=? WHERE email=?').run(TERMS_VERSION,new Date(at).toISOString(),email);
+   if(personal)db.prepare('UPDATE personal_instance SET terms_version=?,terms_accepted_at=? WHERE email=?').run(TERMS_VERSION,new Date(at).toISOString(),email);
    return value;
   })();
   if(!session){res.status(409).json({error:'This code expired or could not be checked. Ask for a new code.'});return;}
-  res.cookie(cookieName,session,{...cookies,maxAge:14*24*hour});res.clearCookie(challengeCookie,cookies);res.json({ok:true});
+  res.cookie(cookieName,session,{...cookies,maxAge:14*24*hour});res.clearCookie(challengeCookie,cookies);if(setup)res.clearCookie(setupCookie,cookies);res.json({ok:true});
  });
 }

@@ -844,8 +844,9 @@ restriction and the earlier exclusion of an in-app setup/code link.
   prerequisites, gives one human action at a time, stops on missing access
   or repeated errors, and never asks for credentials in chat. Do not present
   it as an unattended one-click install or have it rebuild KAI from scratch.
-  Publish the source in this repository and offer Copy prompt and Markdown
-  download through KAI; a kopal.ai-hosted copy is a separate publishing step
+  Publish the source in this repository and offer “Copy for your coding
+  agent” and Markdown download through KAI; a kopal.ai-hosted copy is a
+  separate publishing step
   for Copal, not permission to open another repository on this machine.
 - Provide a tested, operator-run setup path and explicit personal-instance
   mode. It starts with one owner's empty notebook and no public trial signup
@@ -862,6 +863,11 @@ restriction and the earlier exclusion of an in-app setup/code link.
   agent only writes/tests setup code and instructions; it creates no Sprite,
   connector, account or key and incurs no new spending. Live checks remain
   on the existing kai Sprite; a separate installation is Copal/tester's step.
+- Copal requested wording that clearly says people can paste the instructions
+  into their coding agent and set up an instance on Fly's Free plan. State
+  the current $5 monthly Fly allowance, credit-card requirement and automatic
+  move to paid usage above it. Target light personal use, without promising
+  an unlimited free service; provider credits and charges remain separate.
 - Credit copy: AssemblyAI offers $50 in free trial credits; “roughly 200
   hours” is an estimate at current prices, depending on features and credit
   availability, not an allowance promised by KAI. Claude API usage is billed

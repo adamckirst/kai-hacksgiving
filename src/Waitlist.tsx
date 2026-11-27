@@ -1,8 +1,12 @@
+import {usePersonalInstance} from './look/ui';
 import {TERMS_VERSION} from './terms';
 import { Trial } from './look/screens/Trial';
 import { useEffect,useState } from 'react';
 import { Waitlist as WaitlistView,Operator as OperatorView } from './look/screens/Waitlist';
 export function Waitlist({trial=false}:{trial?:boolean}) {
+  const personal=usePersonalInstance();return personal?null:<SharedWaitlist trial={trial}/>;
+}
+function SharedWaitlist({trial=false}:{trial?:boolean}) {
   const [codeEmail,setCodeEmail]=useState('');
   const [ready,setReady]=useState(false),[busy,setBusy]=useState(false),[saved,setSaved]=useState(false),[error,setError]=useState(''),[post,setPost]=useState<string|null>(null);
   useEffect(()=> {fetch('/api/waitlist').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>{setPost(data.xPostUrl);setReady(true);}).catch(()=>setError('The list could not load. Reload this page to try again.'));},[]);

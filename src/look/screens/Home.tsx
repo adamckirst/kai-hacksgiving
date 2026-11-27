@@ -172,12 +172,13 @@ export function Home({
       subtitle="Share a recording in. KAI finds the people, the notes and the promises."
       readOnly={readOnly}
       due={due}
-      dock={readOnly ? <WhatIsKai /> : <AddRecordings onFiles={onFiles} busy={adding} />}
+      dock={readOnly ? <WhatIsKai /> : <AddRecordings continueOwn={home?.trialSeconds===0} onFiles={onFiles} busy={adding} />}
     >
       {queue.length > 0 && <Queue items={queue} initialInfoOpen={initialInfoOpen} showInfo={Boolean(home?.trialVerified && queue.some(item=>['waiting','listening','reading'].includes(item.status) && !item.awaiting_person && !item.awaiting_speakers))} />}
       {home && !readOnly && !home.shortcutReady && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Send voice notes straight to KAI</h2><p className="text-base/7 text-zinc-600">Set up the iPhone shortcut once, then share from Voice Memos or WhatsApp.</p><Button variant="outline" href="/connect">Set up your phone</Button></Card>}
       {home?.trialSeconds!=null && !home.trialVerified && <Card className="p-5"><p className="mb-3 text-base/7">Verify your email to continue your trial. Your notebook and remaining time are kept.</p><Button href="/try" variant="outline">Verify email</Button></Card>}
       {home?.trialSeconds===0 && home.xPostUrl && <Button href={home.xPostUrl} variant="outline">Show KAI some love</Button>}
+      {home?.trialSeconds===0 && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Keep using KAI on your own Sprite</h2><p className="text-base/7 text-zinc-600">Paste our setup instructions into your coding agent. It guides you through opening a fresh KAI with your own provider accounts.</p></Card>}
       {home?.trialSeconds!=null && <DemoInfo seconds={home.trialSeconds}/>}
       {home && !readOnly && home.conversations.length===0 && <Card className="p-5"><h2 className="text-xl font-extrabold">Your notebook starts here</h2><p className="mt-2 text-base/7 text-zinc-600">Add a recording. KAI will find the people, notes and to-dos for you to review.</p></Card>}
       {addError && <Notice tone="error">{addError}</Notice>}
