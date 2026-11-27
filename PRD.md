@@ -925,3 +925,59 @@ stay unchanged.
   preserves input; waitlist-only signup still creates no trial. Verify the
   deployed public layout and run isolated signup checks on the Sprite with
   invented data and fake providers; do not use real tester addresses.
+
+
+## 20 · Verify email first, reuse existing agreement (Copal)
+
+Copal reported that an email already associated with recordings was sent
+through trial information and agreement again. He approved “Verify first;
+reuse prior agreement (Recommended)”: verify the email first for everyone,
+then reopen an existing notebook using its prior agreement, and ask for
+terms only for a new notebook or changed terms. This supersedes §19's
+checkbox-before-sending order and §18's repeated agreement during sign-in.
+The email card also explains both trying KAI and joining the waitlist.
+
+- Public Home's Try it myself action reuses the entered email and immediately
+  requests a verification code. The shared demo's /try and /login entry
+  screens use the same verification-first behavior. Keep me posted remains
+  a separate waitlist-only action. No entered address goes in a URL, browser
+  storage, log, model input or notebook API response.
+- Before successful verification, the response and visible flow do not
+  disclose whether the address owns a notebook. Do not add an address-lookup
+  endpoint or show different first screens for existing/new addresses.
+  Keep generic code-request replies, existing send/guess limits, protected
+  digests, expiration, browser binding and single-use proof. The request
+  itself authorizes only the verification email, not a trial or subscription.
+- After proof, an existing verified owner with the current accepted terms
+  goes straight to the SAME notebook. Preserve recordings, remaining time,
+  grants and the existing terms version/acceptance time. Do not record a new
+  agreement merely because a code was verified. Existing login still works
+  after the 100-user cap and from a different network, with no refill.
+- A new eligible tester sees the demo information and required terms checkbox
+  AFTER verification and BEFORE any notebook, grant or trial subscription is
+  created. An existing owner whose terms version is old or missing agrees to
+  the current version after proof, before that new browser gains access.
+  Record a new acceptance version/time only on explicit agreement.
+- Keep the verified identity in short-lived server-controlled state bound to
+  the requesting browser. Closing or expiring the terms step creates no
+  grant. Repeated requests, duplicate agreement submissions and concurrent
+  claims cannot create extra notebooks, reuse proof or refill time.
+- Preserve existing notebook isolation, explicit switching of signed-in
+  browsers, invitation behavior and original-browser safeguards for legacy
+  unverified notebooks. Keep the 30-minute/100-user/one-email/one-IP grant
+  rules, daily/provider limits and shared email-send caps. No new connector,
+  key, account or provider is authorized.
+- Explain both email-card actions plainly: try personal recordings with 30
+  minutes of demo time, or receive one future product note. Keep the dashed
+  card and scrolling handoff. Returning owners see code entry without the
+  signup information or repeated checkbox when their agreement is current.
+- Checks: npm run check; gallery at 375 px; public card, /try and /login go to
+  code entry first without revealing account existence; a verified returning
+  owner opens the same notebook without a checkbox, changed quota, new rows
+  or rewritten agreement; new and outdated-agreement paths require explicit
+  consent after proof; no pre-consent grant or subscription; expiry, wrong
+  codes, replay, another browser, duplicate consent and concurrent claims
+  fail safely; existing ownership, grant and send limits remain enforced.
+  Verify the deployed public flow and isolated existing/new-owner cases on
+  the Sprite with invented data and fake providers. Never ask Copal to share
+  his address, code or recording details when checking the deployed flow.
