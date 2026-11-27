@@ -176,3 +176,5 @@ Demo imports accept one recording at a time. The Files picker, upload guidance a
 Email sign-in has initial, code, busy, error and explicit notebook-switch states. Connections includes browser sign-out and confirmation states, including the invitation warning. The same notebook reopens with a fresh verified email code; signing in adds no trial time.
 
 Sign-in keeps its email explanation short. The agreement includes its terms/privacy link in the label; its 20 px check retains a 44 px touch target on phones and desktop.
+
+The email card has a dashed outline. On public Home, Try it myself reuses its email and opens an information/terms popup before code verification; Keep me posted remains secondary. The floating trial action yields to the visible card action, then returns when it leaves view. Signed-in notebooks keep their existing waitlist action.

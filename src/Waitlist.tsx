@@ -1,14 +1,16 @@
+import {TrialPopup} from './look/screens/TrialPopup';
 import {TERMS_VERSION} from './terms';
 import { Trial } from './look/screens/Trial';
 import { useEffect,useState } from 'react';
 import { Waitlist as WaitlistView,Operator as OperatorView } from './look/screens/Waitlist';
 export function Waitlist({trial=false}:{trial?:boolean}) {
   const [codeEmail,setCodeEmail]=useState('');
+  const [trialEmail,setTrialEmail]=useState(''),[trialOpen,setTrialOpen]=useState(false);
   const [ready,setReady]=useState(false),[busy,setBusy]=useState(false),[saved,setSaved]=useState(false),[error,setError]=useState(''),[post,setPost]=useState<string|null>(null);
   useEffect(()=> {fetch('/api/waitlist').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>{setPost(data.xPostUrl);setReady(true);}).catch(()=>setError('The list could not load. Reload this page to try again.'));},[]);
-  async function submit(email:string) {
+  async function submit(email:string,forTrial=trial) {
     setBusy(true);setError('');
-    if(trial){
+    if(forTrial){
       try {const r=await fetch('/api/trial/code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,termsVersion:TERMS_VERSION})});const data=await r.json();if(!r.ok)throw new Error(data.error);setCodeEmail(email);}
       catch(e){setError(e instanceof Error ? e.message:'The code could not be sent.');}finally{setBusy(false);}
       return;
@@ -21,7 +23,9 @@ export function Waitlist({trial=false}:{trial?:boolean}) {
   }
   async function verify(code:string){setBusy(true);setError('');try{const r=await fetch('/api/trial/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:codeEmail,code,termsVersion:TERMS_VERSION})});const data=await r.json();if(!r.ok)throw new Error(data.error);location.assign('/home');}catch(e){setError(e instanceof Error ? e.message:'The code could not be checked.');}finally{setBusy(false);}}
   if(trial)return <Trial busy={busy} codeSent={Boolean(codeEmail)} error={error} onSubmit={email=>void submit(email)} onVerify={code=>void verify(code)} onResend={()=>void submit(codeEmail)}/>;
-  return <WaitlistView postUrl={post} saved={saved} busy={!ready || busy} error={error} onSubmit={email=>void submit(email)}/>;
+  return <><WaitlistView postUrl={post} saved={saved} busy={!ready || busy} error={trialOpen?undefined:error} trialOpen={trialOpen} onTry={email=>{setTrialEmail(email);setError('');setCodeEmail('');setTrialOpen(true)}} onSubmit={email=>void submit(email)}/>
+   {trialOpen && <TrialPopup open onClose={()=>{setTrialOpen(false);setError('')}} busy={busy} error={error} codeSent={Boolean(codeEmail)} onSubmit={()=>void submit(trialEmail,true)} onVerify={code=>void verify(code)} onResend={()=>void submit(trialEmail,true)}/>}
+  </>;
 }
 
 export function Operator({secret}:{secret:string|null}) {

@@ -1,18 +1,20 @@
-import { useState } from 'react'
-import { Button, Card, Field, Notice, TextLink } from '../ui'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { SignupCardContext, Button, Card, Field, Notice, TextLink } from '../ui'
 
 /**
  * The waitlist card, at the foot of Home and under a recording once its
- * suggestions are decided. Its button stays quiet: it is never the screen's
- * filled violet one.
+ * suggestions are decided. Public Home also offers the trial, taking over
+ * the main action when its button is in view.
  */
 export function Waitlist({
   postUrl,
   saved,
   busy,
   error,
-  onSubmit,
+  onSubmit, onTry, trialOpen,
 }: {
+  onTry?: (email:string)=>void
+  trialOpen?: boolean
   postUrl: string | null
   saved?: boolean
   busy?: boolean
@@ -20,8 +22,13 @@ export function Waitlist({
   onSubmit: (email: string) => void
 }) {
   const [email, setEmail] = useState('')
+  const {enabled,active,setActive}=useContext(SignupCardContext)
+  const action=useRef<HTMLDivElement>(null)
+  const [visible,setVisible]=useState(false)
+  useEffect(()=>{const node=action.current;if(!enabled || !node || saved){setVisible(false);return}const observer=new IntersectionObserver(entries=>setVisible(entries[0].isIntersecting),{rootMargin:'-160px 0px -100px 0px'});observer.observe(node);return()=>observer.disconnect()},[enabled,saved])
+  useEffect(()=>{setActive(Boolean(enabled && (visible || trialOpen)));return()=>setActive(false)},[enabled,visible,trialOpen,setActive])
   return (
-    <Card aria-label="Keep me posted" className="p-5">
+    <section aria-label="Keep me posted" className="rounded-3xl border border-dashed border-violet-300 bg-transparent p-5">
       <h2 className="text-xl font-extrabold tracking-tight">Would you use something like this?</h2>
       <p className="mt-1 text-base font-medium text-zinc-600">
         Leave your email and I’ll write once if it becomes a product. Only for that one note; ask me and I delete it.
@@ -35,12 +42,13 @@ export function Waitlist({
           className="mt-4 space-y-3"
           onSubmit={(event) => {
             event.preventDefault()
-            onSubmit(email)
+            if((event.nativeEvent as SubmitEvent).submitter?.getAttribute('data-trial')==='true')onTry?.(email);else onSubmit(email)
           }}
         >
           <Field label="Email" id="waitlist-email" type="email" autoComplete="email" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} />
           {error && <Notice tone="error">{error}</Notice>}
-          <Button variant="outline" type="submit" wide disabled={busy}>
+          {enabled && <div ref={action}><Button data-trial="true" variant={active && !trialOpen ? 'primary':'outline'} type="submit" wide disabled={busy}>Try it myself</Button></div>}
+          <Button variant="quiet" type="submit" wide disabled={busy}>
             {busy ? 'Saving…' : 'Keep me posted'}
           </Button>
         </form>
@@ -54,7 +62,7 @@ export function Waitlist({
           <p className="pt-2 text-base font-medium text-zinc-500">The post on X will be linked here once it is up.</p>
         )}
       </div>
-    </Card>
+    </section>
   )
 }
 

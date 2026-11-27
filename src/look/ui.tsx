@@ -18,6 +18,7 @@ export const HrefProvider = HrefContext.Provider
 export const useHref = () => useContext(HrefContext)
 const NotebookStatusContext=createContext({unread:0})
 export const NotebookStatusProvider=NotebookStatusContext.Provider
+export const SignupCardContext=createContext({enabled:false,active:false,setActive:(_active:boolean)=>{}})
 
 /* ---------- surfaces ---------- */
 
@@ -545,6 +546,6 @@ export function RecordingPicker({ onFiles, busy, disabled, label='Add recordings
 }
 
 /** The action of a tab page in the read-only copy. */
-export function WhatIsKai() {
-  return <div className="flex w-full items-center gap-3"><div className="min-w-0 flex-1"><Button variant="primary" wide href="/try">Try it yourself</Button></div><div className="shrink-0"><RoundLink href="/search" label="Search" icon="search"/></div></div>
+export function WhatIsKai({hideTrial=false}:{hideTrial?:boolean}) {
+  return <div className="flex w-full items-center gap-3">{!hideTrial && <div className="min-w-0 flex-1"><Button variant="primary" wide href="/try">Try it yourself</Button></div>}<div className="shrink-0"><RoundLink href="/search" label="Search" icon="search"/></div></div>
 }
