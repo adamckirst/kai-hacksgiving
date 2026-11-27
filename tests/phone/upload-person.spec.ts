@@ -12,7 +12,7 @@ test('choose a new person before upload; their page keeps the recording after re
   await login(page,kai.secret);await page.getByRole('link',{name:'Add recordings',exact:true}).click();
   await page.getByRole('button',{name:/^Someone else/}).click();await page.getByLabel('Who is speaking?').selectOption('new');await assertPhone(page);
   await page.getByLabel('Name',{exact:true}).fill('Avery Fern');await page.getByLabel('Company (optional)').fill('Juniper Dental');await photograph(page,'upload-new-person');
-  await page.getByLabel('Add recordings: choose up to five audio files').setInputFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
+  await page.getByLabel('Add recording: choose one audio file').setInputFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
   await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();await page.getByRole('link',{name:'Avery Fern',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Avery Fern',exact:true})).toBeVisible();
   await page.reload();await expect(page.getByRole('link',{name:/A follow-up with Dana/})).toBeVisible();await assertPhone(page);
@@ -43,7 +43,7 @@ test('Home puts recording progress first, then my tasks, excluding promises owed
   await page.goto('/home');await expect(page.getByText('Reading Dana’s page',{exact:true})).toBeVisible();
   const tasks=page.getByRole('region',{name:'My tasks',exact:true});await expect(tasks).toContainText('Send Dana the pricing');await expect(tasks).not.toContainText('Send the trial dates');
   const progress=await page.getByText('Reading Dana’s page',{exact:true}).boundingBox(),todos=await tasks.boundingBox(),samples=await page.getByText('No recording at hand?',{exact:true}).boundingBox();
-  expect(progress!.y).toBeLessThan(todos!.y);expect(todos!.y).toBeLessThan(samples!.y);await expect(page.getByText('Up to five recordings at once',{exact:true})).toHaveCount(0);await assertPhone(page);
+  expect(progress!.y).toBeLessThan(todos!.y);expect(todos!.y).toBeLessThan(samples!.y);await expect(page.getByText('One recording at a time',{exact:true})).toHaveCount(0);await assertPhone(page);
   await page.getByRole('checkbox',{name:'Mark Send Dana the pricing done'}).click();await expect(tasks).not.toContainText('Send Dana the pricing');
   await page.reload();await expect(page.getByRole('region',{name:'My tasks'})).not.toContainText('Send Dana the pricing');
 });

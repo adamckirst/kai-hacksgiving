@@ -68,7 +68,7 @@ The dock at the foot of the screen holds it, except where noted.
 | Home, People, To-dos | "Add recordings": opens the upload page to choose a person, then files | "Try it yourself", to trial signup |
 | Recording | "Accept all · n"; "Try again" when it failed; no main action when all is decided (Copal’s request). Hidden while a suggestion is edited: "Save and accept" is then the one | "Back to Home" |
 | Person | "Review suggestions" when some wait; otherwise "Add recordings" | "Back to People" |
-| Upload | "Choose audio files", "Set up shortcut" or "Open WhatsApp" or "Choose saved audio"; "Let KAI read" for a shared recording | "Try it yourself" |
+| Upload | "Choose audio file", "Set up shortcut" or "Open WhatsApp" or "Choose saved audio"; "Let KAI read" for a shared recording | "Try it yourself" |
 | Connect | "Copy your address", in the first card | "Try it yourself" |
 
 ### What the look shows that the server does not send yet
@@ -170,3 +170,5 @@ Copal’s phone refinements: focused Search with a shorter notice and no subtitl
 Home keeps the email-update explanation behind an info button only while processing; it supports hover, keyboard and touch. Remaining time sits in the Your demo card. The recording privacy notice lives on Upload and in Demo terms and privacy. Signup requires agreement before a code is requested.
 
 The trial now includes 30 minutes total; files stay at 10 MB and must be under 30 minutes. Quota rejection mail is shown in `email-quota.html` on invented durations. The remaining-time card uses the new allowance.
+
+Demo imports accept one recording at a time. The Files picker, upload guidance and terms show the single-file limit; recording types and the existing queue are unchanged.

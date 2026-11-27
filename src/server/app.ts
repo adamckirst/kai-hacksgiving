@@ -27,7 +27,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber,()=>{void mail.kick();});
   const work=()=>{void quotaMail.kick();void mail.kick();return queue.kick();};
   app.locals.queue={kick:work,stop:async()=>{await queue.stop();await mail.stop();await quotaMail.stop();}};void work();
-  const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:5,fields:2,fieldSize:2048,parts:7}}).array('recordings',5);
+  const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:1,fields:2,fieldSize:2048,parts:3}}).array('recordings',1);
   app.disable('x-powered-by');
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
@@ -176,7 +176,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.use(express.static(path.resolve('dist')));
   app.get(['/', '/terms', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
-    if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose up to five recordings, each up to 10 MB.'});return;}
+    if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose one recording, up to 10 MB.'});return;}
     res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});
   });
   return app;

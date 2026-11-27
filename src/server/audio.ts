@@ -16,7 +16,7 @@ export type Transcript={text:string;utterances:Utterance[]};
 export type Transcriber=(audio:Buffer,signal:AbortSignal,reservedSeconds?:number,multiple?:boolean)=>Promise<string|Transcript>;
 export const fakeTranscriber:Transcriber=async(_audio,_signal,_seconds,multiple)=>multiple ? {text:samples[0].text,utterances:[{speaker:'A',text:samples[0].text.split('\n')[0],start:0,end:1000},{speaker:'B',text:samples[0].text.split('\n').slice(1).join('\n') || 'Thanks.',start:1000,end:2000}]}:samples[0].text;
 export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[],directory:string,source:'recording'|'shared'='recording',options:{person?:unknown;awaitingPerson?:boolean}={}) {
-  if(files.length<1 || files.length>5) throw new ReadingError('Choose between one and five recordings.');
+  if(files.length!==1) throw new ReadingError('Choose one recording at a time.');
   let tooLong=false;let seconds=0;const durations=new Map<AudioInput,number>();
   for(const file of files) {
     if(!/\.(m4a|opus|ogg|mp3|wav)$/i.test(file.name) || !file.buffer.length || file.buffer.length>maxAudioBytes) throw new ReadingError('Use m4a, opus, ogg, mp3 or wav files, each up to 10 MB.');

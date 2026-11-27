@@ -180,7 +180,7 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'welcome/failed': { title: 'Welcome · a link that does not open', screen: () => <Welcome access={{ kind: 'public', videoUrl: null }} failed /> },
   'home/loading': { title: 'Home · loading', screen: () => <Home {...homeProps} home={null} readOnly={false} /> },
   'home/failed': { title: 'Home · could not load', screen: () => <Home {...homeProps} home={null} readOnly={false} loadError="Your notebook could not load. Reload this page to try again." /> },
-  'home/upload-failed': { title: 'Home · upload refused', screen: () => <Home {...homeProps} readOnly={false} addError="Choose one to five recordings, each up to 10 MB." /> },
+  'home/upload-failed': { title: 'Home · upload refused', screen: () => <Home {...homeProps} readOnly={false} addError="Choose one recording, up to 10 MB." /> },
   'home/paste-failed': { title: 'Home · reading refused', screen: () => <Home {...homeProps} readOnly={false} pasteOpen pasteError="KAI could not start. Try again." /> },
   'people/loading': { title: 'People · loading', screen: () => <People people={null} readOnly={false} onFiles={nothing} /> },
   'people/failed': { title: 'People · could not load', screen: () => <People people={null} readOnly={false} error="People could not load. Reload this page to try again." onFiles={nothing} /> },
