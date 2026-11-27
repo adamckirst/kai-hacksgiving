@@ -6,7 +6,7 @@ import { assertPhone } from './usability';
 test('a read-only phone visitor can join once with a quiet button and keep browsing',async({page,kai})=> {
   const before=(kai.db.prepare('SELECT count(*) AS n FROM waitlist').get() as {n:number}).n;
   await page.goto('/home');await expect(page.getByRole('button',{name:'Keep me posted',exact:true})).toBeEnabled();
-  await expect(page.getByText('Only for that one note; ask me and I delete it.')).toBeVisible();await assertPhone(page);
+  await expect(page.getByRole('heading',{name:'Try KAI with your recordings'})).toBeVisible();await expect(page.getByText('Enter your email to try KAI with 30 minutes of recording time. Or choose “Keep me posted” for one email if it becomes a product.')).toBeVisible();await assertPhone(page);
   await page.getByLabel('Email',{exact:true}).fill(randomUUID()+'@example.invalid');await page.getByRole('button',{name:'Keep me posted',exact:true}).click();
   await expect(page.getByText('You’re on the list. Thank you.')).toBeVisible();await expect(page.getByLabel('Email',{exact:true})).toHaveCount(0);await assertPhone(page);
   expect((kai.db.prepare('SELECT count(*) AS n FROM waitlist').get() as {n:number}).n).toBe(before+1);

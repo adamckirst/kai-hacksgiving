@@ -180,3 +180,5 @@ Sign-in keeps its email explanation short. The agreement includes its terms/priv
 The email card has a dashed outline. On public Home, Try it myself reuses its email and opens an information/terms popup before code verification; Keep me posted remains secondary. The floating trial action yields to the visible card action, then returns when it leaves view. Signed-in notebooks keep their existing waitlist action.
 
 Overdue/due-soon badges and status counts use 14 px type. Only the marked non-interactive badge spans receive the smaller-type exception in the phone and gallery checks.
+
+The public email card introduces both choices: try personal recordings with 30 minutes of demo time, or receive one future product email. Signed-in and saved waitlist cards retain their waitlist-only wording.

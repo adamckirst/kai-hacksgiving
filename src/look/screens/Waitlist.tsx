@@ -23,15 +23,16 @@ export function Waitlist({
 }) {
   const [email, setEmail] = useState('')
   const {enabled,active,setActive}=useContext(SignupCardContext)
+  const offersTrial=enabled && !saved
   const action=useRef<HTMLDivElement>(null)
   const [visible,setVisible]=useState(false)
   useEffect(()=>{const node=action.current;if(!enabled || !node || saved){setVisible(false);return}const observer=new IntersectionObserver(entries=>setVisible(entries[0].isIntersecting),{rootMargin:'-160px 0px 0px 0px'});observer.observe(node);return()=>observer.disconnect()},[enabled,saved])
   useEffect(()=>{setActive(Boolean(enabled && (visible || trialOpen)));return()=>setActive(false)},[enabled,visible,trialOpen,setActive])
   return (
-    <section aria-label="Keep me posted" className="rounded-3xl border border-dashed border-violet-300 bg-transparent p-5">
-      <h2 className="text-xl font-extrabold tracking-tight">Would you use something like this?</h2>
+    <section aria-label={offersTrial ? 'Try KAI or keep me posted' : 'Keep me posted'} className="rounded-3xl border border-dashed border-violet-300 bg-transparent p-5">
+      <h2 className="text-xl font-extrabold tracking-tight">{offersTrial ? 'Try KAI with your recordings' : 'Would you use something like this?'}</h2>
       <p className="mt-1 text-base font-medium text-zinc-600">
-        Leave your email and I’ll write once if it becomes a product. Only for that one note; ask me and I delete it.
+        {offersTrial ? 'Enter your email to try KAI with 30 minutes of recording time. Or choose “Keep me posted” for one email if it becomes a product.' : 'Leave your email and I’ll write once if it becomes a product. Only for that one note; ask me and I delete it.'}
       </p>
       {saved ? (
         <div className="mt-4">
