@@ -66,6 +66,10 @@ export function openDatabase(path:string|Buffer = ':memory:') {
     CREATE TABLE IF NOT EXISTS browser_sessions (
       digest TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id), expires_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS personal_instance (
+      singleton INTEGER PRIMARY KEY CHECK(singleton=1), workspace_id TEXT NOT NULL UNIQUE REFERENCES workspaces(id),
+      setup_hash TEXT, email TEXT UNIQUE, verified_at TEXT, terms_version TEXT, terms_accepted_at TEXT
+    );
     CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created_at TEXT NOT NULL);
   `);
   db.transaction(()=> {
@@ -124,6 +128,9 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   // Fill only missing links on the two known seed rows; preserve all user decisions.
   db.exec("UPDATE todos SET person_id=CASE WHEN workspace_id='public' THEN 'dana' ELSE workspace_id||':dana' END WHERE person_id IS NULL AND id=CASE WHEN workspace_id='public' THEN 'pricing' ELSE workspace_id||':pricing' END; UPDATE todos SET person_id=owner_person_id WHERE person_id IS NULL AND id=CASE WHEN workspace_id='public' THEN 'trial' ELSE workspace_id||':trial' END;");
   })();
+  db.exec(`CREATE VIEW IF NOT EXISTS notebook_owners AS
+    SELECT email,workspace_id,verified_at FROM waitlist WHERE verified_at IS NOT NULL
+    UNION ALL SELECT email,workspace_id,verified_at FROM personal_instance WHERE verified_at IS NOT NULL`);
   return db;
 }
 export type KaiDatabase = ReturnType<typeof openDatabase>;

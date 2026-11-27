@@ -468,3 +468,33 @@ Existing invitation cookies stay valid until sign-out, but have no email
 recovery unless the notebook already has a verified trial address. Switching
 notebooks requires signing out explicitly. Recording email links ask for
 sign-in when needed and return to the recording after verification.
+
+### Run your own KAI
+
+[SELF_HOST.md](SELF_HOST.md) is the portable coding-agent setup prompt. Copy
+it from the app’s Run your own KAI page or download the Markdown. It guides
+you through your own Sprite and AssemblyAI, Anthropic and Resend connectors,
+then installs this reviewed code. Provider keys never enter KAI’s shared demo.
+Node 24, Bash, Git and the Sprites CLI are required; you supply a verified
+Resend sending domain/address for owner sign-in.
+
+The personal mode starts empty and allows one owner, established by a private
+setup link plus email verification. It disables public trial signup, the
+waitlist and judge invitations. Your existing demo notebook does not transfer.
+You manage billing, backups and deletion; the shared demo’s 30-minute subsidy
+and 8 December deletion promise do not apply. File, queue, daily processing
+and email limits remain.
+
+Fly currently includes $5/month on its Free plan and automatically changes
+to paid usage above it. Light personal use is the target, not a guarantee
+of a zero bill. Read [Fly pricing](https://fly.io/pricing/) and the guide’s
+separate provider-credit/cost notes before creating resources. Close KAI
+tabs when finished; foreground polling keeps a Sprite awake.
+
+The operator-run installer is `scripts/deploy-personal.sh ORG SPRITE COMMIT
+HTTPS_ORIGIN FROM_ADDRESS`. Read the guide first: its initial stdout contains
+a private setup link and must go directly to an owner-only file. It refuses
+the shared demo target and existing non-personal state, keeps its database
+outside code, and checks the selected commit and personal mode at `/healthz`.
+Tests use invented databases, fake senders and a fake CLI; they do not
+create a Sprite or substitute for a real owner’s installation check.

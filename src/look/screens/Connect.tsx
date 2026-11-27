@@ -2,7 +2,7 @@ import {Account} from './Account'
 import type { ReactNode } from 'react'
 import { Icon, type IconName } from '../icons'
 import type { Connection } from '../types'
-import { Button, Card, FOCUS, Notice, PushedPage, WhatIsKai } from '../ui'
+import { Button, Card, FOCUS, Notice, PushedPage, WhatIsKai,usePersonalInstance } from '../ui'
 
 /** An address to copy: shown whole, selectable, never a field you type in. */
 function Address({ label, id, value }: { label: string; id: string; value: string }) {
@@ -85,10 +85,12 @@ export function Connect({
   onCopy: (which: 'upload' | 'home' | 'assistant', value: string) => void
 }) {
   const feedback = (which: 'upload' | 'home' | 'assistant') => copyError?.at === which ? <Notice tone="error">{copyError.text}</Notice> : copied === which && <Notice tone="good">Copied.</Notice>
+  const personal=usePersonalInstance()
   return (
     <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
       <header className="px-1"><h1 className="text-[32px]/10 font-extrabold">Connections</h1><p className="mt-2 text-base/7 text-zinc-600">Set up your phone or let an assistant read what you kept.</p></header>
       {error && <Notice tone="error">{error}</Notice>}
+      {!personal && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Your own KAI</h2><p className="text-base/7 text-zinc-600">Keep using KAI on your own Sprite with your own provider accounts. Start a fresh notebook.</p><Button variant="quiet" href="/your-own-kai">Run your own KAI</Button></Card>}
       <Account initialChoice={initialSignOut} readOnly={readOnly} recoverable={accountRecoverable} busy={accountBusy} error={accountError} onSignOut={onSignOut}/>
 
       <Card className="space-y-5 p-5">

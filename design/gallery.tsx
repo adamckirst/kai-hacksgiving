@@ -1,3 +1,6 @@
+import {SelfHost} from '../src/look/screens/SelfHost'
+import {PersonalWelcome,PersonalTerms} from '../src/look/screens/Personal'
+import {InstanceProvider} from '../src/look/ui'
 import {Login} from '../src/look/screens/Login'
 import {Terms} from '../src/look/screens/Terms'
 import {Search} from '../src/look/screens/Search'
@@ -141,6 +144,22 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'connect/ready':{title:'Connections · phone set up',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} accountRecoverable readOnly={false} onCopy={nothing}/>},
   'home/connected':{title:'Home · phone set up',screen:()=> <Home {...homeProps} home={{...data.home,shortcutReady:true}} readOnly={false}/>},
 
+  'self-host':{title:'Run your own KAI',screen:()=> <SelfHost onCopy={nothing}/>},
+  'self-host/copied':{title:'Own KAI · copied',screen:()=> <SelfHost copied onCopy={nothing}/>},
+  'self-host/busy':{title:'Own KAI · getting instructions',screen:()=> <SelfHost busy onCopy={nothing}/>},
+  'self-host/failed':{title:'Own KAI · copy unavailable',screen:()=> <SelfHost error='Copying is unavailable here. Download the Markdown instructions below.' onCopy={nothing}/>},
+  'personal/welcome':{title:'Personal KAI · Welcome',screen:()=> <InstanceProvider value><PersonalWelcome signedIn={false}/></InstanceProvider>},
+  'personal/welcome-owner':{title:'Personal KAI · owner Welcome',screen:()=> <InstanceProvider value><PersonalWelcome signedIn/></InstanceProvider>},
+  'personal/terms':{title:'Personal KAI · terms',screen:()=> <PersonalTerms/>},
+  'personal/setup':{title:'Personal KAI · claim notebook',screen:()=> <InstanceProvider value><Login setup onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/></InstanceProvider>},
+  'personal/setup-code':{title:'Personal KAI · verify owner',screen:()=> <InstanceProvider value><Login setup codeSent onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/></InstanceProvider>},
+  'personal/setup-blocked':{title:'Personal KAI · setup link needed',screen:()=> <InstanceProvider value><Login setup blocked error='Open your private setup link, or sign in if this instance already has an owner.' onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/></InstanceProvider>},
+  'personal/login':{title:'Personal KAI · sign in',screen:()=> <InstanceProvider value><Login onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/></InstanceProvider>},
+  'personal/login-code':{title:'Personal KAI · sign-in code',screen:()=> <InstanceProvider value><Login codeSent onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/></InstanceProvider>},
+  'personal/login-error':{title:'Personal KAI · wrong code',screen:()=> <InstanceProvider value><Login codeSent error='This code expired or could not be checked. Ask for a new code.' onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/></InstanceProvider>},
+  'personal/home':{title:'Personal KAI · empty notebook',screen:()=> <InstanceProvider value><Home {...homeProps} readOnly={false} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:null,trialVerified:true}}/></InstanceProvider>},
+  'personal/upload':{title:'Personal KAI · upload',screen:()=> <InstanceProvider value><Upload people={[]} readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/></InstanceProvider>},
+  'personal/connect':{title:'Personal KAI · connections',screen:()=> <InstanceProvider value><Connect connection={data.connection} readOnly={false} accountRecoverable onCopy={nothing}/></InstanceProvider>},
   'try/code': {title:'Trial · verification code',screen:()=> <Trial codeSent onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
   'try/code-error': {title:'Trial · wrong code',screen:()=> <Trial codeSent error='Check the code and try again.' onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
   try: {title:'Trial · join',screen:()=> <Trial onSubmit={nothing}/>},

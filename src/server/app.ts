@@ -1,3 +1,4 @@
+import {personalInstance,mountPersonalSetup} from './personal';
 import {mountLogin,type LoginOptions} from './login';
 import {quotaMailWorker,type SendQuota} from './quota-mail';
 import {searchNotebook} from './search';
@@ -22,7 +23,7 @@ import { mountWaitlist,xPost } from './waitlist';
 import { configureRecording,identifySpeakers } from './recording-person';
 export type AppOptions = LoginOptions & {sendQuota?:SendQuota;sendReady?:SendReady;trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
-  const app = express();
+  const app = express(),personal=Boolean(personalInstance(db));
   const quotaMail=quotaMailWorker(db,options.sendQuota,options.now);
   const mail=recordingMailWorker(db,options.sendReady,options.now);
   const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber,()=>{void mail.kick();});
@@ -33,13 +34,16 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
   mountMcp(app,db);
-  mountTrial(app,db,options);
+  if(personal)app.use(['/api/trial','/api/waitlist','/api/operator','/api/access/start'],(_req,res)=>{res.status(404).json({error:'This personal instance has no public signup.'});});
+  mountPersonalSetup(app,db,options.secureCookies??true);
+  if(!personal)mountTrial(app,db,options);
   mountLogin(app,db,options);
-  mountWaitlist(app,db,options);
+  if(!personal)mountWaitlist(app,db,options);
   // A 20,000-character transcript can need 120 KB when JSON escapes it.
   app.use(express.json({limit:'128kb'}));
   app.use((req,res,next) => {
     res.locals.workspace = workspaceFor(db,req);
+    if(personal && res.locals.workspace==='public' && req.path.startsWith('/api/') && req.path!=='/api/access'){res.status(401).json({error:'Sign in to open this notebook.'});return;}
     if (!['GET','HEAD','OPTIONS'].includes(req.method)) {
       const origin = req.get('origin');
       if (origin && origin !== `${options.secureCookies === false ? req.protocol : 'https'}://${req.get('host')}`) {res.status(403).json({error:'This request is not allowed.'});return;}
@@ -56,8 +60,8 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     res.json({ok:true});
   });
   app.use((_req,_res,next)=>{void work();next();});
-  app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
-  app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null,xPostUrl:xPost(options.xPostUrl),trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds}));
+  app.get('/healthz', (_req,res) => res.json({status:'ok',...(personal?{instance:'personal'}:{}),commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
+  app.get('/api/access',(_req,res) => res.json({personal,kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null,xPostUrl:xPost(options.xPostUrl),trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds}));
   app.get('/api/connect',(_req,res)=> {
     const row=db.prepare("SELECT upload_token,mcp_token,shortcut_ready FROM workspaces WHERE id=? AND kind='judge'").get(res.locals.workspace) as {upload_token:string;mcp_token:string;shortcut_ready:number}|undefined;
     if(!row){res.status(403).json({error:'Open your own copy to connect your phone.'});return;}
@@ -176,7 +180,8 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/terms', '/login', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get('/self-host.md',(_req,res)=>res.type('text/markdown').attachment('KAI-SELF-HOST.md').sendFile('SELF_HOST.md',{root:path.resolve('.')}));
+  app.get(['/', '/your-own-kai', '/setup', '/terms', '/login', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose one recording, up to 10 MB.'});return;}
     res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});
