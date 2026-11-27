@@ -52,6 +52,8 @@ are technical decisions, each with its reason.
   loading, waiting, listening or reading before the first suggestion, and
   when ready with no pending suggestions. Keep Accept all when proposals
   exist, Try again on failure and Save and accept while editing.
+  Settings uses secondary account actions rather than a filled violet main
+  button; its destructive confirmation uses red (§21, Copal's chosen design).
 - U8. Plain words. The screens never say "AI", "LLM", "entity", "extract",
   "prompt" or "token". What the AI does is credited to "KAI".
 
@@ -809,9 +811,11 @@ restriction and the earlier exclusion of an in-app setup/code link.
   combined email-send caps. Distinguish login from signup challenges so
   codes cannot cross flows or be reused. Return generic code-request replies
   rather than disclosing whether an address owns a notebook. Never log or
-  persist a plaintext code or expose addresses in notebook APIs or MCP.
-- Keep Sign in in settings. On Welcome, Try it yourself handles both new
-  and returning testers through §20; omit the separate Sign in action
+  persist a plaintext code or expose addresses in notebook APIs or MCP,
+  except the authenticated owner's account response for Settings (§21).
+- Keep Sign in in settings for signed-out visitors only; signed-in owners
+  see their account and sign-out actions (§21). On Welcome, Try it yourself
+  handles both new and returning testers through §20; omit the separate Sign in action
   **(Copal: “Update the PRD and remove Welcome’s Sign in”)**. Keep Sign out
   for this browser and Sign out everywhere for the notebook. Browser revocation
   does not rotate upload/MCP addresses. Do not silently switch a signed-in browser to a
@@ -983,3 +987,113 @@ The email card also explains both trying KAI and joining the waitlist.
   Verify the deployed public flow and isolated existing/new-owner cases on
   the Sprite with invented data and fake providers. Never ask Copal to share
   his address, code or recording details when checking the deployed flow.
+
+
+## 21 · App shelf, Settings and account deletion (Copal)
+
+Copal chose “app shelf is much better. let's go with that”, then Settings
+version “1”, with “everywhere not outlined, to differntiate from sign out”.
+He requested Delete my account in red and no “Email verified” label. He
+approved “Update the PRD” for these screens, the owner's account-email
+response and deletion with protected quota fingerprints retained until the
+demo ends. These rules supersede §14's source layout and direct gear-to-
+Connections route, and the blanket email-response restrictions in §§12,
+18 and 20 only for the authenticated owner's account response below.
+
+### Add recordings
+
+- Use the selected App shelf layout in KAI's existing look. Files is first,
+  with Choose audio file as the main action. Its description is exactly
+  “One audio file · up to 10 MB · under 30 minutes”, replacing “Your own
+  memo, a voice note or a meeting.” Do not repeat that limits line below.
+- Show app sharing separately from local Files. Offer WhatsApp, Messages
+  and Telegram under voice notes, with sharing instructions and app links
+  where supported. Voice Memos gives sharing instructions and a Files
+  fallback, not the Safari-rejected launch address. Keep guidance accessible
+  by tap and keyboard; screenshots may be placeholders until Copal supplies
+  them. Do not imply that a browser can inspect installed apps or shortcuts.
+- Make phone-sharing setup available here through Connections. If setup is
+  incomplete, guide the person there before sharing. Return to the selected
+  source afterwards. If setup is already confirmed or a share has succeeded,
+  keep it available without repeating the setup demand; let the person
+  dismiss the guidance and return to Upload. Connections also remains
+  reachable through Settings and retains assistant setup.
+- Local Files selection leads to the existing three recording-type selector
+  before upload/processing; an incoming shared recording pauses for the same
+  choice before transcription. Preserve §15's speaker rules: no person for
+  Memo from me, one speaker before transcription for Someone else, and
+  speaker assignment after transcription but before reading for Multiple
+  speakers. Selecting a file alone calls no provider.
+- Keep single imports, 10 MB, under 30 minutes, remaining trial time,
+  server-side validation, privacy notice and all daily/provider/mail limits.
+  Unsupported app launches retain clear manual-sharing and Files guidance.
+
+### Settings and the owner's account
+
+- The gear opens Settings. The selected first design has a rounded account
+  card, then a Connections card. For a verified signed-in owner, show Signed
+  in as and their email. Omit Email verified and Sign in. Sign out is an
+  outlined button; Sign out everywhere is a plain secondary button without
+  an outline. Delete my account is a separate red action below the cards.
+- Signed-out visitors see Sign in, with no private account details or
+  deletion action. Invitation-only notebooks retain their current access
+  warning and sign-out behavior; do not invent or attach an email for them.
+- Return the address only from a dedicated authenticated owner-account
+  response, scoped to that browser's notebook and marked no-store. Never
+  accept a target email or notebook from the client for this read. All
+  general notebook APIs, MCP, logs, models, URLs and browser storage remain
+  address-free; generic pre-verification responses remain unchanged.
+- Keep sign-out confirmation and existing revocation behavior. Sign out
+  everywhere revokes browser sessions but leaves sharing and MCP links
+  working. Ordinary Settings has no filled violet main action; destructive
+  confirmation uses one red Delete my account and a quiet Keep my account.
+
+### Delete my account
+
+- Only an authenticated verified owner can request deletion of their own
+  notebook. Ask for an explicit confirmation explaining that recordings,
+  people, notes and tasks will be deleted, the waitlist subscription removed,
+  all browsers signed out, and sharing/assistant links stopped. Cancel does
+  nothing. No public, invitation-only or cross-notebook deletion is allowed.
+- Delete the live notebook, its remaining audio, suggestions, people, notes,
+  tasks, notifications, queued mail, waitlist entry, ownership challenges and
+  browser sessions. Revoke upload/MCP capabilities. Work already in flight
+  must not recreate deleted rows, restart processing or enqueue more mail;
+  cancellation/restart and repeated deletion requests must be safe. A mail
+  request already handed to its provider cannot be recalled.
+- Retain protected email/IP quota fingerprints until the demo ends on
+  8 December, solely to enforce one trial per email/IP and the 100-grant
+  limit. Keep bounded usage/send counters needed for existing daily caps;
+  deletion must not reset allowances, grant totals or sending limits. Do not
+  retain raw email, IP, recording content or active access credentials for
+  this purpose. Apply these checks to every remaining grant entry path and
+  migrate existing grants without refilling time or exposing addresses.
+- Explain deletion and the limited retention in terms and its confirmation;
+  increment the terms version, preserving §20's explicit agreement rules.
+  Do not promise removal from historical checkpoints before the existing
+  end-of-demo teardown. The agent tests only invented accounts; actual
+  account deletion is initiated by the person in KAI. No Sprite, connector,
+  provider account or key is created or deleted by this change.
+
+### Delivery and checks
+
+Land this approved plan first, then the implementation with the gallery's
+new states. Both use the existing review, merge and deployment loop.
+
+- npm run check; gallery at 375 px; Files-first shelf, exact limits copy,
+  setup/return/dismiss paths, accessible sharing guidance and all three
+  recording types. Existing single-file/quota validation remains enforced.
+- Settings shows only its authenticated owner's email; public/invitation
+  responses and general notebook/MCP APIs disclose none. Sign-out actions
+  retain their behavior and distinct styles; confirmation/cancel states
+  are accessible on phones and desktop.
+- Deletion tests cover authorization, another notebook's isolation, atomic
+  database cleanup, remaining audio cleanup, browser/upload/MCP revocation,
+  outstanding verification proofs, queued/in-flight work and mail, duplicate
+  requests and restart. Deleted owners cannot reclaim a trial with the same
+  email or IP, including concurrent claims and older signup endpoints.
+  The 100-grant total and existing daily/provider/email caps cannot refill.
+- Verify the deployed layout and isolated deletion/ownership/limit cases on
+  the Sprite with invented data and fake providers. Never delete or inspect
+  a real tester's account to prove this check. Copal checks app launches and
+  sharing on his iPhone; list each launch as not run until confirmed.
