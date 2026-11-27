@@ -2,6 +2,9 @@ import type { ReactNode } from 'react'
 
 /** KAI's own small icon set: 24 px, drawn with one rounded stroke. */
 const paths = {
+  trash: <path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7" />,
+  paperplane: <path d="M3 10l18-7-7 18-3-8-8-3zM11 13L21 3" />,
+  phonechat: <><path d="M20 11a8 8 0 01-8 8H8l-5 3 1.5-6A8 8 0 1120 11z"/><path d="M8 7l2 2-1 1c1 2 2 3 4 4l1-1 2 2c-2 3-7-1-9-5z"/></>,
   search: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></>,
   bell: <path d="M9 20h6M5 17h14l-2-3V9a5 5 0 00-10 0v5l-2 3z" />,
   settings: <><path d="M9 4l1-2h4l1 2 2 1 2-.2 2 3-1.2 1.8v2.4L21 14l-2 3-2-.2-2 1-1 2h-4l-1-2-2-1-2 .2-2-3 1.2-1.8V9.8L3 8l2-3 2 .2z"/><circle cx="12" cy="11" r="3"/></>,

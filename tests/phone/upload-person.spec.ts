@@ -10,9 +10,10 @@ async function login(page:any,secret:string) {
 
 test('choose a new person before upload; their page keeps the recording after reload',async({page,kai})=> {
   await login(page,kai.secret);await page.getByRole('link',{name:'Add recordings',exact:true}).click();
+  await page.getByLabel('Add recording: choose one audio file').setInputFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
   await page.getByRole('button',{name:/^Someone else/}).click();await page.getByLabel('Who is speaking?').selectOption('new');await assertPhone(page);
   await page.getByLabel('Name',{exact:true}).fill('Avery Fern');await page.getByLabel('Company (optional)').fill('Juniper Dental');await photograph(page,'upload-new-person');
-  await page.getByLabel('Add recording: choose one audio file').setInputFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
+  await page.getByRole('button',{name:'Let KAI read',exact:true}).click();
   await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();await page.getByRole('link',{name:'Avery Fern',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Avery Fern',exact:true})).toBeVisible();
   await page.reload();await expect(page.getByRole('link',{name:/A follow-up with Dana/})).toBeVisible();await assertPhone(page);

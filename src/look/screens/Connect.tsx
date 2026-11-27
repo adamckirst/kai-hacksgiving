@@ -1,4 +1,3 @@
-import {Account} from './Account'
 import type { ReactNode } from 'react'
 import { Icon, type IconName } from '../icons'
 import type { Connection } from '../types'
@@ -63,14 +62,8 @@ export function Connect({
   showAddress,
   onSetupDone,
   setupBusy,
-  back = "/home",
-  initialSignOut, accountRecoverable, accountBusy, accountError, onSignOut = () => {},
+  back = "/settings",
 }: {
-  initialSignOut?:'here'|'everywhere'
-  accountRecoverable?:boolean
-  accountBusy?:boolean
-  accountError?:string
-  onSignOut?:(all:boolean)=>void
   onSetupDone?: () => void
   setupBusy?: boolean
   back?: string
@@ -86,10 +79,10 @@ export function Connect({
 }) {
   const feedback = (which: 'upload' | 'home' | 'assistant') => copyError?.at === which ? <Notice tone="error">{copyError.text}</Notice> : copied === which && <Notice tone="good">Copied.</Notice>
   return (
-    <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
+    <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':back==='/settings'?'Back to Settings':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
       <header className="px-1"><h1 className="text-[32px]/10 font-extrabold">Connections</h1><p className="mt-2 text-base/7 text-zinc-600">Set up your phone or let an assistant read what you kept.</p></header>
       {error && <Notice tone="error">{error}</Notice>}
-      <Account initialChoice={initialSignOut} readOnly={readOnly} recoverable={accountRecoverable} busy={accountBusy} error={accountError} onSignOut={onSignOut}/>
+
 
       <Card className="space-y-5 p-5">
         <Heading icon="share">Send to KAI from your phone</Heading>

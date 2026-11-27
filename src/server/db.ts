@@ -73,6 +73,9 @@ export function openDatabase(path:string|Buffer = ':memory:') {
       digest TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id), expires_at INTEGER NOT NULL
     );
     CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS deleted_trial_grants (email_hash TEXT PRIMARY KEY, ip_hash TEXT UNIQUE);
+    CREATE TABLE IF NOT EXISTS deleted_usage (day TEXT PRIMARY KEY, readings INTEGER NOT NULL DEFAULT 0, recordings INTEGER NOT NULL DEFAULT 0);
+    CREATE TABLE IF NOT EXISTS deleted_audio (path TEXT PRIMARY KEY);
   `);
   db.transaction(()=> {
   if(!(db.prepare('PRAGMA table_info(recording_emails)').all() as {name:string}[]).some(c=>c.name==='title'))db.exec("ALTER TABLE recording_emails ADD COLUMN title TEXT NOT NULL DEFAULT 'Your recording'");

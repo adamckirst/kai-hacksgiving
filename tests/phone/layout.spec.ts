@@ -2,7 +2,7 @@ import { photograph } from './photos';
 import { assertPhone } from './usability';
 import { test,expect } from './fixture';
 for(const kind of ['public','judge'] as const) {
-  for(const route of ['/','/people','/home','/todos','/connect','/upload','/upload/new','/people/dana','/recordings/dana-call']) {
+  for(const route of ['/','/people','/home','/todos','/connect','/settings','/upload','/upload/new','/people/dana','/recordings/dana-call']) {
     test(`${kind} ${route}: U6–U8 at 375 px`,async({page,kai})=> {
       // Never put usable sharing or assistant addresses in screenshots or failure output.
       await page.route('**/api/connect',r=>r.fulfill({json:{uploadPath:'/in/layout-example',mcpPath:'/mcp/layout-example'}}));

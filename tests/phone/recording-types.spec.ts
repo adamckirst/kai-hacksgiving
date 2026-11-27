@@ -4,12 +4,12 @@ import {testTone} from '../../src/server/gateway';
 test('recording type makes speaker timing explicit; meetings wait for speaker names before suggestions',async({page,kai})=>{
  await page.goto('/');await page.evaluate(s=>{history.replaceState(null,'','/#judge='+s);location.reload()},kai.secret);
  await page.getByRole('link',{name:'Try it yourself',exact:true}).click();await page.goto('/upload/new');
- const picker=page.getByLabel('Add recording: choose one audio file');await expect(picker).toBeDisabled();
- await page.getByRole('button',{name:/^My memo/}).click();await expect(picker).toBeEnabled();await expect(page.getByLabel('Who is speaking?',{exact:true})).toHaveCount(0);await assertPhone(page);
- await page.getByRole('button',{name:/^Someone else/}).click();await expect(picker).toBeDisabled();await expect(page.getByLabel('Who is speaking?',{exact:true})).toBeVisible();
- await page.getByLabel('Who is speaking?',{exact:true}).selectOption('new');await page.getByLabel('Name',{exact:true}).fill('Avery Fern');await expect(picker).toBeEnabled();await assertPhone(page);
- await page.getByRole('button',{name:/^Multiple speakers/}).click();await expect(page.getByLabel('Who is speaking?',{exact:true})).toHaveCount(0);await expect(picker).toBeEnabled();await assertPhone(page);
- await picker.setInputFiles({name:'invented-meeting.wav',mimeType:'audio/wav',buffer:testTone()});
+ const picker=page.getByLabel('Add recording: choose one audio file');await expect(picker).toBeEnabled();await picker.setInputFiles({name:'invented-meeting.wav',mimeType:'audio/wav',buffer:testTone()});await expect(page.getByRole('button',{name:'Let KAI read',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:/^My memo/}).click();await expect(page.getByRole('button',{name:/Let KAI read|Transcribe recording/})).toBeEnabled();await expect(page.getByLabel('Who is speaking?',{exact:true})).toHaveCount(0);await assertPhone(page);
+ await page.getByRole('button',{name:/^Someone else/}).click();await expect(page.getByRole('button',{name:'Let KAI read',exact:true})).toBeDisabled();await expect(page.getByLabel('Who is speaking?',{exact:true})).toBeVisible();
+ await page.getByLabel('Who is speaking?',{exact:true}).selectOption('new');await page.getByLabel('Name',{exact:true}).fill('Avery Fern');await expect(page.getByRole('button',{name:/Let KAI read|Transcribe recording/})).toBeEnabled();await assertPhone(page);
+ await page.getByRole('button',{name:/^Multiple speakers/}).click();await expect(page.getByLabel('Who is speaking?',{exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:/Let KAI read|Transcribe recording/})).toBeEnabled();await assertPhone(page);
+ await page.getByRole('button',{name:'Transcribe recording',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Who said what?',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Create suggestions',exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:/^Accept all/})).toHaveCount(0);await assertPhone(page);
  const id=new URL(page.url()).pathname.split('/').pop()!;const before=await (await page.request.get('/api/readings/'+id)).json();expect(before.suggestions).toHaveLength(0);expect(before.awaiting_speakers).toBe(1);
  await page.reload();await expect(page.getByRole('heading',{name:'Who said what?',exact:true})).toBeVisible();

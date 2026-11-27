@@ -99,6 +99,7 @@ type Job={recording_type:string|null;id:string;workspace_id:string;audio_path:st
 export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,onReady:()=>void=()=>{}) {
   let active:Promise<void>|undefined,stopped=false,again=false;
   const controller=new AbortController();
+  let running:{workspace:string;controller:AbortController}|undefined;
   function retryInterrupted(job:Job) {
     if(job.attempts>=2) {db.prepare("UPDATE conversations SET status='failed',error='KAI could not finish. Try again.' WHERE id=?").run(job.id);return;}
     try {db.transaction(()=> {
@@ -121,7 +122,8 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
         if(stopped) return;
         const job=db.prepare("SELECT * FROM conversations WHERE status='waiting' AND awaiting_person=0 AND awaiting_speakers=0 AND workspace_id IN (SELECT id FROM workspaces WHERE trial_ended=0 AND (trial_seconds IS NULL OR trial_verified=1)) ORDER BY happened_at,rowid LIMIT 1").get() as Job|undefined;
         if(!job) return;
-        const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(Math.max(120000,Math.min(600000,(job.reserved_seconds??0)*1000)))]);
+        const jobController=new AbortController();running={workspace:job.workspace_id,controller:jobController};
+        const signal=AbortSignal.any([controller.signal,jobController.signal,AbortSignal.timeout(Math.max(120000,Math.min(600000,(job.reserved_seconds??0)*1000)))]);
         db.prepare('UPDATE conversations SET attempts=attempts+1 WHERE id=?').run(job.id);
         try {
           if(job.audio_path && !job.transcribed) {
@@ -141,12 +143,14 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
             if(existsSync(job.audio_path)) unlinkSync(job.audio_path);
             db.prepare('UPDATE conversations SET audio_path=NULL WHERE id=?').run(job.id);
           }
-          const pending=db.prepare('SELECT awaiting_speakers FROM conversations WHERE id=?').get(job.id) as {awaiting_speakers:number};
+          const pending=db.prepare('SELECT awaiting_speakers FROM conversations WHERE id=?').get(job.id) as {awaiting_speakers:number}|undefined;
+          if(!pending)continue;
           if(pending.awaiting_speakers){db.prepare("UPDATE conversations SET status='waiting',progress='Choose who is speaking' WHERE id=?").run(job.id);continue;}
           await readConversation(db,job.id,reader,signal);
           onReady();
-          if(signal.aborted && !stopped) retryInterrupted(db.prepare('SELECT * FROM conversations WHERE id=?').get(job.id) as Job);
+          if(signal.aborted && !stopped && db.prepare('SELECT 1 FROM conversations WHERE id=?').get(job.id)) retryInterrupted(db.prepare('SELECT * FROM conversations WHERE id=?').get(job.id) as Job);
         } catch(error) {
+          if(!db.prepare('SELECT 1 FROM conversations WHERE id=?').get(job.id))continue;
           db.prepare('UPDATE conversations SET failure_code=? WHERE id=?').run(signal.aborted ? 'listening_timeout':listeningCode(error),job.id);
           if(error instanceof AudioDurationError) {
             db.prepare('UPDATE workspaces SET trial_ended=1,trial_seconds=0 WHERE id=? AND trial_seconds IS NOT NULL').run(job.workspace_id);
@@ -160,5 +164,5 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
     })().finally(()=>{active=undefined;if(again && !stopped){again=false;return kick();}});
     return active;
   }
-  return {kick,stop:async()=>{stopped=true;controller.abort();await active;}};
+  return {kick,cancel:(workspace:string)=>{if(running?.workspace===workspace)running.controller.abort();},stop:async()=>{stopped=true;controller.abort();await active;}};
 }
