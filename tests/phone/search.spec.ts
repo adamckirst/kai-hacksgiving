@@ -24,3 +24,24 @@ test('public search stays read-only, including task details',async({page})=>{
  await page.goto('/home');await page.getByRole('link',{name:'Search',exact:true}).click();await search(page,'pricing');await assertPhone(page);
  await page.getByRole('region',{name:'Tasks',exact:true}).getByRole('link').click();await expect(page.getByText('Read-only demo',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Mark done',exact:true})).toHaveCount(0);await assertPhone(page);
 });
+
+
+test('a touch opens and focuses Search within the same tap; browser back and forward restore routes',async({browser})=>{
+ const context=await browser.newContext({baseURL:'http://127.0.0.1:18520',viewport:{width:375,height:812},isMobile:true,hasTouch:true});
+ try{
+  const page=await context.newPage();await page.goto('/people');await expect(page.getByRole('link',{name:'Search',exact:true})).toBeVisible();
+  // The window bubble listener runs after the app's document listener, before the tap ends.
+  await page.evaluate(()=>{
+   document.documentElement.dataset.originalDocument='yes';
+   window.addEventListener('click',event=>{
+    if(event.target instanceof Element && event.target.closest('a')?.getAttribute('href')==='/search')document.documentElement.dataset.focusDuringTap=String(document.activeElement?.id==='search-query');
+   });
+  });
+  let accessRequests=0;await page.route('**/api/access',route=>{accessRequests++;return route.continue()});
+  await page.getByRole('link',{name:'Search',exact:true}).tap();await expect(page).toHaveURL(/\/search$/);
+  await expect(page.locator('html')).toHaveAttribute('data-original-document','yes');await expect(page.locator('html')).toHaveAttribute('data-focus-during-tap','true');await expect(page.getByLabel('Search your notebook')).toBeFocused();expect(accessRequests).toBe(0);
+  await search(page,'Dana');await expect(page.getByRole('region',{name:'People',exact:true})).toContainText('Dana Whitfield');
+  await page.goBack();await expect(page).toHaveURL(/\/people$/);await expect(page.getByRole('heading',{name:'People',exact:true})).toBeVisible();
+  await page.goForward();await expect(page).toHaveURL(/\/search\?q=Dana$/);await expect(page.getByLabel('Search your notebook')).toHaveValue('Dana');await expect(page.getByRole('region',{name:'People',exact:true})).toContainText('Dana Whitfield');await assertPhone(page);
+ }finally{await context.close()}
+});
