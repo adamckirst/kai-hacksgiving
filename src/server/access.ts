@@ -43,6 +43,7 @@ export function revokeBrowserSessions(db:KaiDatabase,req:Request,workspace:strin
  if(all) {
   db.prepare('DELETE FROM browser_sessions WHERE workspace_id=?').run(workspace);
   db.prepare('DELETE FROM login_challenges WHERE workspace_id=?').run(workspace);
+  db.prepare('DELETE FROM entry_challenges WHERE email IN (SELECT email FROM waitlist WHERE workspace_id=?)').run(workspace);
  } else if(value?.startsWith('s.'))db.prepare('DELETE FROM browser_sessions WHERE workspace_id=? AND digest=?').run(workspace,sessionDigest(value));
  // Legacy cookies share one notebook signature. New sign-ins have individual sessions.
  if(all || !value?.startsWith('s.'))db.prepare('UPDATE workspaces SET session_secret=? WHERE id=?').run(randomBytes(32).toString('hex'),workspace);

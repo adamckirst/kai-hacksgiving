@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 122 states. The phone suite checks all public and judge
+`check.mjs` checks all 128 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -167,7 +167,7 @@ task detail each keep one violet action; all data stays notebook-scoped.
 
 Copal’s phone refinements: focused Search with a shorter notice and no subtitle; private headers omit the notebook label. Pending suggestions stay above the summary. Reviewed suggestions follow it, before the waitlist. A floating confirmation acknowledges saved decisions. Fully reviewed recordings move from the Home queue to Recent recordings.
 
-Home keeps the email-update explanation behind an info button only while processing; it supports hover, keyboard and touch. Remaining time sits in the Your demo card. The recording privacy notice lives on Upload and in Demo terms and privacy. Signup requires agreement before a code is requested.
+Home keeps the email-update explanation behind an info button only while processing; it supports hover, keyboard and touch. Remaining time sits in the Your demo card. The recording privacy notice lives on Upload and in Demo terms and privacy. Signup verifies the email first and requires agreement before creating a notebook.
 
 The trial now includes 30 minutes total; files stay at 10 MB and must be under 30 minutes. Quota rejection mail is shown in `email-quota.html` on invented durations. The remaining-time card uses the new allowance.
 
@@ -177,6 +177,10 @@ Email sign-in has initial, code, busy, error and explicit notebook-switch states
 
 Sign-in keeps its email explanation short. The agreement includes its terms/privacy link in the label; its 20 px check retains a 44 px touch target on phones and desktop.
 
-The email card has a dashed outline. On public Home, Try it myself reuses its email and opens an information/terms popup before code verification; Keep me posted remains secondary. The floating trial action yields to the visible card action, then returns when it leaves view. Signed-in notebooks keep their existing waitlist action.
+The email card has a dashed outline. On public Home, Try it myself reuses its email and opens code entry immediately, then information/terms only for a new notebook or an outdated agreement; Keep me posted remains secondary. The floating trial action yields to the visible card action, then returns when it leaves view. Signed-in notebooks keep their existing waitlist action.
 
 Overdue/due-soon badges and status counts use 14 px type. Only the marked non-interactive badge spans receive the smaller-type exception in the phone and gallery checks.
+
+The public email card introduces both choices: try personal recordings with 30 minutes of demo time, or receive one future product email. Signed-in and saved waitlist cards retain their waitlist-only wording.
+
+The public card, trial and sign-in share email, code and post-verification terms states. Returning owners with current terms go straight to their notebook without a repeated checkbox. Updated terms have their own full-page and popup states.
