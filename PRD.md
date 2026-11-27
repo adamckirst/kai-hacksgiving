@@ -760,3 +760,25 @@ and five-minute limits; the 10 MB file limit stays.
   10 MB is accepted when quota permits; a 30-minute file and over-quota
   batch are refused; both upload routes queue quota mail for verified owners
   only; duplicates, restarts and retries preserve mail limits and reservations.
+
+
+## 17 · Single recording imports for the demo (Copal)
+
+Copal requested “let's keep it to single imports now and keep batch uploads
+outside the demo”. This supersedes every earlier requirement to select or
+share several files at once, including the batch segment in §2 and the
+batch checks in §7. Batch imports are outside this demo.
+
+- Accept exactly one audio file per upload, from Files or Send to KAI. The
+  file picker selects one file. Refuse multi-file requests in both routes
+  before saving audio, reserving quota, creating people or calling providers.
+- Explain the single-file limit on Upload, in sharing guidance and in terms.
+  Keep the three recording types, 10 MB limit, under-30-minute duration,
+  remaining trial allowance and all existing daily and email limits.
+- Existing recordings and queued work remain available and can finish.
+  Separate single-file uploads may still wait in the existing queue.
+- Checks: npm run check; gallery at 375 px; one file works through each
+  upload route; two files are refused with a clear message and no stored
+  audio, new records, quota charge, provider call or email. Existing queued
+  recordings still complete across restart. Check both routes on the Sprite
+  with invented data and fake providers.
