@@ -835,7 +835,19 @@ restriction and the earlier exclusion of an in-app setup/code link.
   credentials into Fly connectors restricted to their Sprite. All provider
   calls still use connectors. Email login on a personal instance requires
   the owner's own Resend sender/domain and connector; state this plainly.
-- Provide a tested, operator-run setup guide and explicit personal-instance
+- Deliver the setup guide as a portable, copy-and-paste coding-agent prompt
+  in a public Markdown file. Copal requested “a prompt with a step by step
+  guide” that testers can paste into their coding agent. The prompt walks
+  them through creating a Sprite and connecting keys in Fly, then has the
+  agent deploy and verify the reviewed KAI code. It is grounded in this
+  repository's tested setup commands, names the supported environment and
+  prerequisites, gives one human action at a time, stops on missing access
+  or repeated errors, and never asks for credentials in chat. Do not present
+  it as an unattended one-click install or have it rebuild KAI from scratch.
+  Publish the source in this repository and offer Copy prompt and Markdown
+  download through KAI; a kopal.ai-hosted copy is a separate publishing step
+  for Copal, not permission to open another repository on this machine.
+- Provide a tested, operator-run setup path and explicit personal-instance
   mode. It starts with one owner's empty notebook and no public trial signup
   or shared-demo waitlist. A private setup capability and verified email
   establish the first owner atomically; public visitors cannot claim it.
@@ -863,7 +875,8 @@ restriction and the earlier exclusion of an in-app setup/code link.
   verified email for the sole owner, cannot be claimed twice or by another
   address, and survives restart; correct instance-specific copy and limits;
   deployment options and secret-safe instructions checked with fake command
-  runners and invented databases. Smoke-test setup/recovery in an isolated
+  runners and invented databases; prompt copy/download work at 375 px and
+  the prompt matches the tested setup commands and human approval boundaries. Smoke-test setup/recovery in an isolated
   fixture on the existing Sprite with fake providers. Copal/tester performs
   the separate real-instance install; mark that operator check not run until
   confirmed, and do not claim it passed based on fixtures.
