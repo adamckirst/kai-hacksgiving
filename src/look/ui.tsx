@@ -430,7 +430,6 @@ export function TabPage({
   current,
   title,
   subtitle,
-  owner = 'Your notebook',
   readOnly,
   due,
   dock,
@@ -439,7 +438,6 @@ export function TabPage({
   current: TabPath
   title: string
   subtitle?: ReactNode
-  owner?: string
   readOnly?: boolean
   due?: 'overdue' | 'soon'
   dock?: ReactNode
@@ -450,7 +448,7 @@ export function TabPage({
       <div className="sticky top-0 z-20 -mx-4 bg-gradient-to-b from-page from-70% to-page/0 px-4 pt-3 pb-4">
         <div className="mb-2 flex items-center justify-between gap-3 px-1">
           <span className="text-xl font-extrabold tracking-tight text-violet-700">KAI</span>
-          <div className="flex min-w-0 items-center gap-2"><span className="truncate text-base font-semibold text-zinc-500">{readOnly ? READ_ONLY : owner}</span><RoundLink href="/connect" label="Connections" icon="settings"/></div>
+          <div className="flex min-w-0 items-center gap-2">{readOnly && <span className="truncate text-base font-semibold text-zinc-500">{READ_ONLY}</span>}<RoundLink href="/connect" label="Connections" icon="settings"/></div>
         </div>
         <Tabs current={current} due={due} />
       </div>

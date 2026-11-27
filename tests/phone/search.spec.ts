@@ -4,7 +4,7 @@ async function search(page:import('@playwright/test').Page,q:string){await page.
 test('search sits right of the main action and finds all three kinds; task results open the exact task',async({page,kai})=>{
  await page.goto('/');await page.evaluate(s=>{history.replaceState(null,'','/#judge='+s);location.reload()},kai.secret);await page.getByRole('link',{name:'Try it yourself',exact:true}).click();
  const action=await page.getByRole('link',{name:'Add recordings',exact:true}).boundingBox(),find=await page.getByRole('link',{name:'Search',exact:true}).boundingBox();expect(find!.x).toBeGreaterThan(action!.x+action!.width-1);await assertPhone(page);
- await page.getByRole('link',{name:'Search',exact:true}).click();await assertPhone(page);await search(page,'Dana');
+ await page.getByRole('link',{name:'Search',exact:true}).click();await expect(page.getByLabel('Search your notebook')).toBeFocused();await expect(page.getByText('Find tasks, recordings by title or words, and people by details or notes.',{exact:true})).toBeVisible();await assertPhone(page);await search(page,'Dana');
  for(const name of ['Library','People','Tasks'])await expect(page.getByRole('region',{name,exact:true})).toBeVisible();await assertPhone(page);
  await page.getByRole('region',{name:'People',exact:true}).getByRole('link').click();await expect(page.getByRole('heading',{name:'Dana Whitfield',exact:true})).toBeVisible();await page.goBack();
  await expect(page.getByLabel('Search your notebook')).toHaveValue('Dana');

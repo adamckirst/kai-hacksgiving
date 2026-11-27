@@ -11,7 +11,8 @@ test('suggestions appear before the summary, name affected people and keep pendi
  await expect(page.getByText(/Dana Whitfield owes you/)).toBeVisible();
  const note=await page.getByText('Note about Dana Whitfield',{exact:true}).boundingBox();const summary=await page.getByText('KAI’s summary',{exact:true}).boundingBox();expect(note!.y).toBeLessThan(summary!.y);
  await page.getByRole('button',{name:'Accept',exact:true}).first().click();
- await expect(page.getByText('Accepted',{exact:true})).toHaveCount(1);
+ await expect(page.getByText('Accepted',{exact:true})).toHaveCount(1);await expect(page.getByRole('status')).toHaveText('Suggestion accepted');
+ const reviewed=await page.getByRole('region',{name:'Reviewed suggestions'}).boundingBox();const summaryAfter=await page.getByText('KAI’s summary',{exact:true}).boundingBox();expect(reviewed!.y).toBeGreaterThan(summaryAfter!.y);
  const first=page.locator('main li').first();await expect(first).toContainText('Note about Dana Whitfield');await expect(first.getByRole('button',{name:'Accept',exact:true})).toBeEnabled();
  await expect(page.getByRole('heading',{name:'Mark “Send Dana the pricing” done',exact:true})).toBeVisible();
  await page.getByRole('button',{name:/^Show in the words:/}).first().click();await expect(page.locator('mark')).toBeVisible();await assertPhone(page);

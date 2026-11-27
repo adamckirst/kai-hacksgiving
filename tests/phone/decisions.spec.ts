@@ -7,8 +7,8 @@ async function sample(page:Page,secret:string,title='Meeting Sora') {
   await page.getByRole('link',{name:'Try it yourself'}).click();await page.getByRole('button',{name:title,exact:true}).click();await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();
 }
 test('U4: one tap accepts all; People and Person pass U6–U8',async({page,kai})=> {
-  await sample(page,kai.secret);await page.getByRole('button',{name:/^Accept all/}).click();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);
-  await page.getByRole('link',{name:'See people'}).click();await expect(page.getByRole('main')).toContainText('Sora Bell');await assertPhone(page);
+  await sample(page,kai.secret);const recordingId=decodeURIComponent(new URL(page.url()).pathname.split('/').pop()!);kai.db.prepare("UPDATE conversations SET source='recording',batch_id='invented-batch' WHERE id=?").run(recordingId);await page.getByRole('button',{name:/^Accept all/}).click();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);await expect(page.getByRole('status')).toHaveText('All suggestions accepted');expect((await (await page.request.get('/api/queue')).json()).some((r:{id:string})=>r.id===recordingId)).toBe(false);
+  await expect(page.getByRole('link',{name:'See people'})).toHaveCount(0);await assertPhone(page);await page.getByRole('link',{name:'Back to Home',exact:true}).click();await page.getByRole('link',{name:'People',exact:true}).click();await expect(page.getByRole('main')).toContainText('Sora Bell');await assertPhone(page);
   await page.getByRole('link',{name:/Sora Bell/}).click();await expect(page.getByRole('heading',{name:'Sora Bell',exact:true})).toBeVisible();await expect(page.getByText('Send Sora a short overview',{exact:true})).toBeVisible();await assertPhone(page);
 });
 test('U4: one tap accepts one suggestion and one tap rejects a person and their pending items',async({page,kai})=> {

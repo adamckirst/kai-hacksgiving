@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 109 states. The phone suite checks all public and judge
+`check.mjs` checks all 110 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -66,7 +66,7 @@ The dock at the foot of the screen holds it, except where noted.
 |---|---|---|
 | Welcome | "Try it yourself", in the page | "Try it yourself", with a quiet "Look around" |
 | Home, People, To-dos | "Add recordings": opens the upload page to choose a person, then files | "Try it yourself", to trial signup |
-| Recording | "Accept all · n"; "Try again" when it failed; "See people" when all is decided. Hidden while a suggestion is edited: "Save and accept" is then the one | "Back to Home" |
+| Recording | "Accept all · n"; "Try again" when it failed; no main action when all is decided (Copal’s request). Hidden while a suggestion is edited: "Save and accept" is then the one | "Back to Home" |
 | Person | "Review suggestions" when some wait; otherwise "Add recordings" | "Back to People" |
 | Upload | "Choose audio files", "Set up shortcut" or "Open WhatsApp" or "Choose saved audio"; "Let KAI read" for a shared recording | "Try it yourself" |
 | Connect | "Copy your address", in the first card | "Try it yourself" |
@@ -97,7 +97,7 @@ Each is optional in `types.ts`, and the screen is whole without it.
 - The look changes on Copal's words. When the app needs a state that is not
   drawn, add it to `gallery.tsx` in the same pull request.
 
-The public header says “Read-only demo”; private copies say “Your notebook”.
+The public header says “Read-only demo”; private copies show only KAI and the settings button.
 The trial gallery includes signup, busy, error, empty notebook and used quota states.
 
 The trial also shows code entry and wrong-code states. Credit is granted only
@@ -164,3 +164,5 @@ as Library, People and Tasks. The gallery covers initial, matching, empty,
 loading, failed, public and result-limit states. Task results open their own
 read-only-or-actionable detail view, including completed tasks. Search and
 task detail each keep one violet action; all data stays notebook-scoped.
+
+Copal’s phone refinements: focused Search with a shorter notice and no subtitle; private headers omit the notebook label. Pending suggestions stay above the summary. Reviewed suggestions follow it, before the waitlist. A floating confirmation acknowledges saved decisions. Fully reviewed recordings move from the Home queue to Recent recordings.
