@@ -530,10 +530,9 @@ export function RecordingPicker({ onFiles, busy, disabled, label='Add recordings
       </button>
       <input
         type="file"
-        multiple
         disabled={busy || disabled}
         accept=".m4a,.opus,.ogg,.mp3,.wav"
-        aria-label="Add recordings: choose up to five audio files"
+        aria-label="Add recording: choose one audio file"
         onChange={(event) => {
           onFiles(Array.from(event.target.files ?? []))
           event.target.value = ''

@@ -11,7 +11,7 @@ for(const route of ['/people','/todos','/people/dana']) {
     await page.getByRole('button',{name:/^Someone else/}).click();await expect(page.getByLabel('Who is speaking?')).toBeVisible();
     await page.getByRole('button',{name:/^Someone else/}).click();await page.getByLabel('Who is speaking?').selectOption(workspace+':dana');
     const chooser=page.waitForEvent('filechooser');
-    await page.getByLabel('Add recordings: choose up to five audio files').click();
+    await page.getByLabel('Add recording: choose one audio file').click();
     await (await chooser).setFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
     await expect(page).toHaveURL(/\/recordings\//);
     await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();

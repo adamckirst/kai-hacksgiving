@@ -48,9 +48,9 @@ test('a shared recording waits for its owner, survives reopening, and starts onc
   }finally{await app.locals.queue.stop();await new Promise<void>(r=>server.close(()=>r()));db.close();rmSync(dir,{recursive:true,force:true});}
 });
 
-test('file uploads link the whole batch atomically; foreign people and invalid choices leave no files, rows or spent allowance',async()=> {
+test('single imports link a person atomically; foreign people and invalid choices leave no files, rows or spent allowance',async()=> {
   mkdirSync('.data',{recursive:true});const dir=mkdtempSync('.data/person-batch-');const db=openDatabase();seed(db);const a=createJudge(db),b=createJudge(db);
-  const files=[0,1,2].map(i=>({name:'invented.wav',buffer:testTone(),date:Date.now()-5000+i}));
+  const files=[0].map(i=>({name:'invented.wav',buffer:testTone(),date:Date.now()-5000+i}));
   const before=db.prepare('SELECT recordings_today,readings_today FROM workspaces WHERE id=?').get(a.id);
   try {
     await assert.rejects(addAudio(db,a.id,files,dir,'recording',{person:{person_id:b.id+':dana'}}));
@@ -58,9 +58,9 @@ test('file uploads link the whole batch atomically; foreign people and invalid c
     assert.equal((db.prepare("SELECT count(*) AS n FROM conversations WHERE source='recording'").get() as {n:number}).n,0);
     const person={id:randomUUID(),name:'Linden Ash',company:'',role:''};
     const ids=await addAudio(db,a.id,files,dir,'recording',{person:{new_person:person}});
-    assert.equal(ids.length,3);assert.equal((db.prepare('SELECT count(*) AS n FROM people WHERE id=?').get(person.id) as {n:number}).n,1);
+    assert.equal(ids.length,1);assert.equal((db.prepare('SELECT count(*) AS n FROM people WHERE id=?').get(person.id) as {n:number}).n,1);
     for(const id of ids)assert.equal((db.prepare('SELECT person_id FROM conversations WHERE id=?').get(id) as {person_id:string}).person_id,person.id);
-    assert.equal((personPage(db,a.id,person.id)!.conversations as unknown[]).length,3);
+    assert.equal((personPage(db,a.id,person.id)!.conversations as unknown[]).length,1);
     assert.equal((db.prepare('SELECT count(*) AS n FROM suggestions WHERE workspace_id=?').get(a.id) as {n:number}).n,0);
   }finally{db.close();rmSync(dir,{recursive:true,force:true});}
 });

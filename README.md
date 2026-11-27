@@ -142,10 +142,11 @@ Final-product measurements must be repeated on its own deployed head.
 
 ## Add recordings (step 5)
 
-Add recordings opens an upload page. Choose an existing person, add a person,
-or continue without one, then choose one to five `.m4a`, `.opus`, `.ogg`, `.mp3` or `.wav` files.
+Add recordings opens an upload page. Choose My memo, Someone else or Multiple
+speakers; identify the sender for Someone else. Choose one `.m4a`, `.opus`,
+`.ogg`, `.mp3` or `.wav` file. Batch imports are outside the demo.
 Each must be at most 10 MB and shorter than 30 minutes. The server parses the audio’s
-duration, validates the whole batch, and reserves both recording and reading
+duration, validates the file, and reserves both recording and reading
 allowances before enqueueing it. File dates come from the file picker;
 within a day, the original timestamps determine the queue order.
 
@@ -241,9 +242,10 @@ step can merge; the browser tests are not a substitute for that check.
 a file is parsed; a valid address grants upload access only, never a browser
 session or read access. An Origin header is refused on this shortcut route.
 It uses the same validation, limits and oldest-first queue as Home and
-records the source as `shared`. For a batch, clients send up to five files
-under `recordings` and a `dates` JSON array of millisecond timestamps, just
-as Home does. The one-file shortcut uses the ISO date field above. Missing
+records the source as `shared`. Send one file under `recordings`, with a
+one-element `dates` JSON array of millisecond timestamps, or the shortcut’s
+ISO `date` field above. Both routes refuse multi-file requests before any
+recording is saved or allowance charged. Missing
 or invalid dates are refused instead of silently using the upload day.
 
 Browser signing now uses a separate `session_secret` in `workspaces`.
@@ -423,7 +425,7 @@ never the IP. Shared Wi-Fi shares an allowance; changing networks can bypass
 an IP rule, so the global caps remain the spending boundary.
 
 A trial gets 1,800 seconds, rounded up per uploaded file and reserved
-atomically with the daily counters. Rejected batches roll back; accepted
+atomically with the daily counters. Rejected uploads roll back; accepted
 uploads consume time even when transcription fails. Retries of that upload
 do not deduct its duration again. Existing unverified trials retain their
 notebooks and remaining time but cannot call providers until verified.

@@ -18,10 +18,10 @@ function setup(durable=false) {
 }
 const reader:Reader=async(_input,call)=>{call('describe_recording',{title:'A test recording',summary:'KAI kept the invented words.\nThere are no new promises.'});};
 const dates=[Date.UTC(2026,10,24),Date.UTC(2026,10,22),Date.UTC(2026,10,23)];
-test('three files are read oldest first and audio is deleted afterwards',async()=> {
+test('separate imports are read oldest first and audio is deleted afterwards',async()=> {
   const {db,directory}=setup();const order:string[]=[];
   try {
-    const ids=await addAudio(db,'judge-a',dates.map(date=>({name:'memo.wav',buffer:testTone(),date})),directory);
+    const ids:string[]=[];for(const date of dates)ids.push(...await addAudio(db,'judge-a',[{name:'memo.wav',buffer:testTone(),date}],directory));
     const paths=(db.prepare('SELECT audio_path FROM conversations WHERE audio_path IS NOT NULL').all() as {audio_path:string}[]).map(r=>r.audio_path);
     const worker=queueWorker(db,async(input,call)=>{order.push(input.happened_on);await reader(input,call);},fakeTranscriber);
     await worker.kick();
@@ -30,11 +30,12 @@ test('three files are read oldest first and audio is deleted afterwards',async()
     await worker.stop();
   } finally {db.close();rmSync(directory,{recursive:true,force:true});}
 });
-test('queue stopped halfway finishes after reopening its persistent database',async()=> {
+test('an existing batch stopped halfway finishes after reopening its persistent database',async()=> {
   const {db,directory,file}=setup(true);let resumed:ReturnType<typeof openDatabase>|undefined;
   let started!:()=>void;const secondStarted=new Promise<void>(resolve=>started=resolve);let calls=0;
   try {
-    await addAudio(db,'judge-a',dates.map(date=>({name:'memo.wav',buffer:testTone(),date})),directory);
+    for(const date of dates)await addAudio(db,'judge-a',[{name:'memo.wav',buffer:testTone(),date}],directory);
+    db.prepare("UPDATE conversations SET batch_id='legacy-batch' WHERE workspace_id='judge-a'").run();
     const worker=queueWorker(db,reader,async(_audio,signal)=> {
       if(++calls===1) return 'First invented memo.';
       started();await new Promise<void>((_resolve,reject)=>signal.addEventListener('abort',()=>reject(new Error('Stopped')),{once:true}));return '';
@@ -59,14 +60,14 @@ test('real generated m4a and opus files are accepted; 30-minute audio is refused
     await assert.rejects(()=>addAudio(db,'judge-a',[{name:'long.wav',buffer:long,date:dates[0]}],directory),/shorter than 30 minutes/);
   } finally {db.close();rmSync(directory,{recursive:true,force:true});}
 });
-test('11 MB and sixth file are refused by HTTP before anything is queued',async()=> {
+test('11 MB and second file are refused by HTTP before anything is queued',async()=> {
   const {db,directory}=setup();const secret=randomBytes(32).toString('hex');
   const app=createApp(db,{judgeSecret:secret,audioDirectory:directory});const server=app.listen(18522,'127.0.0.1');
   await new Promise<void>(resolve=>server.once('listening',resolve));const base='http://127.0.0.1:18522';
   try {
     const auth=await fetch(base+'/api/access/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({secret})});
     const cookie=auth.headers.get('set-cookie')!.split(';')[0];
-    for(const buffers of [[Buffer.alloc(11_000_000)],Array.from({length:6},()=>testTone())]) {
+    for(const buffers of [[Buffer.alloc(11_000_000)],Array.from({length:2},()=>testTone())]) {
       const form=new FormData();buffers.forEach(b=>form.append('recordings',new Blob([new Uint8Array(b)]),'memo.wav'));form.append('dates',JSON.stringify(buffers.map(()=>dates[0])));
       const response=await fetch(base+'/api/recordings',{method:'POST',headers:{Cookie:cookie},body:form});assert.equal(response.status,400);
     }

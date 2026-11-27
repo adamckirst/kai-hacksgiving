@@ -22,7 +22,7 @@ test('three audio sources show guidance and return from shortcut setup to the ch
  await page.getByRole('button',{name:'Choose saved audio',exact:true}).click();
  await expect(page.getByRole('heading',{name:'What kind of recording?'})).toBeVisible();await page.getByRole('button',{name:/^My memo/}).click();
  await page.getByRole('button',{name:'Files',exact:true}).click();
- const picker=page.getByLabel('Add recordings: choose up to five audio files');await expect(picker).toHaveAttribute('accept','.m4a,.opus,.ogg,.mp3,.wav');
+ const picker=page.getByLabel('Add recording: choose one audio file');await expect(picker).not.toHaveAttribute('multiple');await expect(picker).toHaveAttribute('accept','.m4a,.opus,.ogg,.mp3,.wav');
  await picker.setInputFiles({name:'invented.txt',mimeType:'text/plain',buffer:Buffer.from('Invented words.')});
  await expect(page.getByText('Choose an audio file: M4A, OPUS, OGG, MP3 or WAV.',{exact:true})).toBeVisible();await expect(page).toHaveURL(/upload\/new/);
  await assertPhone(page);
@@ -35,7 +35,7 @@ test('remaining time refuses an oversized duration, hides a missing post, and le
  kai.db.prepare('UPDATE workspaces SET trial_verified=1,trial_seconds=1 WHERE id=?').run(id);
  await page.goto('/upload/new');await expect(page.getByText('0 min 1 sec of recording time left',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:/^My memo/}).click();
- await page.getByLabel('Add recordings: choose up to five audio files').setInputFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
+ await page.getByLabel('Add recording: choose one audio file').setInputFiles({name:'invented.wav',mimeType:'audio/wav',buffer:testTone()});
  await expect(page.getByText(/remaining recording time/)).toBeVisible();
  expect((kai.db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(id) as {trial_seconds:number}).trial_seconds).toBe(1);
  kai.db.prepare('UPDATE workspaces SET trial_seconds=2 WHERE id=?').run(id);

@@ -14,9 +14,9 @@ test('duration reservation is atomic across uploads, survives restart, and prese
  const file={name:'tone.wav',buffer:testTone(),date:Date.now()};
  const remaining=()=>(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(judge.id) as {trial_seconds:number}).trial_seconds;
  try {
-  db.prepare('UPDATE workspaces SET trial_verified=1,trial_seconds=5 WHERE id=?').run(judge.id);
-  await assert.rejects(()=>addAudio(db,judge.id,[file,file,file],dir),/remaining recording time/);assert.equal(remaining(),5);
-  const results=await Promise.allSettled([addAudio(db,judge.id,[file,file],dir),addAudio(db,judge.id,[file,file],dir,'shared',{awaitingPerson:true})]);
+  db.prepare('UPDATE workspaces SET trial_verified=1,trial_seconds=3 WHERE id=?').run(judge.id);
+  await assert.rejects(()=>addAudio(db,judge.id,[file,file],dir),/one recording/);assert.equal(remaining(),3);
+  const results=await Promise.allSettled([addAudio(db,judge.id,[file],dir),addAudio(db,judge.id,[file],dir,'shared',{awaitingPerson:true})]);
   assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(remaining(),1);
   const image=db.serialize();db.close();db=openDatabase(image);assert.equal(remaining(),1);
   await assert.rejects(()=>addAudio(db,judge.id,[file],dir,'shared',{awaitingPerson:true}),/remaining recording time/);
@@ -64,7 +64,7 @@ test('forged audio headers cannot request more provider time than reserved; over
   worker=queueWorker(db,reader,assemblyTranscriber);await worker.kick();await worker.stop();
   assert.equal(requested,1);assert.equal((db.prepare('SELECT status FROM conversations WHERE id=?').get(id) as {status:string}).status,'ready');
   providerDuration=2;
-  await addAudio(db,judge.id,[{name:'forged.wav',buffer:forged,date:Date.now()},{name:'forged.wav',buffer:forged,date:Date.now()}],dir);
+  for(let i=0;i<2;i++)await addAudio(db,judge.id,[{name:'forged.wav',buffer:forged,date:Date.now()}],dir);
   worker=queueWorker(db,reader,assemblyTranscriber);await worker.kick();await worker.stop();
   assert.equal(requested,2);assert.throws(()=>reserveReading(db,judge.id),/trial has ended/);
   const reopened=openDatabase(db.serialize());assert.throws(()=>reserveReading(reopened,judge.id),/trial has ended/);reopened.close();
