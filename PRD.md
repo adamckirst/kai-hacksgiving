@@ -643,7 +643,7 @@ people, and tasks”, moving Connect out of the main tabs. He confirmed
   files are refused; no missing-post link is shown. Phone app launches and
   sharing need Copal’s iPhone check.
 
-### After the video and finished demo: own provider keys (stretch only)
+### After the video and finished demo: own provider keys (superseded by §18)
 
 Copal requested that people eventually “add their own API key from Assembly
 AI and the AI model for processing summaries and todos when their quota
@@ -782,3 +782,93 @@ batch checks in §7. Batch imports are outside this demo.
   audio, new records, quota charge, provider call or email. Existing queued
   recordings still complete across restart. Check both routes on the Sprite
   with invented data and fake providers.
+
+## 18 · Email sign-in and your own KAI (Copal, 27 November)
+
+Copal requested “a login that stays with their email” and suggested testers
+“open a Sprite and implement their own Kai instance”. He chose this over
+hosted provider keys: “I think that is better than storing their keys in
+our instance”, then approved the revised email sign-in/self-hosting plan
+with “Yes”. This starts that stretch now; the video remains on hold.
+It replaces §14's postponed own-key stretch, §12's browser-only recovery
+restriction and the earlier exclusion of an in-app setup/code link.
+
+### Email sign-in on the shared demo
+
+- An existing verified tester signs in with their email and a fresh,
+  short-lived, single-use code through the existing Resend connector.
+  Successful verification opens the SAME notebook on another browser.
+  An email alone grants no access. No new notebook, trial, duration refill,
+  IP grant or waitlist subscription is created by signing in.
+- Keep signup's first-100, one-email/one-IP and 30-minute grant rules. Login
+  to an existing notebook works after the grant cap and from a different
+  network. Waitlist-only and unverified addresses cannot recover a notebook.
+- Use protected code digests, bounded guesses and resends, and the existing
+  combined email-send caps. Distinguish login from signup challenges so
+  codes cannot cross flows or be reused. Return generic code-request replies
+  rather than disclosing whether an address owns a notebook. Never log or
+  persist a plaintext code or expose addresses in notebook APIs or MCP.
+- Add Sign in on Welcome and in settings, Sign out for this browser, and
+  Sign out everywhere for the notebook. Browser revocation does not rotate
+  upload/MCP addresses. Do not silently switch a signed-in browser to a
+  different notebook; make the change explicit before verifying it.
+- Update terms, signup and email-link wording for verified email recovery;
+  increment the terms version. Existing judge invitations remain valid and
+  are not automatically linked to an email or merged with trial notebooks.
+- Checks: npm run check; gallery at 375 px; fresh verification reopens the
+  same notebook across browsers without new rows or quota; wrong, expired,
+  replayed and cross-flow codes fail; notebook isolation and generic request
+  replies hold; email limits hold; grant exhaustion and a changed network
+  do not block existing login; sign-out and revocation work without breaking
+  upload/MCP links. Check recovery on the Sprite with invented data and a
+  fake mail sender. Copal confirms real code receipt and reopening his
+  notebook in a second browser without sharing his email or code.
+
+### Self-hosted continuation, no tester keys in the demo
+
+- When the trial time is used, offer “Keep using KAI on your own Sprite”
+  with one “Run your own KAI” action. Settings also links to the public
+  repository's setup guide. Explain that a personal instance starts fresh;
+  this step includes no notebook export, transfer or migration.
+- Do not collect, store or proxy testers' provider keys in the shared demo.
+  They create their own Sprite and put their own Anthropic and AssemblyAI
+  credentials into Fly connectors restricted to their Sprite. All provider
+  calls still use connectors. Email login on a personal instance requires
+  the owner's own Resend sender/domain and connector; state this plainly.
+- Provide a tested, operator-run setup guide and explicit personal-instance
+  mode. It starts with one owner's empty notebook and no public trial signup
+  or shared-demo waitlist. A private setup capability and verified email
+  establish the first owner atomically; public visitors cannot claim it.
+  Existing owner login is then the email-code flow above. KAI's shared demo
+  configuration, accounts, mail sender and secrets must never be reused.
+- The owner controls hosting, visibility, provider budgets, backups and
+  deletion. The personal instance does not inherit the demo's 8 December
+  deletion promise or its free 30-minute subsidy. Keep the single-file,
+  10 MB, under-30-minute, queue, daily processing and email bounds explicit.
+  The shared demo retains all its current limits and deletion notice.
+- Explain setup and costs before asking readers to create anything. The
+  agent only writes/tests setup code and instructions; it creates no Sprite,
+  connector, account or key and incurs no new spending. Live checks remain
+  on the existing kai Sprite; a separate installation is Copal/tester's step.
+- Credit copy: AssemblyAI offers $50 in free trial credits; “roughly 200
+  hours” is an estimate at current prices, depending on features and credit
+  availability, not an allowance promised by KAI. Claude API usage is billed
+  through the tester's Claude Console account; hosting and email have their
+  own costs/limits. Link official current credit and pricing pages. Do not
+  claim extra judging points: the published contest rules promise none for
+  a self-hosting guide.
+- Checks: npm run check; gallery at 375 px; exhausted-trial and settings
+  links open the guide; shared-demo limits and connector-only calls remain;
+  personal mode has no public trial grants, requires private setup plus
+  verified email for the sole owner, cannot be claimed twice or by another
+  address, and survives restart; correct instance-specific copy and limits;
+  deployment options and secret-safe instructions checked with fake command
+  runners and invented databases. Smoke-test setup/recovery in an isolated
+  fixture on the existing Sprite with fake providers. Copal/tester performs
+  the separate real-instance install; mark that operator check not run until
+  confirmed, and do not claim it passed based on fixtures.
+
+Implement in order: this plan PR, email sign-in PR, then personal-instance
+setup/guide and continuation UI PR. Each goes through the existing review
+loop, merge and deployment. The secret and connector-only rules stay intact;
+AGENTS.md and the review scripts need no change for this plan.
