@@ -148,7 +148,7 @@ export function Connect({
                 <h3 className="text-lg font-extrabold">3. Try it</h3>
                 <p className="text-base/7 font-medium text-zinc-700">In WhatsApp, hold a voice note, then choose <B>Forward → Share → Send to KAI</B>. In Voice Memos, choose a recording, then <B>Share → Send to KAI</B>.</p>
                 <p className="text-base/7 font-medium text-zinc-700">KAI opens with the recording attached. Choose the person who sent it, or continue without a person, then tap <B>Let KAI read</B>.</p>
-                <p className="text-base/7 font-medium text-zinc-500">One file at a time, up to 10 MB and five minutes.</p>
+                <p className="text-base/7 font-medium text-zinc-500">One file at a time, up to 10 MB and under 30 minutes.</p>
               </li>
             </ol>
             {connection.shortcutReady ? <Notice tone="good">Your phone shortcut is set up.</Notice> : onSetupDone && <Button variant="outline" wide disabled={setupBusy} onClick={onSetupDone}>{setupBusy ? 'Saving…':'I’ve added the shortcut'}</Button>}

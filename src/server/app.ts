@@ -1,3 +1,4 @@
+import {quotaMailWorker,type SendQuota} from './quota-mail';
 import {searchNotebook} from './search';
 import {getTodo} from './todos';
 import {suggestionList} from './suggestion-list';
@@ -18,13 +19,14 @@ import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
 import { mountWaitlist,xPost } from './waitlist';
 import { configureRecording,identifySpeakers } from './recording-person';
-export type AppOptions = TrialOptions & {sendReady?:SendReady;trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
+export type AppOptions = TrialOptions & {sendQuota?:SendQuota;sendReady?:SendReady;trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
+  const quotaMail=quotaMailWorker(db,options.sendQuota,options.now);
   const mail=recordingMailWorker(db,options.sendReady,options.now);
   const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber,()=>{void mail.kick();});
-  const work=()=>{void mail.kick();return queue.kick();};
-  app.locals.queue={kick:work,stop:async()=>{await queue.stop();await mail.stop();}};void work();
+  const work=()=>{void quotaMail.kick();void mail.kick();return queue.kick();};
+  app.locals.queue={kick:work,stop:async()=>{await queue.stop();await mail.stop();await quotaMail.stop();}};void work();
   const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:5,fields:2,fieldSize:2048,parts:7}}).array('recordings',5);
   app.disable('x-powered-by');
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
@@ -119,7 +121,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
       const ids=await addAudio(db,res.locals.workspace,files.map((f,i)=>({name:f.originalname,buffer:f.buffer,date:dates[i]})),options.audioDirectory ?? '.data/audio','recording',{person:req.body?.person ? JSON.parse(req.body.person):undefined});
       res.status(202).json({ids});void work();
     } catch(error) {
-      if(error instanceof ReadingError) res.status(error.status).json({error:error.message});
+      if(error instanceof ReadingError) {res.status(error.status).json({error:error.message});void work();}
       else if(error instanceof SyntaxError) res.status(400).json({error:'The recording dates could not be read.'});else throw error;
     }
   });
@@ -136,11 +138,11 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
       if(typeof text!=='string' || typeof req.body?.happened_on!=='string' || (req.body.sample_id && !sample)) throw new ReadingError('Choose a sample or add your words and date.');
       const id=addReading(db,res.locals.workspace,text,req.body.happened_on,sample ? 'sample':'paste');
       res.status(202).json({id});void work();
-    } catch(error) {if(error instanceof ReadingError) res.status(error.status).json({error:error.message});else throw error;}
+    } catch(error) {if(error instanceof ReadingError) {res.status(error.status).json({error:error.message});void work();}else throw error;}
   });
   app.post('/api/readings/:id/retry',(req,res) => {
     try {retryReading(db,res.locals.workspace,req.params.id);res.status(202).json({ok:true});void work();}
-    catch(error) {if(error instanceof ReadingError) res.status(error.status).json({error:error.message});else throw error;}
+    catch(error) {if(error instanceof ReadingError) {res.status(error.status).json({error:error.message});void work();}else throw error;}
   });
   app.get('/api/uploads',(_req,res)=>res.json(db.prepare('SELECT id,title,happened_on FROM conversations WHERE workspace_id=? AND awaiting_person=1 ORDER BY rowid DESC').all(res.locals.workspace)));
   app.post('/api/uploads/:id/start',(req,res) => {
@@ -172,7 +174,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get(['/', '/terms', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose up to five recordings, each up to 10 MB.'});return;}
     res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});

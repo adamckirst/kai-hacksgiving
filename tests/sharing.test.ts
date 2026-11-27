@@ -58,7 +58,7 @@ test('sharing enters only its address owner’s queue; wrong addresses are 404 a
 test('shared uploads retain file, duration, batch and daily limits without queuing rejected input',async()=> {
   const {db,base,judge,close}=await setup();try {
     const a=await judge();const post=(form:FormData)=>fetch(base+a.uploadPath,{method:'POST',body:form});
-    const long=Buffer.alloc(44+301*16000*2);testTone().copy(long);long.writeUInt32LE(long.length-8,4);long.writeUInt32LE(long.length-44,40);
+    const long=Buffer.alloc(44+1800*800*2);testTone().copy(long);long.writeUInt32LE(long.length-8,4);long.writeUInt32LE(long.length-44,40);long.writeUInt32LE(800,24);long.writeUInt32LE(1600,28);
     for(const form of [audioForm([Buffer.alloc(11_000_000)]),audioForm(Array.from({length:6},()=>testTone())),audioForm([long]),audioForm([testTone()],'2026-02-30T12:00:00Z'),new FormData()])assert.equal((await post(form)).status,400);
     assert.equal((db.prepare("SELECT count(*) AS n FROM conversations WHERE source='shared'").get() as {n:number}).n,0);
     for(let i=0;i<2;i++)assert.equal((await post(audioForm(Array.from({length:5},()=>testTone())))).status,202);

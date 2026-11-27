@@ -44,6 +44,6 @@ test('remaining time refuses an oversized duration, hides a missing post, and le
  // The last two seconds are already reserved. The attached recording must still be startable.
  await page.goto('/upload/'+ids[0]);await page.getByRole('button',{name:/^My memo/}).click();await expect(page.getByRole('button',{name:'Let KAI read',exact:true})).toBeEnabled();await assertPhone(page);
  await page.getByRole('button',{name:'Let KAI read',exact:true}).click();await expect(page.getByRole('button',{name:/^Accept all/})).toBeEnabled();
- await page.goto('/upload/new');await expect(page.getByRole('heading',{name:'Your hour is complete'})).toBeVisible();await expect(page.getByRole('link',{name:'Show KAI some love'})).toHaveCount(0);await assertPhone(page);
+ await page.goto('/upload/new');await expect(page.getByRole('heading',{name:'Your trial time is complete'})).toBeVisible();await expect(page.getByRole('link',{name:'Show KAI some love'})).toHaveCount(0);await assertPhone(page);
  await page.goto('/home');await expect(page.getByRole('link',{name:'Show KAI some love'})).toHaveCount(0);
 });

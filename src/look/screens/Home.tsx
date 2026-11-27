@@ -1,10 +1,8 @@
+import {DemoInfo,ProcessingInfo} from './DemoInfo'
 import { useState, type ReactNode } from 'react'
 import { Icon } from '../icons'
 import type { HomeData, QueueItem, Sample } from '../types'
 import { AddRecordings, Area, Button, Card, DueChip, Field, FOCUS, Notice, Rows, SectionLabel, TabPage, TextLink, useHref, WhatIsKai, Working, Tick } from '../ui'
-
-export const RECORDING_NOTICE =
-  'Your recording is transcribed by AssemblyAI and read by Claude. It stays in your own copy of this demo, which is deleted on 8 December.'
 
 const STATUS: Record<QueueItem['status'], string> = {
   waiting: 'Waiting',
@@ -15,13 +13,13 @@ const STATUS: Record<QueueItem['status'], string> = {
 }
 
 /** "Listening to 2 of 3": what KAI is working through, oldest first. */
-function Queue({ items }: { items: QueueItem[] }) {
+function Queue({ items, showInfo, initialInfoOpen }: { items: QueueItem[]; showInfo?:boolean; initialInfoOpen?:boolean }) {
   const to = useHref()
   const active = items.findIndex((item) => item.status === 'listening' || item.status === 'reading')
   const heading = active < 0 ? 'Your recordings' : `${items[active].status === 'listening' ? 'Listening to' : 'Reading'} ${active + 1} of ${items.length}`
   return (
     <div>
-      <SectionLabel tone="kai">{heading}</SectionLabel>
+      <SectionLabel tone="kai" action={showInfo ? <ProcessingInfo initialOpen={initialInfoOpen}/> : undefined}>{heading}</SectionLabel>
       <Rows kai>
         {items.map((item) => (
           <li key={item.id}>
@@ -144,7 +142,9 @@ export function Home({
   onSample,
   onTick,
   pending = [],
+  initialInfoOpen,
 }: {
+  initialInfoOpen?:boolean
   home: HomeData | null
   queue?: QueueItem[]
   samples?: readonly Sample[]
@@ -174,12 +174,11 @@ export function Home({
       due={due}
       dock={readOnly ? <WhatIsKai /> : <AddRecordings onFiles={onFiles} busy={adding} />}
     >
-      {queue.length > 0 && <Queue items={queue} />}
+      {queue.length > 0 && <Queue items={queue} initialInfoOpen={initialInfoOpen} showInfo={Boolean(home?.trialVerified && queue.some(item=>['waiting','listening','reading'].includes(item.status) && !item.awaiting_person && !item.awaiting_speakers))} />}
       {home && !readOnly && !home.shortcutReady && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Send voice notes straight to KAI</h2><p className="text-base/7 text-zinc-600">Set up the iPhone shortcut once, then share from Voice Memos or WhatsApp.</p><Button variant="outline" href="/connect">Set up your phone</Button></Card>}
       {home?.trialSeconds!=null && !home.trialVerified && <Card className="p-5"><p className="mb-3 text-base/7">Verify your email to continue your trial. Your notebook and remaining time are kept.</p><Button href="/try" variant="outline">Verify email</Button></Card>}
-      {home?.trialSeconds!=null && home.trialVerified && <p className="px-1 text-base/7 text-zinc-600">KAI will email you when a recording is ready or needs another try, with a link to open it.</p>}
       {home?.trialSeconds===0 && home.xPostUrl && <Button href={home.xPostUrl} variant="outline">Show KAI some love</Button>}
-      {home?.trialSeconds!=null && <p className="px-1 text-base/7 font-medium text-zinc-600">{home.trialSeconds ? `${Math.floor(home.trialSeconds/60)} min ${home.trialSeconds%60} sec of recording time left` : 'You’ve used your hour of recordings. Your notebook and assistant connection are still here.'}</p>}
+      {home?.trialSeconds!=null && <DemoInfo seconds={home.trialSeconds}/>}
       {home && !readOnly && home.conversations.length===0 && <Card className="p-5"><h2 className="text-xl font-extrabold">Your notebook starts here</h2><p className="mt-2 text-base/7 text-zinc-600">Add a recording. KAI will find the people, notes and to-dos for you to review.</p></Card>}
       {addError && <Notice tone="error">{addError}</Notice>}
       {loadError && <Notice tone="error">{loadError}</Notice>}
@@ -201,7 +200,6 @@ export function Home({
         </section>
       )}
       {!readOnly && !home?.hasRecordings && <Paste samples={samples} busy={pasteBusy} error={pasteError} open={pasteOpen} today={today} onRead={onRead} onSample={onSample} />}
-      {!readOnly && <p className="px-1 text-base/7 font-medium text-zinc-500">{RECORDING_NOTICE}</p>}
 
       {home && (
         <>

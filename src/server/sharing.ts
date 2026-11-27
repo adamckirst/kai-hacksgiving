@@ -27,7 +27,7 @@ export function mountSharing(app:Express,db:KaiDatabase,upload:RequestHandler,di
       db.prepare('UPDATE workspaces SET shortcut_ready=1 WHERE id=?').run(res.locals.sharingWorkspace);
       res.status(202).json({ids,openPath:'/upload/'+ids[0]});void work();
     }catch(error) {
-      if(error instanceof ReadingError)res.status(error.status).json({error:error.message});
+      if(error instanceof ReadingError){res.status(error.status).json({error:error.message});void work();}
       else if(error instanceof SyntaxError)res.status(400).json({error:'The recording dates could not be read.'});else throw error;
     }
   });

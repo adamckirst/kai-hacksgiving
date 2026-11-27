@@ -52,6 +52,12 @@ export function openDatabase(path:string|Buffer = ':memory:') {
     CREATE TABLE IF NOT EXISTS notification_sends (id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id), sent_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS trial_challenges (email TEXT PRIMARY KEY,id TEXT NOT NULL,ip_hash TEXT NOT NULL,code_hash TEXT NOT NULL,expires_at INTEGER NOT NULL,attempts INTEGER NOT NULL,delivered INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS trial_sends (id TEXT PRIMARY KEY,ip_hash TEXT NOT NULL,email_hash TEXT NOT NULL,sent_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS quota_emails (
+      id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id), fingerprint TEXT NOT NULL,
+      requested_seconds INTEGER NOT NULL, remaining_seconds INTEGER NOT NULL, queued_at INTEGER NOT NULL,
+      first_attempt_at INTEGER, attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER NOT NULL DEFAULT 0,
+      sent_at INTEGER, closed INTEGER NOT NULL DEFAULT 0, UNIQUE(workspace_id,fingerprint)
+    );
     CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created_at TEXT NOT NULL);
   `);
   db.transaction(()=> {
@@ -82,7 +88,9 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   if (!columns.some(c=>c.name==='reading_day')) db.exec("ALTER TABLE workspaces ADD COLUMN reading_day TEXT; ALTER TABLE workspaces ADD COLUMN readings_today INTEGER NOT NULL DEFAULT 0;");
   if (!columns.some(c=>c.name==='recording_day')) db.exec("ALTER TABLE workspaces ADD COLUMN recording_day TEXT; ALTER TABLE workspaces ADD COLUMN recordings_today INTEGER NOT NULL DEFAULT 0;");
   if(!columns.some(c=>c.name==='trial_seconds')) db.exec('ALTER TABLE workspaces ADD COLUMN trial_seconds INTEGER');
+  if(!columns.some(c=>c.name==='trial_allowance'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_allowance INTEGER NOT NULL DEFAULT 1800; UPDATE workspaces SET trial_seconds=max(0,trial_seconds-1800) WHERE trial_seconds IS NOT NULL');
   const waitlist=db.prepare('PRAGMA table_info(waitlist)').all() as {name:string}[];
+  if(!waitlist.some(c=>c.name==='terms_version'))db.exec('ALTER TABLE waitlist ADD COLUMN terms_version TEXT; ALTER TABLE waitlist ADD COLUMN terms_accepted_at TEXT');
   if(!waitlist.some(c=>c.name==='workspace_id')) db.exec('ALTER TABLE waitlist ADD COLUMN workspace_id TEXT REFERENCES workspaces(id)');
   if(!columns.some(c=>c.name==='shortcut_ready'))db.exec("ALTER TABLE workspaces ADD COLUMN shortcut_ready INTEGER NOT NULL DEFAULT 0; UPDATE workspaces SET shortcut_ready=1 WHERE EXISTS (SELECT 1 FROM conversations c WHERE c.workspace_id=workspaces.id AND c.source='shared')");
   if(!columns.some(c=>c.name==='trial_ended'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_ended INTEGER NOT NULL DEFAULT 0');

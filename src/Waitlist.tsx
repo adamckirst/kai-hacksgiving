@@ -1,3 +1,4 @@
+import {TERMS_VERSION} from './terms';
 import { Trial } from './look/screens/Trial';
 import { useEffect,useState } from 'react';
 import { Waitlist as WaitlistView,Operator as OperatorView } from './look/screens/Waitlist';
@@ -8,7 +9,7 @@ export function Waitlist({trial=false}:{trial?:boolean}) {
   async function submit(email:string) {
     setBusy(true);setError('');
     if(trial){
-      try {const r=await fetch('/api/trial/code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});const data=await r.json();if(!r.ok)throw new Error(data.error);setCodeEmail(email);}
+      try {const r=await fetch('/api/trial/code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,termsVersion:TERMS_VERSION})});const data=await r.json();if(!r.ok)throw new Error(data.error);setCodeEmail(email);}
       catch(e){setError(e instanceof Error ? e.message:'The code could not be sent.');}finally{setBusy(false);}
       return;
     }
@@ -18,7 +19,7 @@ export function Waitlist({trial=false}:{trial?:boolean}) {
       if(!response.ok)throw new Error(data.error);if(trial){location.assign('/home');return;}setSaved(true);
     }catch(e){setError(e instanceof Error ? e.message:'Please try again.');}finally{setBusy(false);}
   }
-  async function verify(code:string){setBusy(true);setError('');try{const r=await fetch('/api/trial/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:codeEmail,code})});const data=await r.json();if(!r.ok)throw new Error(data.error);location.assign('/home');}catch(e){setError(e instanceof Error ? e.message:'The code could not be checked.');}finally{setBusy(false);}}
+  async function verify(code:string){setBusy(true);setError('');try{const r=await fetch('/api/trial/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:codeEmail,code,termsVersion:TERMS_VERSION})});const data=await r.json();if(!r.ok)throw new Error(data.error);location.assign('/home');}catch(e){setError(e instanceof Error ? e.message:'The code could not be checked.');}finally{setBusy(false);}}
   if(trial)return <Trial busy={busy} codeSent={Boolean(codeEmail)} error={error} onSubmit={email=>void submit(email)} onVerify={code=>void verify(code)} onResend={()=>void submit(codeEmail)}/>;
   return <WaitlistView postUrl={post} saved={saved} busy={!ready || busy} error={error} onSubmit={email=>void submit(email)}/>;
 }

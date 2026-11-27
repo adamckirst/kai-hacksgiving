@@ -1,3 +1,4 @@
+import {Terms} from './look/screens/Terms';
 import {SearchScreen} from './Search';
 import {TaskScreen} from './Task';
 import React,{useEffect,useState} from 'react';
@@ -32,6 +33,7 @@ function App() {
   const [access,setAccess]=useState<Access|null>(null),[failed,setFailed]=useState(false);
   useEffect(()=>{accessRequest.then(setAccess).catch(()=>setFailed(true));},[]);
   const route=location.pathname;
+  if(route==='/terms')return <Terms fromHome={new URLSearchParams(location.search).get('from')==='home'}/>;
   if(route==='/operator')return <Operator secret={downloadSecret}/>;
   if(route==='/')return <Welcome access={access} failed={failed}/>;
   if(!access) {

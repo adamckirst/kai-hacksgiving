@@ -1,3 +1,4 @@
+import {TERMS_VERSION} from '../src/terms';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -94,7 +95,7 @@ test('verification shares the 100-attempt cap with recording emails',async()=>{
  const codes=db.prepare('INSERT INTO trial_sends(id,ip_hash,email_hash,sent_at) VALUES (?,?,?,?)');for(let i=0;i<40;i++)codes.run(randomUUID(),'invented-ip-'+i,'invented-email-'+i,now);
  const app=createApp(db,{secureCookies:false,sendCode:async()=>{sends++}}),server=app.listen(18576,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));
  try {
-  const r=await fetch('http://127.0.0.1:18576/api/trial/code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:randomUUID()+'@example.invalid'})});assert.equal(r.status,429);assert.equal(sends,0);
+  const r=await fetch('http://127.0.0.1:18576/api/trial/code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:randomUUID()+'@example.invalid',termsVersion:TERMS_VERSION})});assert.equal(r.status,429);assert.equal(sends,0);
  }finally{await app.locals.queue.stop();await new Promise<void>(r=>server.close(()=>r()));db.close()}
 });
 test('Resend completion mail uses one stable idempotency key and a secret-free HTTPS review link',async()=>{
