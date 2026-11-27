@@ -1,3 +1,4 @@
+import {TrialPopup} from '../src/look/screens/TrialPopup'
 import {Login} from '../src/look/screens/Login'
 import {Terms} from '../src/look/screens/Terms'
 import {Search} from '../src/look/screens/Search'
@@ -145,6 +146,9 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'try/code-error': {title:'Trial · wrong code',screen:()=> <Trial codeSent error='Check the code and try again.' onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
   try: {title:'Trial · join',screen:()=> <Trial onSubmit={nothing}/>},
   'try/busy': {title:'Trial · opening',screen:()=> <Trial busy onSubmit={nothing}/>},
+  'try/popup':{title:'Trial · agreement popup',screen:()=> <TrialPopup open onClose={nothing} onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
+  'try/popup-code':{title:'Trial · code popup',screen:()=> <TrialPopup open codeSent onClose={nothing} onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
+  'try/popup-error':{title:'Trial · popup error',screen:()=> <TrialPopup open codeSent error='This code expired or could not be checked. Ask for a new code.' onClose={nothing} onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
   'login':{title:'Sign in',screen:()=> <Login onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/>},
   'login/code':{title:'Sign in · code',screen:()=> <Login codeSent onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/>},
   'login/busy':{title:'Sign in · busy',screen:()=> <Login busy onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/>},

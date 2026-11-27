@@ -90,7 +90,7 @@ Each is optional in `types.ts`, and the screen is whole without it.
 
 - Violet is KAI's: the one action of a screen, a suggestion, a quote. Red is
   overdue. Amber is due today or tomorrow. Nothing else is coloured.
-- No text under 16 px, and no link, button or field under 44 px. Small
+- Non-interactive status badges may use 14 px; body text stays at least 16 px, and no link, button or field is under 44 px. Small
   uppercase labels and icon-only buttons do not belong here.
 - One filled violet button per screen (`variant="primary"`). Everything else
   is `soft`, `quiet` or `outline`.
@@ -176,3 +176,7 @@ Demo imports accept one recording at a time. The Files picker, upload guidance a
 Email sign-in has initial, code, busy, error and explicit notebook-switch states. Connections includes browser sign-out and confirmation states, including the invitation warning. The same notebook reopens with a fresh verified email code; signing in adds no trial time.
 
 Sign-in keeps its email explanation short. The agreement includes its terms/privacy link in the label; its 20 px check retains a 44 px touch target on phones and desktop.
+
+The email card has a dashed outline. On public Home, Try it myself reuses its email and opens an information/terms popup before code verification; Keep me posted remains secondary. The floating trial action yields to the visible card action, then returns when it leaves view. Signed-in notebooks keep their existing waitlist action.
+
+Overdue/due-soon badges and status counts use 14 px type. Only the marked non-interactive badge spans receive the smaller-type exception in the phone and gallery checks.

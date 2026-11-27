@@ -2,7 +2,7 @@ import {DemoInfo,ProcessingInfo} from './DemoInfo'
 import { useState, type ReactNode } from 'react'
 import { Icon } from '../icons'
 import type { HomeData, QueueItem, Sample } from '../types'
-import { AddRecordings, Area, Button, Card, DueChip, Field, FOCUS, Notice, Rows, SectionLabel, TabPage, TextLink, useHref, WhatIsKai, Working, Tick } from '../ui'
+import { SignupCardContext, AddRecordings, Area, Button, Card, DueChip, Field, FOCUS, Notice, Rows, SectionLabel, TabPage, TextLink, useHref, WhatIsKai, Working, Tick } from '../ui'
 
 const STATUS: Record<QueueItem['status'], string> = {
   waiting: 'Waiting',
@@ -165,14 +165,15 @@ export function Home({
   onSample: (id: string) => void
 }) {
   const to = useHref()
+  const [signupActive,setSignupActive]=useState(false)
   return (
-    <TabPage
+    <SignupCardContext.Provider value={{enabled:readOnly,active:signupActive,setActive:setSignupActive}}><TabPage
       current="/home"
       title="Home"
       subtitle="Share a recording in. KAI finds the people, the notes and the promises."
       readOnly={readOnly}
       due={due}
-      dock={readOnly ? <WhatIsKai /> : <AddRecordings onFiles={onFiles} busy={adding} />}
+      dock={readOnly ? <WhatIsKai hideTrial={signupActive}/> : <AddRecordings onFiles={onFiles} busy={adding} />}
     >
       {queue.length > 0 && <Queue items={queue} initialInfoOpen={initialInfoOpen} showInfo={Boolean(home?.trialVerified && queue.some(item=>['waiting','listening','reading'].includes(item.status) && !item.awaiting_person && !item.awaiting_speakers))} />}
       {home && !readOnly && !home.shortcutReady && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Send voice notes straight to KAI</h2><p className="text-base/7 text-zinc-600">Set up the iPhone shortcut once, then share from Voice Memos or WhatsApp.</p><Button variant="outline" href="/connect">Set up your phone</Button></Card>}
@@ -222,6 +223,6 @@ export function Home({
         </>
       )}
       {waitlist}
-    </TabPage>
+    </TabPage></SignupCardContext.Provider>
   )
 }

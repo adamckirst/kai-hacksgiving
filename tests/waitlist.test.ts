@@ -24,8 +24,12 @@ test('waitlist fences public writes, attempts, capacity, privacy and operator do
   const post=(cookie:string,email:unknown)=>fetch(base+'/api/waitlist',{method:'POST',headers:{Cookie:cookie,'Content-Type':'application/json'},body:JSON.stringify({email})});
   const count=()=> (db.prepare('SELECT count(*) AS n FROM waitlist').get() as {n:number}).n;
   try {
+    const workspaceCount=()=> (db.prepare('SELECT count(*) AS n FROM workspaces').get() as {n:number}).n;
+    const beforeWorkspaces=workspaceCount();
     const first=await visitor(),email=inventedAddress();
     assert.equal((await post(first,email)).status,200);assert.equal(count(),1);
+    assert.equal(workspaceCount(),beforeWorkspaces);
+    assert.equal((db.prepare('SELECT workspace_id FROM waitlist WHERE email=?').get(email) as {workspace_id:string|null}).workspace_id,null);
     assert.equal((await post(first,' '+email.toUpperCase()+' ')).status,200);assert.equal(count(),1);
     assert.equal((await post(first,'not an address')).status,400);
     assert.equal((await post(first,'a'.repeat(250)+'@example.invalid')).status,400);

@@ -6,7 +6,7 @@ export async function assertPhone(page:Page) {
       if (document.documentElement.scrollWidth > innerWidth) issues.push('sideways scroll');
       for (const el of document.querySelectorAll<HTMLElement>('body *')) {
         if (!el.getClientRects().length) continue;
-        if ([...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent?.trim()) && parseFloat(getComputedStyle(el).fontSize)<16) issues.push('small text: '+el.textContent);
+        if ([...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent?.trim()) && parseFloat(getComputedStyle(el).fontSize)<(el.matches('span[data-status-badge="true"]:not([role]):not([tabindex])') ? 14 : 16)) issues.push('small text: '+el.textContent);
       }
       for (const el of document.querySelectorAll('a,button,input,select,textarea,summary')) {
         if(el.hasAttribute('data-headlessui-focus-guard'))continue;
