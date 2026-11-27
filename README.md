@@ -454,7 +454,8 @@ notice within the existing email limits, without retaining the rejected audio.
 
 ### Sign in to the same notebook
 
-Welcome and Connections offer email sign-in for existing verified testers.
+Welcome’s Try it yourself handles both new and returning testers. Connections
+also offers email sign-in for existing verified testers.
 Codes expire after ten minutes, allow five guesses, and work only in the
 browser that requested them. The public card, /try and /login share one
 verification-first flow and the existing send limits with recording emails.

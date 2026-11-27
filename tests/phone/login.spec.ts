@@ -21,8 +21,8 @@ test('email sign-in restores a recording in a second browser and offers explicit
   const old=await original.newPage();await old.goto('/home');await expect(old.getByText('2 min 3 sec left')).toBeVisible();
  }finally{await original.close()}
 });
-test('Welcome links to sign-in and invitation switching warns before leaving',async({page,kai})=>{
- await page.goto('/');await page.getByRole('link',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await assertPhone(page);
+test('Welcome uses the shared entry action and invitation switching warns before leaving',async({page,kai})=>{
+ await page.goto('/');await expect(page.getByRole('link',{name:'Sign in',exact:true})).toHaveCount(0);await page.getByRole('link',{name:'Try it yourself',exact:true}).click();await expect(page.getByLabel('Email',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Send verification code'})).toBeEnabled();await assertPhone(page);
  const invitation=createJudge(kai.db,false);await page.context().addCookies([{name:'kai_session',value:invitation.cookie,url:'http://127.0.0.1:18520'}]);await page.goto('/login');
  await expect(page.getByText('This invitation notebook has no verified email. Signing out will lose this browser’s access.')).toBeVisible();await expect(page.getByRole('button',{name:'Switch notebooks'})).toBeDisabled();await page.getByRole('checkbox',{name:'I’m ready to leave this notebook'}).check();await expect(page.getByRole('button',{name:'Switch notebooks'})).toBeEnabled();await assertPhone(page);await page.getByRole('button',{name:'Switch notebooks'}).click();await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();
 });
