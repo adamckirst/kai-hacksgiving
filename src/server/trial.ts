@@ -1,3 +1,4 @@
+import {TERMS_VERSION} from '../terms';
 import express,{type Express,type Request} from 'express';
 import {createHmac,randomInt,randomUUID} from 'node:crypto';
 import {isIP} from 'node:net';
@@ -8,8 +9,8 @@ import {persistentJudgeSecret} from './config';
 export type SendCode=(email:string,code:string,id:string)=>Promise<void>;
 export type TrialOptions={secureCookies?:boolean;now?:()=>number;sendCode?:SendCode;trustSpriteProxy?:boolean;trialsPaused?:boolean};
 const emailSchema=z.string().trim().max(254).email().transform(s=>s.toLowerCase());
-const requestSchema=z.object({email:emailSchema}).strict();
-const verifySchema=z.object({email:emailSchema,code:z.string().regex(/^\d{6}$/)}).strict();
+const requestSchema=z.object({email:emailSchema,termsVersion:z.literal(TERMS_VERSION)}).strict();
+const verifySchema=z.object({email:emailSchema,code:z.string().regex(/^\d{6}$/),termsVersion:z.literal(TERMS_VERSION)}).strict();
 const hour=3600000;
 export function normalizeIp(value:string) {
  if(value.startsWith('::ffff:') && isIP(value.slice(7))===4)return value.slice(7);
@@ -35,7 +36,7 @@ export function mountTrial(app:Express,db:KaiDatabase,options:TrialOptions) {
  });
  app.post('/api/trial/code',async(req,res)=>{
   const parsed=requestSchema.safeParse(req.body),network=ip(req);
-  if(!parsed.success){res.status(400).json({error:'Enter a valid email address.'});return;}
+  if(!parsed.success){res.status(400).json({error:'Enter a valid email and agree to the current demo terms.'});return;}
   if(!network){res.status(503).json({error:'We could not check this connection. Please try again later.'});return;}
   const email=parsed.data.email,at=now(),code=String(randomInt(0,1000000)).padStart(6,'0'),id=randomUUID();
   const result=db.transaction(()=>{
@@ -65,7 +66,7 @@ export function mountTrial(app:Express,db:KaiDatabase,options:TrialOptions) {
  });
  app.post('/api/trial/verify',(req,res)=>{
   const parsed=verifySchema.safeParse(req.body),network=ip(req);
-  if(!parsed.success || !network){res.status(400).json({error:'Check the code and try again.'});return;}
+  if(!parsed.success || !network){res.status(400).json({error:'Check the code and agree to the current demo terms.'});return;}
   const {email,code}=parsed.data,at=now();
   const result=db.transaction(()=>{
    const row=db.prepare('SELECT * FROM trial_challenges WHERE email=?').get(email) as {id:string;ip_hash:string;code_hash:string;expires_at:number;attempts:number;delivered:number}|undefined;
@@ -83,8 +84,9 @@ export function mountTrial(app:Express,db:KaiDatabase,options:TrialOptions) {
    const currentTrial=db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(current) as {trial_seconds:number|null}|undefined;
    const judge=current==='public' || currentTrial?.trial_seconds==null ? createJudge(db,false):null;
    const workspace=judge?.id??current;
-   db.prepare('UPDATE workspaces SET trial_seconds=coalesce(trial_seconds,3600),trial_verified=1 WHERE id=?').run(workspace);
+   db.prepare('UPDATE workspaces SET trial_seconds=coalesce(trial_seconds,1800),trial_verified=1 WHERE id=?').run(workspace);
    db.prepare('INSERT INTO waitlist(email,created_at,workspace_id,verified_at,trial_ip) VALUES (?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET workspace_id=excluded.workspace_id,verified_at=excluded.verified_at,trial_ip=excluded.trial_ip').run(email,new Date(at).toISOString(),workspace,new Date(at).toISOString(),network);
+   db.prepare('UPDATE waitlist SET terms_version=?,terms_accepted_at=? WHERE email=?').run(TERMS_VERSION,new Date(at).toISOString(),email);
    db.prepare('DELETE FROM trial_challenges WHERE email=?').run(email);
    return {cookie:judge?.cookie};
   })();

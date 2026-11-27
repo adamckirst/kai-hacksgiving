@@ -1,0 +1,16 @@
+import {Button,Card,PushedPage,TextLink} from '../ui'
+import {RECORDING_NOTICE} from './DemoInfo'
+import {SUPPORT_EMAIL} from '../../terms'
+export function Terms({fromHome=false}:{fromHome?:boolean}) {
+ const back=fromHome?'/home':'/try',label=fromHome?'Back to Home':'Back to signup'
+ return <PushedPage back={back} backLabel={label} dock={<Button variant="primary" href={back}>{label}</Button>}>
+  <header className="px-1"><h1 className="text-[32px]/10 font-extrabold">Demo terms and privacy</h1><p className="mt-2 text-base/7 text-zinc-600">KAI, by Kopal · 26 November 2026</p></header>
+  <Card className="space-y-5 p-5 text-base/7 text-zinc-700">
+   <section><h2 className="text-lg font-extrabold text-zinc-900">A temporary, free demo</h2><p>One verified email and public network address can claim 30 minutes of recording time, for the first 100 people. People sharing a network share an allowance. There is no payment or automatic renewal. Each file is under 30 minutes and at most 10 MB, with up to five files per upload and ten recordings a day. Shared daily limits can mean trying again tomorrow.</p></section>
+   <section><h2 className="text-lg font-extrabold text-zinc-900">What you share</h2><p>Only add recordings you have permission to share and process, including permission from other speakers where needed. Use made-up examples to try the demo. KAI can make mistakes: review its suggestions before accepting or relying on them. KAI does not send messages to your contacts or carry out tasks for you.</p></section>
+   <section><h2 className="text-lg font-extrabold text-zinc-900">Your recordings and notebook</h2><p>{RECORDING_NOTICE}</p><p className="mt-2">KAI runs on Fly.io. Audio is deleted from KAI after transcription; the words, summaries and accepted changes stay in your private notebook until 8 December 2026. Providers process the material sent to them under their own policies; this deletion date describes KAI’s copy. Keep your original recordings.</p><p className="mt-2">Access is kept in this browser with a cookie. Verifying your email again does not recover access or refill your allowance. Keep your private sharing and assistant addresses private: they grant access to their respective features.</p></section>
+   <section><h2 className="text-lg font-extrabold text-zinc-900">Your email and trial records</h2><p>Resend delivers verification codes and recording-ready, retry or over-quota upload emails. Ready emails include the recording title, suggestion counts and a review link. Your email is linked to your trial and waitlist signup. Kopal may write once if KAI becomes a product; the waitlist can be retained for that message unless you ask to leave it. Your address is not sent to the recording providers or exposed to connected assistants.</p><p className="mt-2">KAI keeps a protected fingerprint of your public network address to prevent repeat trials, plus the version and time of your agreement. Existing trial and daily limits remain in force.</p></section>
+   <section><h2 className="text-lg font-extrabold text-zinc-900">Questions or deletion</h2><p>Contact Kopal for support, privacy questions, or to request deletion of your notebook or waitlist entry.</p><TextLink href={'mailto:'+SUPPORT_EMAIL}>Email Kopal support</TextLink></section>
+  </Card>
+ </PushedPage>
+}

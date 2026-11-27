@@ -47,7 +47,7 @@ test('queue stopped halfway finishes after reopening its persistent database',as
     assert.equal((resumed.prepare('SELECT count(*) AS n FROM conversations WHERE audio_path IS NOT NULL').get() as {n:number}).n,0);
   } finally {if(db.open)db.close();resumed?.close();rmSync(directory,{recursive:true,force:true});}
 });
-test('real generated m4a and opus files are accepted; over-five-minute audio is refused',async()=> {
+test('real generated m4a and opus files are accepted; 30-minute audio is refused',async()=> {
   const {db,directory}=setup();
   try {
     for(const [extension,codec] of [['m4a','aac'],['opus','libopus']]) {
@@ -55,8 +55,8 @@ test('real generated m4a and opus files are accepted; over-five-minute audio is 
       execFileSync('ffmpeg',['-v','error','-f','wav','-i','pipe:0','-c:a',codec,filename],{input:testTone()});
       assert.equal((await addAudio(db,'judge-a',[{name:'memo.'+extension,buffer:readFileSync(filename),date:dates[0]}],directory)).length,1);
     }
-    const long=Buffer.alloc(44+301*16000*2);testTone().copy(long);long.writeUInt32LE(long.length-8,4);long.writeUInt32LE(long.length-44,40);
-    await assert.rejects(()=>addAudio(db,'judge-a',[{name:'long.wav',buffer:long,date:dates[0]}],directory),/five minutes/);
+    const long=Buffer.alloc(44+1800*800*2);testTone().copy(long);long.writeUInt32LE(long.length-8,4);long.writeUInt32LE(long.length-44,40);long.writeUInt32LE(800,24);long.writeUInt32LE(1600,28);
+    await assert.rejects(()=>addAudio(db,'judge-a',[{name:'long.wav',buffer:long,date:dates[0]}],directory),/shorter than 30 minutes/);
   } finally {db.close();rmSync(directory,{recursive:true,force:true});}
 });
 test('11 MB and sixth file are refused by HTTP before anything is queued',async()=> {

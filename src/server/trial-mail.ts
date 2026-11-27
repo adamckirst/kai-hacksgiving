@@ -1,3 +1,5 @@
+import {quotaEmail} from '../email/quota';
+import type {SendQuota} from './quota-mail';
 import {readyEmail} from '../email/ready';
 import {failedEmail} from '../email/failed';
 import {gatewayUrl,gatewayRequest} from './gateway';
@@ -25,4 +27,8 @@ export function resendReadySender(from:string,origin:string):SendReady {
  // Validate configuration before starting the worker; never derive links from request headers.
  readyMessage(origin,'check',{person:0,note:0,todo:0,done:0});
  return (email,id,counts,title,kind='ready')=>{const message=kind==='failed'?failedEmail(origin,id):readyEmail(origin,id,counts,title);return sendMail(from,email,'kai-recording-'+kind+'-'+id,message.subject,message.text,message.html);};
+}
+
+export function resendQuotaSender(from:string,origin:string):SendQuota {
+ quotaEmail(origin,1,0);return (email,id,requested,remaining)=>{const message=quotaEmail(origin,requested,remaining);return sendMail(from,email,'kai-quota-'+id,message.subject,message.text,message.html)};
 }

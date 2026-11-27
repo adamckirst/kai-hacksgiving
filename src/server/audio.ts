@@ -1,3 +1,5 @@
+import {MAX_AUDIO_SECONDS,MAX_AUDIO_TEXT} from '../limits';
+import {queueQuotaEmail} from './quota-mail';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync, unlinkSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
@@ -15,15 +17,16 @@ export type Transcriber=(audio:Buffer,signal:AbortSignal,reservedSeconds?:number
 export const fakeTranscriber:Transcriber=async(_audio,_signal,_seconds,multiple)=>multiple ? {text:samples[0].text,utterances:[{speaker:'A',text:samples[0].text.split('\n')[0],start:0,end:1000},{speaker:'B',text:samples[0].text.split('\n').slice(1).join('\n') || 'Thanks.',start:1000,end:2000}]}:samples[0].text;
 export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[],directory:string,source:'recording'|'shared'='recording',options:{person?:unknown;awaitingPerson?:boolean}={}) {
   if(files.length<1 || files.length>5) throw new ReadingError('Choose between one and five recordings.');
-  let seconds=0;const durations=new Map<AudioInput,number>();
+  let tooLong=false;let seconds=0;const durations=new Map<AudioInput,number>();
   for(const file of files) {
     if(!/\.(m4a|opus|ogg|mp3|wav)$/i.test(file.name) || !file.buffer.length || file.buffer.length>maxAudioBytes) throw new ReadingError('Use m4a, opus, ogg, mp3 or wav files, each up to 10 MB.');
     if(!Number.isFinite(file.date) || file.date<0 || file.date>Date.now()+86400000) throw new ReadingError('The recording date is not valid.');
     try {
       const {format}=await parseBuffer(file.buffer,{path:file.name,size:file.buffer.length},{duration:true,skipCovers:true});
-      if(!format.duration || !Number.isFinite(format.duration) || format.duration>300 || !format.numberOfChannels) throw new Error();
+      if(!format.duration || !Number.isFinite(format.duration) || format.duration<=0 || !format.numberOfChannels) throw new Error();
+      if(format.duration>=MAX_AUDIO_SECONDS)tooLong=true;
       const duration=Math.ceil(format.duration);seconds+=duration;durations.set(file,duration);
-    } catch {throw new ReadingError('Use an audio recording up to five minutes long.');}
+    } catch {throw new ReadingError('Use a valid audio recording shorter than 30 minutes.');}
   }
   mkdirSync(directory,{recursive:true,mode:0o700});
   const written:string[]=[];const batch=randomUUID();
@@ -31,9 +34,10 @@ export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[
     return db.transaction(()=> {
       const trial=db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(workspace) as {trial_seconds:number|null}|undefined;
       if(trial?.trial_seconds!=null) {
-        if(seconds>trial.trial_seconds)throw new ReadingError('This exceeds your remaining recording time. Choose a shorter recording.',429);
+        if(seconds>trial.trial_seconds)throw new QuotaExceeded(seconds,trial.trial_seconds);
         db.prepare('UPDATE workspaces SET trial_seconds=trial_seconds-? WHERE id=?').run(seconds,workspace);
       }
+      if(tooLong)throw new ReadingError('Each recording must be shorter than 30 minutes.');
       return files.slice().sort((a,b)=>a.date-b.date).map(file=> {
       reserveRecording(db,workspace);reserveReading(db,workspace);
       const id=randomUUID(),audioPath=path.resolve(directory,id+'.audio');
@@ -44,8 +48,9 @@ export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[
       if(options.person!==undefined)configureRecording(db,workspace,id,options.person);
       return id;
     });})();
-  } catch(error) {for(const file of written) if(existsSync(file)) unlinkSync(file);throw error;}
+  } catch(error) {if(error instanceof QuotaExceeded)queueQuotaEmail(db,workspace,files.map(f=>f.buffer),error.requested,error.remaining);for(const file of written) if(existsSync(file)) unlinkSync(file);throw error;}
 }
+export class QuotaExceeded extends ReadingError {constructor(public requested:number,public remaining:number){super(`This exceeds your remaining recording time (${Math.floor(remaining/60)} min ${remaining%60} sec). Choose a shorter recording.`,429)}}
 export class AudioDurationError extends Error {}
 /** Fixed categories only. Never retain provider messages or recording content. */
 export class ListeningFailure extends Error {constructor(public code:string){super(code)}}
@@ -55,8 +60,8 @@ function listeningCode(error:unknown) {
   if(error instanceof Error && /^Connector request failed \((\d{3})\)\.$/.test(error.message))return 'listening_http_'+error.message.match(/\d{3}/)![0];
   return 'listening_failed';
 }
-export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=300,multiple=false)=> {
-  if(!Number.isInteger(reservedSeconds) || reservedSeconds<1 || reservedSeconds>300)throw new Error('Invalid recording reservation.');
+export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=MAX_AUDIO_SECONDS,multiple=false)=> {
+  if(!Number.isInteger(reservedSeconds) || reservedSeconds<1 || reservedSeconds>MAX_AUDIO_SECONDS)throw new Error('Invalid recording reservation.');
   const {assemblyai}=await discoverGateways();
   const uploaded=await gatewayRequest(assemblyai,'/v2/upload',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:new Uint8Array(audio),signal});
   const job=await gatewayRequest(assemblyai,'/v2/transcript',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio_url:uploaded.upload_url,speech_models:['assemblyai-stt-3-7'],audio_start_from:0,audio_end_at:reservedSeconds*1000,...(multiple ? {speaker_labels:true}:{})}),signal});
@@ -67,17 +72,17 @@ export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=
       const result=await gatewayRequest(assemblyai,`/v2/transcript/${job.id}`,{signal});
       if(result.status==='completed') {
         if(typeof result.audio_duration!=='number' || !Number.isFinite(result.audio_duration) || result.audio_duration<0 || result.audio_duration>reservedSeconds)throw new AudioDurationError('Recording exceeds its reserved time.');
-        if(typeof result.text!=='string' || result.text.length>20000 || result.audio_duration>300) throw new Error('Recording exceeds the limits.');
+        if(typeof result.text!=='string' || result.text.length>MAX_AUDIO_TEXT || result.audio_duration>MAX_AUDIO_SECONDS) throw new Error('Recording exceeds the limits.');
         if(multiple) {
           const utterances=result.utterances;
           if(!Array.isArray(utterances) || !utterances.length || utterances.length>2000)throw new ListeningFailure('speakers_missing');
           const clean:Utterance[]=utterances.map(u=>{
             if(!u || typeof u.speaker!=='string' || !/^[A-Z]{1,3}$/.test(u.speaker))throw new ListeningFailure('speaker_label_invalid');
-            if(typeof u.text!=='string' || !u.text.trim() || u.text.length>20000)throw new ListeningFailure('speaker_text_invalid');
+            if(typeof u.text!=='string' || !u.text.trim() || u.text.length>MAX_AUDIO_TEXT)throw new ListeningFailure('speaker_text_invalid');
             if(!Number.isFinite(u.start) || !Number.isFinite(u.end) || u.start<0 || u.end<u.start || u.end>reservedSeconds*1000+1000)throw new ListeningFailure('speaker_time_invalid');
             return {speaker:u.speaker,text:u.text,start:u.start,end:u.end};
           });
-          if(new Set(clean.map(u=>u.speaker)).size>20 || clean.reduce((n,u)=>n+u.text.length,0)>40000)throw new ListeningFailure('speaker_limit');
+          if(new Set(clean.map(u=>u.speaker)).size>20 || clean.reduce((n,u)=>n+u.text.length,0)>MAX_AUDIO_TEXT*2)throw new ListeningFailure('speaker_limit');
           return {text:result.text,utterances:clean};
         }
         return result.text;
@@ -116,7 +121,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
         if(stopped) return;
         const job=db.prepare("SELECT * FROM conversations WHERE status='waiting' AND awaiting_person=0 AND awaiting_speakers=0 AND workspace_id IN (SELECT id FROM workspaces WHERE trial_ended=0 AND (trial_seconds IS NULL OR trial_verified=1)) ORDER BY happened_at,rowid LIMIT 1").get() as Job|undefined;
         if(!job) return;
-        const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(120000)]);
+        const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(Math.max(120000,Math.min(600000,(job.reserved_seconds??0)*1000)))]);
         db.prepare('UPDATE conversations SET attempts=attempts+1 WHERE id=?').run(job.id);
         try {
           if(job.audio_path && !job.transcribed) {
@@ -128,7 +133,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
             const words=typeof transcript==='string' ? transcript:transcript.text;
             const utterances=typeof transcript==='string' ? []:transcript.utterances;
             if(job.recording_type==='multiple' && !utterances.length)throw new ListeningFailure('speakers_missing');
-            if(words.length>20000) throw new Error();
+            if(words.length>MAX_AUDIO_TEXT) throw new Error();
             // Persist words first: a restart after this line never needs to listen again.
             db.prepare('UPDATE conversations SET text=?,transcribed=1,utterances=?,awaiting_speakers=? WHERE id=?').run(words,JSON.stringify(utterances),Number(job.recording_type==='multiple'),job.id);
           }

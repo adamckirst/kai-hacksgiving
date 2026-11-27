@@ -17,7 +17,7 @@ me to build it, from scratch, this week.
 
 [Open the live demo](https://kai-b6whz.sprites.app/). Everyone can browse the
 read-only notebook, or join the waitlist for an empty private notebook with
-one hour of recording time and its own assistant connection. Existing judge
+30 minutes of recording time and its own assistant connection. Existing judge
 invitations still open seeded editable copies. Video waits for Copal’s
 approval of the final product.
 
@@ -144,7 +144,7 @@ Final-product measurements must be repeated on its own deployed head.
 
 Add recordings opens an upload page. Choose an existing person, add a person,
 or continue without one, then choose one to five `.m4a`, `.opus`, `.ogg`, `.mp3` or `.wav` files.
-Each must be at most 10 MB and five minutes. The server parses the audio’s
+Each must be at most 10 MB and shorter than 30 minutes. The server parses the audio’s
 duration, validates the whole batch, and reserves both recording and reading
 allowances before enqueueing it. File dates come from the file picker;
 within a day, the original timestamps determine the queue order.
@@ -422,7 +422,7 @@ public signup is enabled. The operator-only network check returns a digest,
 never the IP. Shared Wi-Fi shares an allowance; changing networks can bypass
 an IP rule, so the global caps remain the spending boundary.
 
-A trial gets 3,600 seconds, rounded up per uploaded file and reserved
+A trial gets 1,800 seconds, rounded up per uploaded file and reserved
 atomically with the daily counters. Rejected batches roll back; accepted
 uploads consume time even when transcription fails. Retries of that upload
 do not deduct its duration again. Existing unverified trials retain their
@@ -430,8 +430,9 @@ notebooks and remaining time but cannot call providers until verified.
 Private judge invitations remain separate. Keep the original browser;
 this verification flow does not recover another browser’s notebook.
 
-Daily caps, file limits and provider limits are unchanged. A full hour may
-span days. One hundred hours is an allowance for new uploaded audio, not a
+Daily caps and provider limits are unchanged. Files remain capped at 10 MB
+and must be shorter than 30 minutes. The 30 minutes may span days. Fifty
+hours across 100 trials is an allowance for new uploaded audio, not a
 guarantee about the full bill: retries, Claude, email and compute also count.
 Transcription requests do not enable keyterms or other paid add-ons.
 
@@ -442,3 +443,8 @@ proxy check. Missing configuration fails closed. Two server-only tables
 keep short-lived code challenges and bounded send counters. The waitlist
 holds the verified date, private notebook link and protected IP digest;
 none of these enter notebook/MCP responses.
+
+Trial signup requires agreement to the demo terms. Existing trial time is
+reduced once to a 30-minute total, counting time already used. Accepted
+recordings keep their reservations. Quota-rejected uploads queue a private
+notice within the existing email limits, without retaining the rejected audio.

@@ -20,11 +20,11 @@ test('duration reservation is atomic across uploads, survives restart, and prese
   assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(remaining(),1);
   const image=db.serialize();db.close();db=openDatabase(image);assert.equal(remaining(),1);
   await assert.rejects(()=>addAudio(db,judge.id,[file],dir,'shared',{awaitingPerson:true}),/remaining recording time/);
-  db.prepare('UPDATE workspaces SET trial_seconds=3600,recording_day=?,recordings_today=10 WHERE id=?').run(new Date().toISOString().slice(0,10),judge.id);
-  await assert.rejects(()=>addAudio(db,judge.id,[file],dir),/today’s recording limit/);assert.equal(remaining(),3600);
+  db.prepare('UPDATE workspaces SET trial_seconds=1800,recording_day=?,recordings_today=10 WHERE id=?').run(new Date().toISOString().slice(0,10),judge.id);
+  await assert.rejects(()=>addAudio(db,judge.id,[file],dir),/today’s recording limit/);assert.equal(remaining(),1800);
   db.prepare('UPDATE workspaces SET recordings_today=0 WHERE id=?').run(judge.id);
   db.prepare("UPDATE workspaces SET recording_day=?,recordings_today=60 WHERE id='public'").run(new Date().toISOString().slice(0,10));
-  await assert.rejects(()=>addAudio(db,judge.id,[file],dir),/today’s recording limit/);assert.equal(remaining(),3600);
+  await assert.rejects(()=>addAudio(db,judge.id,[file],dir),/today’s recording limit/);assert.equal(remaining(),1800);
  }finally{db.close();rmSync(dir,{recursive:true,force:true})}
 });
 
@@ -44,7 +44,7 @@ test('forged audio headers cannot request more provider time than reserved; over
  const {assemblyTranscriber,queueWorker}=await import('../src/server/audio');
  const {reserveReading}=await import('../src/server/reading');
  const db=openDatabase();seed(db);const judge=createJudge(db,false),dir=mkdtempSync('.data/trial-duration-');
- db.prepare('UPDATE workspaces SET trial_seconds=3600,trial_verified=1 WHERE id=?').run(judge.id);
+ db.prepare('UPDATE workspaces SET trial_seconds=1800,trial_verified=1 WHERE id=?').run(judge.id);
  const tone=testTone(),fact=Buffer.alloc(12);fact.write('fact');fact.writeUInt32LE(4,4);fact.writeUInt32LE(16000,8);
  const forged=Buffer.concat([tone.subarray(0,36),fact,tone.subarray(36)]);forged.writeUInt32LE(forged.length-8,4);
  const original=globalThis.fetch;let providerDuration=1,requested=0;

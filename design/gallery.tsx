@@ -1,3 +1,4 @@
+import {Terms} from '../src/look/screens/Terms'
 import {Search} from '../src/look/screens/Search'
 import {Task} from '../src/look/screens/Task'
 import { StrictMode, useEffect, useState, type ReactNode } from 'react'
@@ -144,7 +145,9 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   try: {title:'Trial · join',screen:()=> <Trial onSubmit={nothing}/>},
   'try/busy': {title:'Trial · opening',screen:()=> <Trial busy onSubmit={nothing}/>},
   'try/error': {title:'Trial · could not open',screen:()=> <Trial error='This trial cannot be opened here. Use the browser where you started it.' onSubmit={nothing}/>},
-  'home/trial': {title:'Home · new trial',screen:()=> <Home {...homeProps} readOnly={false} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:3600,trialVerified:true}}/>},
+  terms:{title:'Demo terms and privacy',screen:()=> <Terms/>},
+  'home/processing-info':{title:'Home · processing information',screen:()=> <Home {...homeProps} readOnly={false} initialInfoOpen home={{...data.home,trialSeconds:1556,trialVerified:true}} queue={data.queue}/>},
+  'home/trial': {title:'Home · new trial',screen:()=> <Home {...homeProps} readOnly={false} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:1800,trialVerified:true}}/>},
   'home/trial-used': {title:'Home · trial used',screen:()=> <Home {...homeProps} readOnly={false} home={{...data.home,trialSeconds:0,trialVerified:true}}/>},
   'opening/page': { title: 'Page · opening', screen: () => <Opening page="People" onRetry={nothing}/> },
   'opening/failed': { title: 'Page · could not open', screen: () => <Opening page="People" failed onRetry={nothing}/> },
@@ -166,7 +169,7 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'upload/public': { title: 'Upload · read-only', screen: () => <Upload people={null} readOnly onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'home/after-upload': { title: 'Home · recording ready to review', screen: () => <Home {...homeProps} home={{...data.home,hasRecordings:true}} readOnly={false} onTick={nothing} queue={[{id:'fresh',title:'A new recording',status:'ready',error:null,suggestion_count:3}]}/> },
   'home/empty-todos': { title: 'Home · no open to-dos', screen: () => <Home {...homeProps} home={{...data.home,todos:[]}} readOnly={false}/> },
-  'home/unfinished': {title:'Home · distinct unfinished recordings',screen:()=> <Home {...homeProps} home={{...data.home,trialVerified:true,trialSeconds:3356,hasRecordings:true}} readOnly={false} queue={[{id:'shared',title:'New recording',status:'waiting',error:null,awaiting_person:1,reserved_seconds:27,happened_on:today},{id:'meeting',title:'New recording',status:'failed',error:'KAI could not listen to this recording. Try again.',recording_type:'multiple',reserved_seconds:64,happened_on:today}]}/>},
+  'home/unfinished': {title:'Home · distinct unfinished recordings',screen:()=> <Home {...homeProps} home={{...data.home,trialVerified:true,trialSeconds:1556,hasRecordings:true}} readOnly={false} queue={[{id:'shared',title:'New recording',status:'waiting',error:null,awaiting_person:1,reserved_seconds:27,happened_on:today},{id:'meeting',title:'New recording',status:'failed',error:'KAI could not listen to this recording. Try again.',recording_type:'multiple',reserved_seconds:64,happened_on:today}]}/>},
   'home/speakers': {title:'Home · identify speakers',screen:()=> <Home {...homeProps} readOnly={false} queue={[{id:'meeting',title:'New recording',status:'waiting',error:null,awaiting_speakers:1,recording_type:'multiple',reserved_seconds:64,happened_on:today}]}/>},
   'home/shared': { title: 'Home · recording ready to add', screen: () => <Home {...homeProps} readOnly={false} queue={[{id:'shared',title:'New recording',status:'waiting',error:null,awaiting_person:1}]}/> },
   'recording/linked': { title: 'Recording · linked to a person', screen: () => <LiveRecording first={{...data.recordings.ready,person:data.people[0]}}/> },

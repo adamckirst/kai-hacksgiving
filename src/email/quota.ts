@@ -1,0 +1,12 @@
+export function quotaEmail(origin:string,requested:number,remaining:number) {
+ const url=new URL(origin);if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||url.pathname!=='/')throw new Error('A public HTTPS origin is required for recording mail.');
+ if(![requested,remaining].every(n=>Number.isSafeInteger(n)&&n>=0))throw new Error('Invalid recording time.');
+ const time=(seconds:number)=>`${Math.floor(seconds/60)} min ${seconds%60} sec`,link=new URL('/upload/new',url).href;
+ const subject='Your recording is longer than your remaining demo time — KAI';
+ const explanation=`This upload needs ${time(requested)}, but you had ${time(remaining)} left when you sent it. I haven’t transcribed it or used any more of your allowance. Each recording must also be under 30 minutes and up to 10 MB.`;
+ const thanks='Thank you for trying KAI and sharing your interest. You’re on the waitlist, and Kopal will let you know if KAI becomes a product. Your existing notebook is still yours to explore.';
+ const text=`Hi there,\n\n${explanation}\n\n${remaining ? 'You can choose a shorter recording that fits your remaining time.':'You’ve used your trial recording time.'}\n\n${thanks}\n\nOpen KAI: ${link}\nUse the browser where you started your notebook.\n\nKAI, by Kopal`;
+ const safe=link.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+ const html=`<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;background:#f7f5fb;color:#27272a;font:16px/1.7 Arial,sans-serif"><div style="max-width:520px;margin:24px auto;padding:20px"><p style="color:#7008e7;font-size:28px;font-weight:800">KAI</p><div style="background:white;border:1px solid #ede9f5;border-radius:24px;padding:24px"><h1 style="font-size:28px;line-height:1.3">Thanks for trying KAI</h1><p>Hi there,</p><p>${explanation}</p><p>${remaining?'Choose a shorter recording that fits your remaining time.':'You’ve used your trial recording time.'}</p><p>${thanks}</p><a href="${safe}" style="display:block;padding:16px;border-radius:999px;background:#7f22fe;color:white;font-weight:800;text-align:center;text-decoration:none">Open KAI →</a><p>Use the browser where you started your notebook.</p></div><p style="text-align:center;color:#71717a">KAI, by Kopal</p></div></body></html>`;
+ return {subject,text,html};
+}

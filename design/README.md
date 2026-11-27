@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 110 states. The phone suite checks all public and judge
+`check.mjs` checks all 112 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -166,3 +166,7 @@ read-only-or-actionable detail view, including completed tasks. Search and
 task detail each keep one violet action; all data stays notebook-scoped.
 
 Copal’s phone refinements: focused Search with a shorter notice and no subtitle; private headers omit the notebook label. Pending suggestions stay above the summary. Reviewed suggestions follow it, before the waitlist. A floating confirmation acknowledges saved decisions. Fully reviewed recordings move from the Home queue to Recent recordings.
+
+Home keeps the email-update explanation behind an info button only while processing; it supports hover, keyboard and touch. Remaining time sits in the Your demo card. The recording privacy notice lives on Upload and in Demo terms and privacy. Signup requires agreement before a code is requested.
+
+The trial now includes 30 minutes total; files stay at 10 MB and must be under 30 minutes. Quota rejection mail is shown in `email-quota.html` on invented durations. The remaining-time card uses the new allowance.

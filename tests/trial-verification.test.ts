@@ -1,3 +1,4 @@
+import {TERMS_VERSION} from '../src/terms';
 import {test} from 'node:test';
 import {Client,StreamableHTTPClientTransport} from '@modelcontextprotocol/client';
 import assert from 'node:assert/strict';
@@ -12,16 +13,17 @@ test('verification gates grants, protects codes, bounds attempts and prevents em
  const db=openDatabase();seed(db);let now=Date.now(),fail=false,sends=0;const codes=new Map<string,string>();
  const app=createApp(db,{secureCookies:false,trustSpriteProxy:true,now:()=>now,sendCode:async(email,code)=>{sends++;if(fail)throw new Error();codes.set(email,code)}});
  const server=app.listen(18574,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));const base='http://127.0.0.1:18574';
- const post=(route:string,body:unknown,ip='192.0.2.1',cookie='')=>fetch(base+'/api/trial/'+route,{method:'POST',headers:{'Content-Type':'application/json','Sprite-Client-IP':ip,Cookie:cookie},body:JSON.stringify(body)});
+ const post=(route:string,body:unknown,ip='192.0.2.1',cookie='')=>fetch(base+'/api/trial/'+route,{method:'POST',headers:{'Content-Type':'application/json','Sprite-Client-IP':ip,Cookie:cookie},body:JSON.stringify({termsVersion:TERMS_VERSION,...body as object})});
  const count=()=>(db.prepare('SELECT count(*) n FROM waitlist WHERE verified_at IS NOT NULL').get() as {n:number}).n;
  try {
-  const email=address();assert.equal((await post('code',{email})).status,200);assert.equal(count(),0);
+  const email=address();assert.equal((await post('code',{email,termsVersion:undefined})).status,400);assert.equal((await post('code',{email,termsVersion:'old'})).status,400);assert.equal(sends,0);assert.equal((await post('code',{email})).status,200);assert.equal(count(),0);
   const wrong=String((Number(codes.get(email))+1)%1000000).padStart(6,'0');
   assert.equal((await post('verify',{email,code:wrong})).status,409);assert.equal(count(),0);
-  const good=await post('verify',{email,code:codes.get(email)});assert.equal(good.status,200);assert.equal(count(),1);
+  assert.equal((await post('verify',{email,code:codes.get(email),termsVersion:undefined})).status,400);assert.equal(count(),0);
+  const good=await post('verify',{email,code:codes.get(email)});assert.equal(good.status,200);assert.equal(count(),1);assert.deepEqual(db.prepare('SELECT terms_version,terms_accepted_at FROM waitlist WHERE email=?').get(email),{terms_version:TERMS_VERSION,terms_accepted_at:new Date(now).toISOString()});
   const cookie=good.headers.get('set-cookie')!.split(';')[0];
   assert.equal((await post('verify',{email,code:codes.get(email)})).status,409);
-  const home=await(await fetch(base+'/api/home',{headers:{Cookie:cookie}})).json();assert.equal(home.trialSeconds,3600);assert.equal(home.peopleCount,0);assert.equal(home.trialVerified,true);
+  const home=await(await fetch(base+'/api/home',{headers:{Cookie:cookie}})).json();assert.equal(home.trialSeconds,1800);assert.equal(home.peopleCount,0);assert.equal(home.trialVerified,true);
   for(const route of ['home','people','todos','access','connect','library','notifications']) {
    const response=await fetch(base+'/api/'+route,{headers:{Cookie:cookie}});assert.equal(response.status,200);
    assert.ok(!(await response.text()).includes(email));
@@ -56,7 +58,7 @@ test('100th grant is atomic, existing unverified notebooks keep their remaining 
  assert.throws(()=>reserveReading(db,legacy.id),/Verify your email/);
  const codes=new Map<string,string>();const app=createApp(db,{secureCookies:false,trustSpriteProxy:true,sendCode:async(email,code)=>{codes.set(email,code)}});
  const server=app.listen(18575,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));const base='http://127.0.0.1:18575';
- const post=(route:string,body:unknown,ip:string,cookie='')=>fetch(base+'/api/trial/'+route,{method:'POST',headers:{'Content-Type':'application/json','Sprite-Client-IP':ip,Cookie:cookie},body:JSON.stringify(body)});
+ const post=(route:string,body:unknown,ip:string,cookie='')=>fetch(base+'/api/trial/'+route,{method:'POST',headers:{'Content-Type':'application/json','Sprite-Client-IP':ip,Cookie:cookie},body:JSON.stringify({termsVersion:TERMS_VERSION,...body as object})});
  try {
   await post('code',{email:legacyEmail},'192.0.2.10');
   assert.equal((await post('verify',{email:legacyEmail,code:codes.get(legacyEmail)},'192.0.2.10','kai_session='+legacy.cookie)).status,200);
