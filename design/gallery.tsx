@@ -1,3 +1,4 @@
+import {Login} from '../src/look/screens/Login'
 import {Terms} from '../src/look/screens/Terms'
 import {Search} from '../src/look/screens/Search'
 import {Task} from '../src/look/screens/Task'
@@ -89,7 +90,7 @@ function LiveTodos({ view, readOnly = false, empty = false }: { view?: 'mine' | 
 
 function LiveConnect() {
   const [copied, setCopied] = useState<'upload' | 'home' | 'assistant' | null>(null)
-  return <Connect connection={data.connection} readOnly={false} due="overdue" copied={copied} onCopy={(which) => setCopied(which)} onSetupDone={nothing} />
+  return <Connect connection={data.connection} accountRecoverable readOnly={false} due="overdue" copied={copied} onCopy={(which) => setCopied(which)} onSetupDone={nothing} />
 }
 
 const homeProps = { home: data.home, samples: data.samples, today, due: 'overdue' as const, onFiles: nothing, onRead: nothing, onSample: nothing }
@@ -137,13 +138,19 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'notifications/empty':{title:'Notifications · empty',screen:()=> <Notifications items={[]} readOnly={false}/>},
   'notifications/loading':{title:'Notifications · loading',screen:()=> <Notifications items={null} readOnly={false}/>},
   'notifications/failed':{title:'Notifications · could not load',screen:()=> <Notifications items={null} readOnly={false} error="Your recordings could not load. Reload this page to try again."/>},
-  'connect/ready':{title:'Connections · phone set up',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} readOnly={false} onCopy={nothing}/>},
+  'connect/ready':{title:'Connections · phone set up',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} accountRecoverable readOnly={false} onCopy={nothing}/>},
   'home/connected':{title:'Home · phone set up',screen:()=> <Home {...homeProps} home={{...data.home,shortcutReady:true}} readOnly={false}/>},
 
   'try/code': {title:'Trial · verification code',screen:()=> <Trial codeSent onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
   'try/code-error': {title:'Trial · wrong code',screen:()=> <Trial codeSent error='Check the code and try again.' onSubmit={nothing} onVerify={nothing} onResend={nothing}/>},
   try: {title:'Trial · join',screen:()=> <Trial onSubmit={nothing}/>},
   'try/busy': {title:'Trial · opening',screen:()=> <Trial busy onSubmit={nothing}/>},
+  'login':{title:'Sign in',screen:()=> <Login onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/>},
+  'login/code':{title:'Sign in · code',screen:()=> <Login codeSent onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/>},
+  'login/busy':{title:'Sign in · busy',screen:()=> <Login busy onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/>},
+  'login/error':{title:'Sign in · wrong code',screen:()=> <Login codeSent error="This code expired or could not be checked. Ask for a new code." onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/>},
+  'login/signed-in':{title:'Sign in · switch notebook',screen:()=> <Login signedIn recoverable onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/>},
+  'login/invitation':{title:'Sign in · invitation notebook',screen:()=> <Login signedIn recoverable={false} onSubmit={nothing} onVerify={nothing} onResend={nothing} onSignOut={nothing}/>},
   'try/error': {title:'Trial · could not open',screen:()=> <Trial error='This trial cannot be opened here. Use the browser where you started it.' onSubmit={nothing}/>},
   terms:{title:'Demo terms and privacy',screen:()=> <Terms/>},
   'home/processing-info':{title:'Home · processing information',screen:()=> <Home {...homeProps} readOnly={false} initialInfoOpen home={{...data.home,trialSeconds:1556,trialVerified:true}} queue={data.queue}/>},
@@ -187,11 +194,11 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'person/failed': { title: 'Person · could not load', screen: () => <Person person={null} readOnly={false} today={today} error="This person could not load. Go to People and try again." onFiles={nothing} /> },
   'todos/failed': { title: 'To-dos · could not finish', screen: () => <Todos todos={data.todos} readOnly={false} today={today} error="This to-do could not be finished. Try ticking it again." onFiles={nothing} onTick={nothing} /> },
   'recording/edit-failed': { title: 'Recording · edit could not save', screen: () => <LiveRecording first={data.recordings.ready} editing="s3" error="Check the words and use a real date." /> },
-  'connect/manual': {title:'Connect · build shortcut manually',screen:()=> <Connect connection={data.connection} readOnly={false} showManual onCopy={nothing}/>},
-  'connect/address': {title:'Connect · show private address',screen:()=> <Connect connection={data.connection} readOnly={false} showAddress onCopy={nothing}/>},
+  'connect/manual': {title:'Connect · build shortcut manually',screen:()=> <Connect connection={data.connection} accountRecoverable readOnly={false} showManual onCopy={nothing}/>},
+  'connect/address': {title:'Connect · show private address',screen:()=> <Connect connection={data.connection} accountRecoverable readOnly={false} showAddress onCopy={nothing}/>},
   'connect/loading': { title: 'Connect · loading', screen: () => <Connect connection={null} readOnly={false} onCopy={nothing} /> },
   'connect/failed': { title: 'Connect · could not load', screen: () => <Connect connection={null} readOnly={false} error="Your address could not load. Reload this page to try again." onCopy={nothing} /> },
-  'connect/copy-failed': { title: 'Connect · copy unavailable', screen: () => <Connect connection={data.connection} readOnly={false} copyError={{at:'assistant',text:'Touch and hold the address to copy it.'}} onCopy={nothing} /> },
+  'connect/copy-failed': { title: 'Connect · copy unavailable', screen: () => <Connect connection={data.connection} accountRecoverable readOnly={false} copyError={{at:'assistant',text:'Touch and hold the address to copy it.'}} onCopy={nothing} /> },
   'waitlist/failed': { title: 'Waitlist · could not save', screen: () => <Home {...homeProps} readOnly waitlist={<Waitlist postUrl={null} error="Please wait an hour, then reload this page." onSubmit={nothing}/>} /> },
   'operator/failed': { title: 'Download · link needed', screen: () => <Operator count={null} error="Open your private download link to see the list." onDownload={nothing}/> },
   home: { title: 'Home', screen: () => <Home {...homeProps} readOnly={false} waitlist={<DemoWaitlist />} /> },
@@ -217,6 +224,10 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'todos/empty': { title: 'To-dos · nothing open', screen: () => <LiveTodos empty /> },
   'todos/public': { title: 'To-dos · read-only', screen: () => <LiveTodos readOnly /> },
   connect: { title: 'Connect', screen: () => <LiveConnect /> },
+  'connect/sign-out': {title:'Connections · sign out here',screen:()=> <Connect connection={data.connection} readOnly={false} accountRecoverable initialSignOut='here' onCopy={nothing}/>},
+  'connect/sign-out-all': {title:'Connections · sign out everywhere',screen:()=> <Connect connection={data.connection} readOnly={false} accountRecoverable initialSignOut='everywhere' onCopy={nothing}/>},
+  'connect/invitation': {title:'Connections · invitation access',screen:()=> <Connect connection={data.connection} readOnly={false} accountRecoverable={false} onCopy={nothing}/>},
+  'connect/sign-out-failed': {title:'Connections · sign out failed',screen:()=> <Connect connection={data.connection} readOnly={false} accountRecoverable initialSignOut='here' accountError='Could not sign out. Try again.' onCopy={nothing}/>},
   'connect/public': { title: 'Connect · read-only', screen: () => <Connect connection={null} readOnly due="overdue" onCopy={nothing} /> },
   waitlist: { title: 'The waitlist card · signed up', screen: () => <Home {...homeProps} readOnly waitlist={<DemoWaitlist saved />} /> },
   operator: { title: 'Copal’s download page', screen: () => <Operator count={12} onDownload={nothing} /> },

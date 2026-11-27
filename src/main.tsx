@@ -1,3 +1,4 @@
+import {LoginScreen} from './Login';
 import {Terms} from './look/screens/Terms';
 import {SearchScreen} from './Search';
 import {TaskScreen} from './Task';
@@ -37,9 +38,10 @@ function App() {
   if(route==='/operator')return <Operator secret={downloadSecret}/>;
   if(route==='/')return <Welcome access={access} failed={failed}/>;
   if(!access) {
-    const page=route.startsWith('/upload') ? 'Add recordings':route.startsWith('/recordings/') ? 'Recording':route.startsWith('/people/') ? 'Person':route==='/people' ? 'People':route.startsWith('/todos/') ? 'Task':route==='/search' ? 'Search':route==='/todos' ? 'Tasks':route==='/library' ? 'Library':route==='/notifications' ? 'Notifications':route==='/connect' ? 'Connections':'Home';
+    const page=route==='/login'?'Sign in':route.startsWith('/upload') ? 'Add recordings':route.startsWith('/recordings/') ? 'Recording':route.startsWith('/people/') ? 'Person':route==='/people' ? 'People':route.startsWith('/todos/') ? 'Task':route==='/search' ? 'Search':route==='/todos' ? 'Tasks':route==='/library' ? 'Library':route==='/notifications' ? 'Notifications':route==='/connect' ? 'Connections':'Home';
     return <Opening page={page} failed={failed} onRetry={()=>location.reload()}/>;
   }
+  if(route==='/login' || (access.kind==='public' && /^\/recordings\/[a-f0-9-]{36}$/.test(route)))return <LoginScreen signedIn={access.kind==='judge'}/>;
   return <Notebook access={access}/>;
 }
 function Notebook({access}:{access:Access}) {

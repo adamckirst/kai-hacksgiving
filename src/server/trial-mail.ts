@@ -32,3 +32,7 @@ export function resendReadySender(from:string,origin:string):SendReady {
 export function resendQuotaSender(from:string,origin:string):SendQuota {
  quotaEmail(origin,1,0);return (email,id,requested,remaining)=>{const message=quotaEmail(origin,requested,remaining);return sendMail(from,email,'kai-quota-'+id,message.subject,message.text,message.html)};
 }
+
+export function resendLoginSender(from:string):SendCode {
+ return (email,code,id)=>sendMail(from,email,'kai-login-'+id,'Your KAI sign-in code',`Your KAI sign-in code is ${code}. It expires in 10 minutes. Enter it only in the browser where you requested it. If you did not request this, ignore this email.`);
+}

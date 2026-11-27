@@ -1,10 +1,11 @@
+import {mountLogin,type LoginOptions} from './login';
 import {quotaMailWorker,type SendQuota} from './quota-mail';
 import {searchNotebook} from './search';
 import {getTodo} from './todos';
 import {suggestionList} from './suggestion-list';
 import {recordingMailWorker,type SendReady} from './recording-mail';
 import express from 'express';
-import {mountTrial,type TrialOptions} from './trial';
+import {mountTrial} from './trial';
 import path from 'node:path';
 import type { KaiDatabase } from './db';
 import { addReading, retryReading, reserveReading, reserveRecording, ReadingError, type Reader } from './reading';
@@ -19,7 +20,7 @@ import { mountSharing } from './sharing';
 import { mountMcp } from './mcp';
 import { mountWaitlist,xPost } from './waitlist';
 import { configureRecording,identifySpeakers } from './recording-person';
-export type AppOptions = TrialOptions & {sendQuota?:SendQuota;sendReady?:SendReady;trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
+export type AppOptions = LoginOptions & {sendQuota?:SendQuota;sendReady?:SendReady;trialsPaused?:boolean;judgeSecret?:string; downloadSecret?:string; xPostUrl?:string; now?:()=>number; videoUrl?:string;videoFile?:string; secureCookies?:boolean;reader?:Reader;transcriber?:Transcriber;audioDirectory?:string};
 export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const app = express();
   const quotaMail=quotaMailWorker(db,options.sendQuota,options.now);
@@ -33,6 +34,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
   mountMcp(app,db);
   mountTrial(app,db,options);
+  mountLogin(app,db,options);
   mountWaitlist(app,db,options);
   // A 20,000-character transcript can need 120 KB when JSON escapes it.
   app.use(express.json({limit:'128kb'}));
@@ -174,7 +176,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/terms', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get(['/', '/terms', '/login', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose one recording, up to 10 MB.'});return;}
     res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});

@@ -62,3 +62,11 @@ mark {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* A compact check inside a full-size touch target. */
+.login-check { appearance: none; cursor: pointer; background: transparent; display: grid; place-content: center; }
+.login-check::before { content: ''; width: 20px; height: 20px; border: 2px solid var(--color-zinc-400); border-radius: 5px; background: white; }
+.login-check:checked::before { background: var(--color-violet-600); border-color: var(--color-violet-600); }
+.login-check:checked::after { content: ''; position: absolute; width: 6px; height: 11px; border: solid white; border-width: 0 2px 2px 0; left: 19px; top: 15px; transform: rotate(45deg); }
+.login-check { position: relative; }
+.login-check:focus-visible { outline: 2px solid var(--color-violet-600); outline-offset: 2px; border-radius: 8px; }
