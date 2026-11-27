@@ -174,3 +174,5 @@ The trial now includes 30 minutes total; files stay at 10 MB and must be under 3
 Demo imports accept one recording at a time. The Files picker, upload guidance and terms show the single-file limit; recording types and the existing queue are unchanged.
 
 Email sign-in has initial, code, busy, error and explicit notebook-switch states. Connections includes browser sign-out and confirmation states, including the invitation warning. The same notebook reopens with a fresh verified email code; signing in adds no trial time.
+
+Sign-in keeps its email explanation short. The agreement includes its terms/privacy link in the label; its 20 px check retains a 44 px touch target on phones and desktop.

@@ -7,14 +7,13 @@ export function Login({busy,error,codeSent,signedIn,recoverable,onSubmit,onVerif
   <Card className="space-y-4 p-5">
    {signedIn ? <>
     <Button variant="primary" wide href="/home">Keep using this notebook</Button>
-    {recoverable===false && <><Notice>This invitation notebook has no verified email. Signing out will lose this browser’s access.</Notice><label className="flex items-center gap-3 text-base/7"><input type="checkbox" className="size-11 shrink-0 accent-violet-600" checked={leave} onChange={e=>setLeave(e.target.checked)}/>I’m ready to leave this notebook</label></>}
+    {recoverable===false && <><Notice>This invitation notebook has no verified email. Signing out will lose this browser’s access.</Notice><label className="flex items-center gap-3 text-base/7"><input type="checkbox" className="login-check size-11 shrink-0" checked={leave} onChange={e=>setLeave(e.target.checked)}/>I’m ready to leave this notebook</label></>}
     <Button variant="quiet" wide disabled={busy || recoverable===undefined || (!recoverable && !leave)} onClick={onSignOut}>{busy?'Signing out…':'Switch notebooks'}</Button>
    </> : <form className="space-y-4" onSubmit={e=>{e.preventDefault();if(codeSent)onVerify(code);else if(agreed)onSubmit(email)}}>
     {codeSent ? <Field label="Sign-in code" id="login-code" type="password" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} required value={code} onChange={e=>setCode(e.target.value)}/> : <>
      <Field label="Email" id="login-email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={e=>setEmail(e.target.value)}/>
-     <p className="text-base/7 text-zinc-600">We’ll send a code through Resend to open your existing notebook. Signing in won’t add more recording time.</p>
-     <a href="/terms" target="_blank" rel="noopener" className={`${FOCUS} inline-flex min-h-11 items-center text-base font-bold text-violet-700`}>Read demo terms and privacy</a>
-     <label className="flex items-center gap-3 text-base/7"><input type="checkbox" required className="size-11 shrink-0 accent-violet-600" checked={agreed} onChange={e=>setAgreed(e.target.checked)}/>I agree to the demo terms</label>
+     <p className="text-base/7 text-zinc-600">We’ll send you a sign-in code.</p>
+     <label className="flex items-center gap-3 text-base/7"><input type="checkbox" required className="login-check size-11 shrink-0" checked={agreed} onChange={e=>setAgreed(e.target.checked)}/><span>I agree to the <a href="/terms" target="_blank" rel="noopener" className={`${FOCUS} inline-flex min-h-11 items-center font-bold text-violet-700 underline`}>demo terms and privacy</a></span></label>
     </>}
     <Button variant="primary" wide type="submit" disabled={busy || (!codeSent && !agreed)}>{busy?'Please wait…':codeSent?'Sign in and open notebook':'Send sign-in code'}</Button>
     {codeSent && <Button variant="quiet" wide disabled={busy} onClick={onResend}>Send another code</Button>}
