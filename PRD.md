@@ -46,6 +46,10 @@ are technical decisions, each with its reason.
 
 - U6. No sideways scroll. Text at least 16 px. Tap targets at least 44 px.
 - U7. Exactly one filled violet button: the screen's one obvious action.
+  Exception (Copal): private recording pages may omit the main action while
+  loading, waiting, listening or reading before the first suggestion, and
+  when ready with no pending suggestions. Keep Accept all when proposals
+  exist, Try again on failure and Save and accept while editing.
 - U8. Plain words. The screens never say "AI", "LLM", "entity", "extract",
   "prompt" or "token". What the AI does is credited to "KAI".
 
