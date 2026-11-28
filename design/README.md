@@ -209,5 +209,9 @@ Apple’s Messages PNG (approved exception). Sharing help opens in a dismissible
 popup; Send to KAI links back to Connections. Messages keeps sms: and explains
 closing the composer before selecting a conversation. The shortcut checkbox
 persists its confirmation and collapses phone setup, making the assistant
-address the main action. Claude, ChatGPT, Grok and Muse have separate guidance;
-Muse is explicitly unverified. Official help links accompany the steps.
+address the main action. Claude, ChatGPT, Grok and Cursor have separate guidance based on official documentation; actual client connections remain an operator check. Official help links accompany the steps.
+
+Copal approved the compact rows on 28 November: 30 px artwork, Voice Memos
+first, WhatsApp and Messages. Telegram leaves the selection; old source links
+retain guidance. Each popup ends with Set up the KAI shortcut for iOS, linking
+to Connections with its source preserved. The sharing heading is his exact copy.

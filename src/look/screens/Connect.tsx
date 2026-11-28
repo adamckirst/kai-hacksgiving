@@ -65,7 +65,7 @@ export function Connect({
   back = "/settings",
   initialAssistant = "Claude",
 }: {
-  initialAssistant?: 'Claude' | 'ChatGPT' | 'Grok' | 'Muse'
+  initialAssistant?: 'Claude' | 'ChatGPT' | 'Grok' | 'Cursor'
   onSetupDone?: (ready:boolean) => void
   setupBusy?: boolean
   back?: string
@@ -182,7 +182,7 @@ export function Connect({
               </Button>
               {feedback('assistant')}
               <p className="text-base/7 text-zinc-500">Keep this address private: anyone with it can read your notebook.</p>
-              <fieldset className="space-y-3"><legend className="text-base font-bold">Choose your assistant</legend><div className="grid grid-cols-2 gap-2">{(['Claude','ChatGPT','Grok','Muse'] as const).map(name=><button key={name} type="button" aria-pressed={assistant===name} onClick={()=>setAssistant(name)} className={`${FOCUS} min-h-11 rounded-xl border px-3 py-2 text-base font-bold ${assistant===name?'border-violet-400 bg-violet-50 text-violet-700':'border-zinc-200 text-zinc-600'}`}>{name}</button>)}</div></fieldset>
+              <fieldset className="space-y-3"><legend className="text-base font-bold">Choose your assistant</legend><div className="grid grid-cols-2 gap-2">{(['Claude','ChatGPT','Grok','Cursor'] as const).map(name=><button key={name} type="button" aria-pressed={assistant===name} onClick={()=>setAssistant(name)} className={`${FOCUS} min-h-11 rounded-xl border px-3 py-2 text-base font-bold ${assistant===name?'border-violet-400 bg-violet-50 text-violet-700':'border-zinc-200 text-zinc-600'}`}>{name}</button>)}</div></fieldset>
               <AssistantSteps name={assistant}/>
 
             </>
@@ -197,14 +197,14 @@ const assistantHelp={
  Claude:'https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp',
  ChatGPT:'https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt-beta',
  Grok:'https://docs.x.ai/grok/connectors',
- Muse:'https://www.meta.com/en-gb/help/superintelligence/1687253048996149/',
+ Cursor:'https://cursor.com/docs/mcp',
 }
 function AssistantSteps({name}:{name:keyof typeof assistantHelp}) {
  const steps:Record<keyof typeof assistantHelp,ReactNode[]>={
   Claude:[<>Open Claude’s <B>Customize → Connectors</B>, then <B>Add → Add custom connector</B>. Your workspace may need its owner to add it first.</>,<>Name it <B>KAI</B>, paste your assistant address and choose <B>No sign in</B> if asked. The private address already gives access.</>,<>Connect KAI, enable it in a conversation’s tool menu and ask <B>What tasks do I have in KAI?</B></>],
   ChatGPT:[<>Use ChatGPT on the web. In <B>Settings → Apps → Advanced settings</B>, enable <B>Developer mode</B>. Availability depends on your plan and workspace permissions.</>,<>Under <B>Apps</B>, choose <B>Create</B>. Name it <B>KAI</B>, paste your assistant address and choose <B>No authentication</B>. Scan the tools and create the app.</>,<>Start a chat, select KAI from the apps menu and ask <B>What tasks do I have in KAI?</B></>],
   Grok:[<>Open <B>grok.com/connectors</B>. Choose <B>New Connector → Custom</B>. A work account may need its admin to add it first.</>,<>Name it <B>KAI</B> and paste your assistant address as the server URL. No extra sign-in is needed for this private address.</>,<>Finish adding it, then ask Grok <B>What tasks do I have in KAI?</B></>],
-  Muse:[<>Ask Muse to create a custom connector for KAI. Meta’s instructions start this setup in a conversation.</>,<>Ask whether it can connect to a remote MCP server. KAI uses a private server address; no separate API key is needed.</>,<>KAI’s connection to Muse has not been verified. If Muse cannot use a remote MCP address, choose another assistant here.</>],
+  Cursor:[<>Open Cursor’s <B>Customize</B> page and add a custom MCP server.</>,<>Use an HTTP server named <B>KAI</B> with your assistant address as its URL. Keep this private configuration out of shared projects.</>,<>Enable KAI’s tools in Agent, then ask <B>What tasks do I have in KAI?</B></>],
  }
  return <section aria-label={`${name} setup`} className="space-y-3"><Steps>{steps[name]}</Steps><a className={`${FOCUS} inline-flex min-h-11 items-center rounded-lg text-base font-bold text-violet-700 underline`} href={assistantHelp[name]} target="_blank" rel="noreferrer">{name}’s setup guide</a></section>
 }

@@ -12,3 +12,6 @@ respective owners; KAI is not affiliated with these apps.
   an official SVG was unavailable.
 
 The files are served locally; opening KAI does not contact these hosts.
+
+- Voice Memos PNG: Apple’s App Store artwork for app 1069512134, obtained
+  through https://itunes.apple.com/lookup?id=1069512134 on 28 November 2026.

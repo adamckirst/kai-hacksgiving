@@ -46,8 +46,8 @@ test('shortcut checkbox persists, reveals assistant setup and keeps sharing retu
  const checkbox=page.getByRole('checkbox',{name:'I already have the shortcut set up'});
  await checkbox.click();await expect(checkbox).toBeChecked();await expect(page.getByRole('button',{name:'Copy your address',exact:true})).toHaveCount(0);await assertPhone(page);
  await page.reload();await expect(checkbox).toBeChecked();
- for(const name of ['Claude','ChatGPT','Grok','Muse']){await page.getByRole('button',{name,exact:true}).click();await expect(page.getByRole('region',{name:name+' setup'})).toBeVisible();await expect(page.getByRole('link',{name:name+'’s setup guide'})).toHaveAttribute('href',/^https:/);await assertPhone(page)}
- await expect(page.getByText('KAI’s connection to Muse has not been verified.',{exact:false})).toBeVisible();
+ for(const name of ['Claude','ChatGPT','Grok','Cursor']){await page.getByRole('button',{name,exact:true}).click();await expect(page.getByRole('region',{name:name+' setup'})).toBeVisible();await expect(page.getByRole('link',{name:name+'’s setup guide'})).toHaveAttribute('href',/^https:/);await assertPhone(page)}
+ await expect(page.getByRole('link',{name:'Cursor’s setup guide'})).toHaveAttribute('href','https://cursor.com/docs/mcp');
  await checkbox.click();await expect(page.getByRole('button',{name:'Copy your address',exact:true})).toBeVisible();await page.reload();await expect(checkbox).not.toBeChecked();
  await page.route('**/api/connect/shortcut',route=>route.fulfill({status:500,json:{error:'Invented failure'}}));await checkbox.click();await expect(page.getByText('Your setup could not be saved. Try again.')).toBeVisible();await expect(checkbox).not.toBeChecked();
  await page.getByRole('link',{name:'Back to upload'}).click();await expect(page.getByRole('heading',{name:'From Messages'})).toBeVisible();

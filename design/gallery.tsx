@@ -143,7 +143,7 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'notifications/failed':{title:'Notifications · could not load',screen:()=> <Notifications items={null} readOnly={false} error="Your recordings could not load. Reload this page to try again."/>},
   'connect/chatgpt':{title:'Connections · ChatGPT',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="ChatGPT" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
   'connect/grok':{title:'Connections · Grok',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="Grok" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
-  'connect/muse':{title:'Connections · Muse',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="Muse" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/cursor':{title:'Connections · Cursor',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="Cursor" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
   'connect/setup-saving':{title:'Connections · saving setup',screen:()=> <Connect connection={data.connection} setupBusy readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
   'connect/setup-failed':{title:'Connections · setup failed',screen:()=> <Connect connection={data.connection} error="Your setup could not be saved. Try again." readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
   'connect/ready':{title:'Connections · phone set up',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} readOnly={false} onCopy={nothing}/>},
