@@ -27,7 +27,7 @@ test('one entry is generic before proof; returning owners keep notebook, quota a
  const snapshot=()=>({workspaces:f.db.prepare('SELECT id,trial_seconds,trial_verified FROM workspaces ORDER BY id').all(),waitlist:f.db.prepare('SELECT * FROM waitlist ORDER BY email').all(),people:f.db.prepare('SELECT * FROM people').all()});const before=snapshot();
  const known=await f.request(' '+a.email.toUpperCase()+' '),unknown=await f.request(email(),'198.51.100.21');
  assert.equal(f.codes.size,2);assert.equal((await f.post('entry/agree',{termsVersion:TERMS_VERSION},known.cookie)).status,409);
- const r=await f.verify(known,'203.0.113.55');assert.equal(r.status,200);assert.deepEqual(await r.json(),{next:'notebook'});assert.deepEqual(snapshot(),before);
+ const r=await f.verify(known,'203.0.113.55');assert.equal(r.status,200);assert.deepEqual(await r.json(),{next:'notebook',onboarding:false});assert.deepEqual(snapshot(),before);
  const session=f.cookie(r,'kai_session');assert.ok(session.startsWith('kai_session=s.'));
  const people=await(await fetch('http://127.0.0.1:18740/api/people',{headers:{Connection:'close',Cookie:session}})).text();assert.ok(people.includes('Dana Whitfield'));assert.ok(!people.includes(a.email));
  assert.equal((await f.verify(known)).status,409);assert.equal((await f.verify(unknown)).status,409);
@@ -52,7 +52,7 @@ test('outdated terms require explicit post-proof agreement without refilling, an
  const a=f.owner('older-version'),c=await f.request(a.email);const before=f.db.prepare('SELECT terms_version,terms_accepted_at FROM waitlist WHERE email=?').get(a.email);
  const r=await f.verify(c);assert.deepEqual(await r.json(),{next:'terms',audience:'returning'});assert.equal(f.cookie(r,'kai_session'),'');assert.deepEqual(f.db.prepare('SELECT terms_version,terms_accepted_at FROM waitlist WHERE email=?').get(a.email),before);
  assert.equal((await f.agree(c)).status,200);const accepted=f.db.prepare('SELECT terms_version,terms_accepted_at FROM waitlist WHERE email=?').get(a.email);assert.equal((accepted as {terms_version:string}).terms_version,TERMS_VERSION);
- f.advance(61000);const again=await f.request(a.email);assert.deepEqual(await(await f.verify(again)).json(),{next:'notebook'});assert.deepEqual(f.db.prepare('SELECT terms_version,terms_accepted_at FROM waitlist WHERE email=?').get(a.email),accepted);assert.equal((f.db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(a.id) as {trial_seconds:number}).trial_seconds,123);
+ f.advance(61000);const again=await f.request(a.email);assert.deepEqual(await(await f.verify(again)).json(),{next:'notebook',onboarding:false});assert.deepEqual(f.db.prepare('SELECT terms_version,terms_accepted_at FROM waitlist WHERE email=?').get(a.email),accepted);assert.equal((f.db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(a.id) as {trial_seconds:number}).trial_seconds,123);
 }));
 test('a missing acceptance timestamp requires consent, and paused trials still allow existing recovery',()=>fixture(async f=>{
  const owner=f.owner();f.db.prepare('UPDATE waitlist SET terms_accepted_at=NULL WHERE email=?').run(owner.email);f.options.trialsPaused=true;

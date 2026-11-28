@@ -60,7 +60,7 @@ function App() {
     const page=route==='/login'?'Sign in':route.startsWith('/upload') ? 'Add recordings':route.startsWith('/recordings/') ? 'Recording':route.startsWith('/people/') ? 'Person':route==='/people' ? 'People':route.startsWith('/todos/') ? 'Task':route==='/search' ? 'Search':route==='/todos' ? 'Tasks':route==='/library' ? 'Library':route==='/notifications' ? 'Notifications':route==='/settings' ? 'Settings':route==='/connect' ? 'Connections':'Home';
     return <Opening page={page} failed={failed} onRetry={()=>location.reload()}/>;
   }
-  if(route==='/login' || (access.kind==='public' && /^\/recordings\/[a-f0-9-]{36}$/.test(route)))return <LoginScreen signedIn={access.kind==='judge'}/>;
+  if(route==='/login' || (access.kind==='public' && (route==='/upload' || /^\/(?:recordings|upload)\/[a-f0-9-]{36}$/.test(route))))return <LoginScreen signedIn={access.kind==='judge'}/>;
   return <Notebook access={access}/>;
 }
 function Notebook({access}:{access:Access}) {

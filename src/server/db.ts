@@ -110,6 +110,7 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   if(!waitlist.some(c=>c.name==='terms_version'))db.exec('ALTER TABLE waitlist ADD COLUMN terms_version TEXT; ALTER TABLE waitlist ADD COLUMN terms_accepted_at TEXT');
   if(!waitlist.some(c=>c.name==='workspace_id')) db.exec('ALTER TABLE waitlist ADD COLUMN workspace_id TEXT REFERENCES workspaces(id)');
   if(!columns.some(c=>c.name==='shortcut_ready'))db.exec("ALTER TABLE workspaces ADD COLUMN shortcut_ready INTEGER NOT NULL DEFAULT 0; UPDATE workspaces SET shortcut_ready=1 WHERE EXISTS (SELECT 1 FROM conversations c WHERE c.workspace_id=workspaces.id AND c.source='shared')");
+  if(!columns.some(c=>c.name==='assistant_onboarding_done'))db.exec("ALTER TABLE workspaces ADD COLUMN assistant_onboarding_done INTEGER NOT NULL DEFAULT 0; UPDATE workspaces SET assistant_onboarding_done=1 WHERE EXISTS (SELECT 1 FROM conversations c WHERE c.workspace_id=workspaces.id AND c.source IN ('recording','shared','sample'))");
   if(!columns.some(c=>c.name==='trial_ended'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_ended INTEGER NOT NULL DEFAULT 0');
   if(!columns.some(c=>c.name==='trial_verified'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_verified INTEGER NOT NULL DEFAULT 0');
   if(!waitlist.some(c=>c.name==='verified_at'))db.exec('ALTER TABLE waitlist ADD COLUMN verified_at TEXT; ALTER TABLE waitlist ADD COLUMN trial_ip TEXT; CREATE UNIQUE INDEX waitlist_trial_ip ON waitlist(trial_ip) WHERE trial_ip IS NOT NULL');

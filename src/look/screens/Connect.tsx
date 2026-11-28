@@ -1,3 +1,4 @@
+import {ExampleChoice} from './AssistantOffer'
 import {useState,type ReactNode} from 'react'
 import { Icon, type IconName } from '../icons'
 import type { Connection } from '../types'
@@ -64,7 +65,18 @@ export function Connect({
   setupBusy,
   back = "/settings",
   initialAssistant = "Claude",
+  assistantOnly = false,canFinish=false,onFinish,onExample,exampleBusy,exampleError,
+  onboarding = false,
+  shareHref = "/upload/new?onboarding=1",
 }: {
+  assistantOnly?:boolean
+  canFinish?:boolean
+  onFinish?:()=>void
+  onExample?:()=>void
+  exampleBusy?:boolean
+  exampleError?:string
+  shareHref?:string
+  onboarding?:boolean
   initialAssistant?: 'Claude' | 'ChatGPT' | 'Grok' | 'Cursor'
   onSetupDone?: (ready:boolean) => void
   setupBusy?: boolean
@@ -82,14 +94,20 @@ export function Connect({
   const [assistant,setAssistant]=useState(initialAssistant)
   const ready=Boolean(connection?.shortcutReady)
   const feedback = (which: 'upload' | 'home' | 'assistant') => copyError?.at === which ? <Notice tone="error">{copyError.text}</Notice> : copied === which && <Notice tone="good">Copied.</Notice>
+  const setupCheckbox=(
+            <button type="button" role="checkbox" aria-checked={ready} disabled={setupBusy || !onSetupDone} onClick={()=>onSetupDone?.(!ready)} className={`${FOCUS} flex min-h-11 w-full items-center gap-3 rounded-xl text-left text-base font-bold`}>
+              <span aria-hidden="true" className={`grid size-5 shrink-0 place-items-center rounded border-2 ${ready?'border-violet-600 bg-violet-600 text-white':'border-zinc-300 bg-white'}`}>{ready && <Icon name="check" className="size-4"/>}</span>
+              {setupBusy?'Saving…':'I already have the shortcut set up'}
+            </button>
+  )
   return (
-    <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':back==='/settings'?'Back to Settings':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
-      <header className="px-1"><h1 className="text-[32px]/10 font-extrabold">Connections</h1><p className="mt-2 text-base/7 text-zinc-600">Set up your phone or let an assistant read what you kept.</p></header>
+    <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':back==='/settings'?'Back to Settings':back.startsWith('/recordings/')?'Back to recording':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
+      <header className="px-1">{onboarding && <p className="mb-3 text-base font-bold text-violet-700">Step 1 of 2</p>}<h1 className="text-[32px]/10 font-extrabold">{assistantOnly?'Connect your assistant':onboarding?'Set up your shortcut':'Connections'}</h1><p className="mt-2 text-base/7 text-zinc-600">{assistantOnly?'Bring the people, notes and tasks you keep into your assistant.':onboarding?'Do this once. Then send recordings straight to your notebook.':'Set up your phone or let an assistant read what you kept.'}</p></header>
       {error && <Notice tone="error">{error}</Notice>}
 
 
-      <Card className="space-y-5 p-5">
-        <Heading icon="share">Send to KAI from your phone</Heading>
+      {!assistantOnly && <Card className="space-y-5 p-5">
+        {!onboarding && <Heading icon="share">Send to KAI from your phone</Heading>}
         {readOnly ? (
           <p className="text-base/7 font-medium text-zinc-700">
             In your own copy, you add “Send to KAI” to your iPhone’s share sheet. Then a voice note goes in from WhatsApp or Voice Memos without opening KAI, and you decide what to keep.
@@ -101,16 +119,13 @@ export function Connect({
           </>
         ) : (
           <>
-            <button type="button" role="checkbox" aria-checked={ready} disabled={setupBusy || !onSetupDone} onClick={()=>onSetupDone?.(!ready)} className={`${FOCUS} flex min-h-11 w-full items-center gap-3 rounded-xl text-left text-base font-bold`}>
-              <span aria-hidden="true" className={`grid size-5 shrink-0 place-items-center rounded border-2 ${ready?'border-violet-600 bg-violet-600 text-white':'border-zinc-300 bg-white'}`}>{ready && <Icon name="check" className="size-4"/>}</span>
-              {setupBusy?'Saving…':'I already have the shortcut set up'}
-            </button>
-            {ready ? <p className="text-base/7 text-zinc-600">Your phone shortcut is set up. Connect an assistant below, or return to your recording.</p> : <>
-            <p className="text-base/7 font-medium text-zinc-600">Set up once. Then share voice notes straight to KAI.</p>
+            {!onboarding && setupCheckbox}
+            {ready ? <p className="text-base/7 text-zinc-600">{onboarding?'Your phone shortcut is set up. Share your first recording next.':'Your phone shortcut is set up. Connect an assistant below, or return to your recording.'}</p> : <>
+            {!onboarding && <p className="text-base/7 font-medium text-zinc-600">Set up once. Then share voice notes straight to KAI.</p>}
             <ol aria-label="Phone setup" className="divide-y divide-zinc-100">
               <li className="space-y-3 pb-5">
                 <h3 className="text-lg font-extrabold">1. Copy your address</h3>
-                <Button variant="primary" wide icon="copy" onClick={() => onCopy('upload', connection.uploadAddress)}>Copy your address</Button>
+                <Button variant={onboarding && copied==='upload'?"outline":"primary"} wide icon="copy" onClick={() => onCopy('upload', connection.uploadAddress)}>Copy your address</Button>
                 {feedback('upload')}
                 <p className="text-base/7 font-medium text-zinc-500">Keep it private. Anyone with it can add recordings to your notebook.</p>
                 <details open={showAddress || copyError?.at === 'upload' || undefined}>
@@ -120,15 +135,15 @@ export function Connect({
               </li>
               <li className="space-y-3 py-5">
                 <h3 className="text-lg font-extrabold">2. Add the iOS shortcut</h3>
-                <Button variant="outline" wide href="https://www.icloud.com/shortcuts/5d7d8a29c386458bb5c95b14c35ac6ab">Add the shortcut</Button>
-                <p className="text-base/7 font-medium text-zinc-700">Tap <B>Add Shortcut</B>, then open its editor. Paste the address from step 1 into <B>URL</B>. Set the final <B>Open URLs</B> to the upload address below, then tap <B>Done</B>.</p>
-                <Address label="KAI upload address" id="home-address" value={connection.homeAddress}/>
-                <Button variant="outline" wide icon="copy" onClick={() => onCopy('home', connection.homeAddress)}>Copy upload address</Button>
-                {feedback('home')}
+                <Button variant={onboarding && copied==='upload'?"primary":"outline"} wide href="https://www.icloud.com/shortcuts/8bc37dcb4d854d1e807e6c8755df7ddf">Add the shortcut</Button>
+                <p className="text-base/7 font-medium text-zinc-700">Tap <B>Add Shortcut</B>, then open its editor. Paste the address from step 1 into <B>URL</B>. Then tap <B>Done</B>. The shortcut already knows how to bring you back to KAI.</p>
                 <details open={showManual || undefined}>
                   <summary className={`${FOCUS} min-h-11 cursor-pointer rounded-xl py-2 text-base font-bold text-zinc-600`}>Build it yourself</summary>
                   <div className="space-y-4 pt-3">
                     <p className="text-base/7 font-medium text-zinc-600">Only needed if you can’t add the shortcut above.</p>
+                    <Address label="KAI upload address" id="home-address" value={connection.homeAddress}/>
+                    <Button variant="outline" wide icon="copy" onClick={() => onCopy('home', connection.homeAddress)}>Copy upload address</Button>
+                    {feedback('home')}
                     <Steps>
                       {[
                         <>
@@ -154,19 +169,22 @@ export function Connect({
                   </div>
                 </details>
               </li>
-              <li className="space-y-3 pt-5">
+              {!onboarding && <li className="space-y-3 pt-5">
                 <h3 className="text-lg font-extrabold">3. Try it</h3>
                 <p className="text-base/7 font-medium text-zinc-700">In WhatsApp, hold a voice note, then choose <B>Forward → Share → Send to KAI</B>. In Voice Memos, choose a recording, then <B>Share → Send to KAI</B>.</p>
                 <p className="text-base/7 font-medium text-zinc-700">KAI opens with the recording attached. Choose <B>My memo</B>, <B>Someone else</B>, or <B>Multiple speakers</B>. For Someone else, choose the speaker before reading. For Multiple speakers, identify speakers after transcription.</p>
                 <p className="text-base/7 font-medium text-zinc-500">One file at a time, up to 10 MB and under 30 minutes.</p>
-              </li>
+              </li>}
             </ol>
             </>}
           </>
         )}
-      </Card>
+      </Card>}
 
-      <Card className="space-y-5 p-5">
+      {onboarding && connection && !readOnly && setupCheckbox}
+      {onboarding && ready && <Button variant="primary" wide href={shareHref}>Share my first recording</Button>}
+      {onboarding && !readOnly && <ExampleChoice onExample={onExample} busy={exampleBusy} error={exampleError}/>}
+      {!onboarding && <Card className="space-y-5 p-5">
         <Heading icon="sparkle">Connect an assistant</Heading>
         <p className="text-base/7 font-medium text-zinc-700">
           Your assistant can read the people, notes and to-dos you accepted, with their quotes, and search your recordings’ words. It cannot change anything or send anything.
@@ -177,7 +195,7 @@ export function Connect({
           connection && (
             <>
               <Address label="Your assistant address" id="assistant-address" value={connection.assistantAddress} />
-              <Button variant={ready?"primary":"outline"} wide icon="copy" onClick={() => onCopy('assistant', connection.assistantAddress)}>
+              <Button variant={ready || assistantOnly?"primary":"outline"} wide icon="copy" onClick={() => onCopy('assistant', connection.assistantAddress)}>
                 Copy assistant address
               </Button>
               {feedback('assistant')}
@@ -188,7 +206,8 @@ export function Connect({
             </>
           )
         )}
-      </Card>
+      </Card>}
+      {assistantOnly && !readOnly && canFinish && <div className="space-y-2"><Button variant="outline" wide disabled={setupBusy} onClick={onFinish}>I’ve connected it</Button><Button variant="quiet" wide disabled={setupBusy} onClick={onFinish}>Later</Button></div>}
     </PushedPage>
   )
 }

@@ -1,3 +1,4 @@
+import {AssistantOffer} from './look/screens/AssistantOffer';
 import { useEffect,useState,useRef } from 'react';
 import { Recording as RecordingView } from './look/screens/Recording';
 import type { Recording,Payload } from './look/types';
@@ -23,6 +24,7 @@ export function RecordingScreen({readOnly=false}:{readOnly?:boolean}) {
   useEffect(()=>{if(readOnly || !recording || !['ready','failed'].includes(recording.status))return;void fetch('/api/notifications/'+id+'/seen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:recording.status})}).catch(()=>{});},[id,readOnly,recording?.status]);
   useEffect(()=>{if(!recording?.awaiting_speakers)return;let alive=true;fetch('/api/people').then(r=>{if(!r.ok)throw new Error();return r.json()}).then(p=>{if(alive)setPeople(p)}).catch(()=>{if(alive)setActionError('People could not load. Reload this page to try again.')});return()=>{alive=false}},[recording?.awaiting_speakers]);
   async function identify(choices:Record<string,SpeakerChoice>){setBusy(true);setActionError('');deciding.current=true;revision.current++;try{const r=await fetch('/api/readings/'+id+'/speakers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(choices)});const data=await r.json();if(!r.ok)throw new Error(data.error);const refreshed=await fetch('/api/readings/'+id);if(!refreshed.ok)throw new Error('Saved. Reload to continue.');setRecording(await refreshed.json());}catch(e){setActionError(e instanceof Error ? e.message:'The speakers could not be saved.');}finally{revision.current++;deciding.current=false;setBusy(false)}}
+  async function finishOnboarding(){deciding.current=true;revision.current++;setBusy(true);setActionError('');try{const r=await fetch('/api/onboarding/finish',{method:'POST'});if(!r.ok)throw Error();setRecording(value=>value?{...value,assistantOffer:false}:value)}catch{setActionError('Setup could not be saved. Try again.')}finally{revision.current++;deciding.current=false;setBusy(false)}}
   async function retry() {
     setActionError('');
     try {
@@ -48,5 +50,5 @@ export function RecordingScreen({readOnly=false}:{readOnly?:boolean}) {
     }catch(e){setActionError(e instanceof Error ? e.message:'The decisions could not be saved.');}finally{revision.current++;deciding.current=false;setBusy(false);}
   }
   if(recording?.awaiting_speakers && !readOnly)return <Speakers utterances={recording.utterances ?? []} people={people} busy={busy} error={actionError} onSubmit={choices=>void identify(choices)}/>;
-  return <RecordingView confirmation={confirmation?.text} recording={recording} readOnly={readOnly} today={new Date().toISOString().slice(0,10)} busy={busy} editing={editing} error={error} actionError={actionError} waitlist={<Waitlist/>} onDecide={(id,choice)=>void decision(id,choice)} onAcceptAll={()=>void acceptAll()} onEdit={setEditing} onSaveEdit={(id,edits)=>void decision(id,'accept',edits)} onCancelEdit={()=>setEditing(null)} onRetry={()=>void retry()}/>;
+  return <RecordingView assistantOffer={!readOnly && recording?.assistantOffer && id?<AssistantOffer id={id} busy={busy} onLater={()=>void finishOnboarding()}/>:undefined} confirmation={confirmation?.text} recording={recording} readOnly={readOnly} today={new Date().toISOString().slice(0,10)} busy={busy} editing={editing} error={error} actionError={actionError} waitlist={<Waitlist/>} onDecide={(id,choice)=>void decision(id,choice)} onAcceptAll={()=>void acceptAll()} onEdit={setEditing} onSaveEdit={(id,edits)=>void decision(id,'accept',edits)} onCancelEdit={()=>setEditing(null)} onRetry={()=>void retry()}/>;
 }

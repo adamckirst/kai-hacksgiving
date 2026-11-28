@@ -191,6 +191,7 @@ export function Recording({
   editing,
   error,
   actionError,
+  assistantOffer,
   confirmation,
   waitlist,
   onDecide,
@@ -208,6 +209,7 @@ export function Recording({
   editing?: string | null
   error?: string
   actionError?: string
+  assistantOffer?:ReactNode
   confirmation?: string
   waitlist?: ReactNode
   onDecide: (id: string, decision: 'accept' | 'reject') => void
@@ -262,6 +264,8 @@ export function Recording({
               {recording.status === 'waiting' ? 'Waiting for KAI…' : recording.status === 'listening' ? 'KAI is listening…' : (recording.progress ?? 'KAI is reading…')}
             </p>
           )}
+          {working && assistantOffer}
+          {recording.source==='sample' && <p className="rounded-2xl bg-violet-50 px-4 py-3 text-base font-semibold text-violet-900">This example uses made-up people and events. You choose which suggestions to keep.</p>}
           {recording.status === 'failed' && <Notice tone="error">{recording.error ?? 'KAI could not read this recording.'}</Notice>}
           {actionError && !edited && <Notice tone="error">{actionError}</Notice>}
 
@@ -303,6 +307,7 @@ export function Recording({
             </Card>
           )}
 
+          {!working && assistantOffer}
           {recording.suggestions.some(s=>s.status!=='proposed') && <section aria-label="Reviewed suggestions"><SectionLabel>Reviewed suggestions</SectionLabel><ul className="divide-y divide-zinc-100 overflow-hidden rounded-3xl bg-white shadow-card ring-1 ring-zinc-200">{recording.suggestions.filter(s=>s.status!=='proposed').map(suggestion=><SuggestionRow key={suggestion.id} suggestion={suggestion} today={today} readOnly={readOnly} busy={busy || Boolean(edited)} onQuote={showQuote} onDecide={onDecide} onEdit={onEdit}/>)}</ul></section>}
 
           {recording.status === 'ready' && proposed.length === 0 && waitlist}

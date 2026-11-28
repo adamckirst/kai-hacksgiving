@@ -1,3 +1,4 @@
+import {onboardingState} from './onboarding';
 import {trialGrantCount,trialAlreadyClaimed} from './account';
 import express,{type Express,type Request} from 'express';
 import {createHmac,randomBytes,randomInt,randomUUID} from 'node:crypto';
@@ -13,7 +14,7 @@ const emailSchema=z.string().trim().max(254).email().transform(s=>s.toLowerCase(
 const requestSchema=z.object({email:emailSchema}).strict();
 const verifySchema=requestSchema.extend({code:z.string().regex(/^\d{6}$/)});
 type Challenge={email:string;id:string;ip_hash:string;browser_hash:string;origin_workspace:string;code_hash:string;expires_at:number;attempts:number;delivered:number;verified:number};
-type Result={error:string}|{next:'terms';audience:'new'|'returning'}|{session:string};
+type Result={error:string}|{next:'terms';audience:'new'|'returning'}|{session:string;onboarding:boolean};
 export function mountEmailEntry(app:Express,db:KaiDatabase,options:TrialOptions) {
  const now=options.now??Date.now,secret=persistentJudgeSecret(db);
  const digest=(kind:string,value:string)=>createHmac('sha256',secret).update(kind+':'+value).digest('hex');
@@ -49,7 +50,7 @@ export function mountEmailEntry(app:Express,db:KaiDatabase,options:TrialOptions)
   }
   const session=createBrowserSession(db,workspace,at);
   db.prepare('DELETE FROM entry_challenges WHERE id=?').run(row.id);
-  return {session};
+  return {session,onboarding:!owner && onboardingState(db,workspace).needsShortcut};
  }
  app.use('/api/entry',express.json({limit:'1kb'}),(req,res,next)=>{
   const origin=req.get('origin');if(origin && origin!==`${options.secureCookies===false?req.protocol:'https'}://${req.get('host')}`){res.status(403).json({error:'This request is not allowed.'});return;}next();
@@ -93,7 +94,7 @@ export function mountEmailEntry(app:Express,db:KaiDatabase,options:TrialOptions)
    return finish(row!,req,false);
   })();
   if('error' in result){res.status(409).json(result);return;}
-  if('session' in result){res.cookie(cookieName,result.session,{...cookies,maxAge:14*24*hour});res.clearCookie(entryCookie,cookies);res.json({next:'notebook'});return;}
+  if('session' in result){res.cookie(cookieName,result.session,{...cookies,maxAge:14*24*hour});res.clearCookie(entryCookie,cookies);res.json({next:'notebook',onboarding:result.onboarding});return;}
   res.json(result);
  });
  app.post('/api/entry/agree',(req,res)=>{
@@ -104,7 +105,7 @@ export function mountEmailEntry(app:Express,db:KaiDatabase,options:TrialOptions)
    return finish(row!,req,true);
   })();
   if('error' in result){res.status(409).json(result);return;}
-  if('session' in result){res.cookie(cookieName,result.session,{...cookies,maxAge:14*24*hour});res.clearCookie(entryCookie,cookies);res.json({next:'notebook'});return;}
+  if('session' in result){res.cookie(cookieName,result.session,{...cookies,maxAge:14*24*hour});res.clearCookie(entryCookie,cookies);res.json({next:'notebook',onboarding:result.onboarding});return;}
   res.status(409).json({error:'Verify your email again to continue.'});
  });
  app.post('/api/entry/cancel',(req,res)=>{db.prepare('DELETE FROM entry_challenges WHERE browser_hash=?').run(digest('entry-browser',proof(req)));res.clearCookie(entryCookie,cookies);res.json({ok:true});});

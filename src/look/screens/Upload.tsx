@@ -6,13 +6,13 @@ import { Button, Card, Field, FOCUS, Notice, PushedPage, RecordingPicker, Segmen
 import {Icon} from '../icons'
 import {Dialog,DialogTitle,DialogBody,DialogActions} from '../../catalyst/dialog'
 export type UploadSource='voice-memos'|'whatsapp'|'messages'|'telegram'|'files'
-const appImages={whatsapp:new URL('../brands/whatsapp.svg',import.meta.url).href,messages:new URL('../brands/messages.png',import.meta.url).href,'voice-memos':new URL('../brands/voice-memos.png',import.meta.url).href}
-const apps:{id:keyof typeof appImages;label:string;href:string}[]=[
+export const appImages={whatsapp:new URL('../brands/whatsapp.svg',import.meta.url).href,messages:new URL('../brands/messages.png',import.meta.url).href,'voice-memos':new URL('../brands/voice-memos.png',import.meta.url).href}
+export const apps:{id:keyof typeof appImages;label:string;href:string}[]=[
  {id:'voice-memos',label:'Voice Memos',href:''},
  {id:'whatsapp',label:'WhatsApp',href:'whatsapp://app'},
  {id:'messages',label:'Messages',href:'sms:'}
 ]
-const guides:Record<UploadSource,string[]>={
+export const guides:Record<UploadSource,string[]>={
  'voice-memos':['Open Voice Memos from your Home Screen and choose a recording.','Tap More (…), then Share. If Options appears, choose Rendered audio.','Choose Send to KAI. Your browser opens so you can choose the recording type.','Or choose Save to Files, then use Choose audio file here.'],
  whatsapp:['Open the conversation and hold the voice note, then tap Forward.','Tap Share, then Send to KAI.','Return to KAI and choose who sent it before transcription.'],
  messages:['Open Messages and the conversation with your recording. If a new message opens, close it first.','Touch and hold the audio. Choose Save to Voice Memos if offered, then share it from Voice Memos through Send to KAI.','If sharing is unavailable, save the audio to Files and choose it here.'],
@@ -21,7 +21,8 @@ const guides:Record<UploadSource,string[]>={
 }
 const timeLeft=(seconds:number)=>`${Math.floor(seconds/60)} min ${seconds%60} sec`
 
-export function Upload({ people, incoming, readOnly, presetPerson, busy, error, loadError, onFiles, onStart, onRetry, shortcutReady=false, remainingSeconds, xPostUrl, initialSource='files', initialGuide, initialType, initialFile }: {
+export function Upload({ people, incoming, readOnly, presetPerson, busy, error, loadError, onFiles, onStart, onRetry, onLocalFileChange, shortcutReady=false, remainingSeconds, xPostUrl, initialSource='files', initialGuide, initialType, initialFile }: {
+  onLocalFileChange?: (chosen:boolean)=>void
   initialFile?:File
   initialType?:RecordingType
   shortcutReady?: boolean
@@ -44,7 +45,7 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
   const [guide,setGuide]=useState<UploadSource|null>(initialGuide ?? (initialSource==='files'?null:initialSource))
   const [file,setFile]=useState<File|null>(initialFile??null),[fileError,setFileError]=useState('')
   const attached=Boolean(incoming || file)
-  function chooseFiles(files:File[]){const invalid=audioFileError(files);setFileError(invalid);if(!invalid){setFile(files[0]);setGuide(null)}}
+  function chooseFiles(files:File[]){const invalid=audioFileError(files);setFileError(invalid);if(!invalid){setFile(files[0]);setGuide(null);onLocalFileChange?.(true)}}
   const exhausted=remainingSeconds===0 && !incoming
   const [recordingType,setRecordingType]=useState<RecordingType|undefined>(initialType)
   const [selected,setSelected]=useState(presetPerson ?? '')
@@ -75,13 +76,12 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
         <DialogTitle className="!text-xl !font-extrabold">From {guide==='voice-memos'?'Voice Memos':guide==='files'?'Files':guide==='telegram'?'Telegram':apps.find(a=>a.id===guide)?.label}</DialogTitle>
         <DialogBody className="space-y-4 !text-base/7">
          <ol className="list-decimal space-y-3 pl-5">{guide && guides[guide].map((step,index)=><li key={index}>{step.split('Send to KAI').map((part,i)=><span key={i}>{i>0 && <a href={to('/connect?next='+guide)} className={`${FOCUS} inline-flex min-h-11 items-center rounded-lg font-bold text-violet-700 underline`}>Send to KAI</a>}{part}</span>)}</li>)}</ol>
-         <p>If an app does not open, open it from your Home Screen. You can also save the recording to Files and choose it here.</p>
          <TextLink href={'/connect?next='+(guide==='files'?'voice-memos':guide)}>Set up the KAI shortcut for iOS</TextLink>
         </DialogBody>
         <DialogActions><Button variant="quiet" onClick={()=>setGuide(null)}>Dismiss instructions</Button></DialogActions>
        </Dialog>
       </>}
-      {file && !incoming && <Card className="space-y-2 p-5"><p className="text-base font-bold text-violet-700">Chosen from Files</p><h2 className="break-words text-lg font-extrabold">{file.name}</h2><p className="text-base/7 text-zinc-600">Ready to upload after you choose the recording type.</p><Button variant="quiet" disabled={busy} onClick={()=>{setFile(null);setFileError('')}}>Choose a different file</Button></Card>}
+      {file && !incoming && <Card className="space-y-2 p-5"><p className="text-base font-bold text-violet-700">Chosen from Files</p><h2 className="break-words text-lg font-extrabold">{file.name}</h2><p className="text-base/7 text-zinc-600">Ready to upload after you choose the recording type.</p><Button variant="quiet" disabled={busy} onClick={()=>{setFile(null);setFileError('');onLocalFileChange?.(false)}}>Choose a different file</Button></Card>}
       {incoming && <Card className="p-5"><p className="text-base font-bold text-violet-700">Shared from your phone</p><h2 className="mt-1 text-lg font-extrabold">{incoming.title}</h2><p className="mt-2 text-base/7 font-medium text-zinc-600">Your recording is attached and waiting for you.</p></Card>}
       {attached && <Card className="space-y-4 p-4"><h2 className="px-1 text-lg font-extrabold">What kind of recording?</h2>
         <fieldset disabled={busy}><Segmented<RecordingType|''> label="Recording type" value={recordingType ?? ''} onChange={value=>setRecordingType(value || undefined)} items={[{key:'memo',label:'My memo'},{key:'voice',label:'Someone else'},{key:'multiple',label:'Multiple speakers'}]}/></fieldset>

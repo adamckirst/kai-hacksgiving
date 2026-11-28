@@ -82,6 +82,7 @@ export type SpeakerChoice={kind:'owner'}|{kind:'person';person_id:string}|{kind:
 export type Utterance={speaker:string;text:string;start:number;end:number}
 
 export type Recording = {
+  assistantOffer?:boolean
   awaiting_speakers?:number
   recording_type?:RecordingType | null
   utterances?:Utterance[]
@@ -98,9 +99,11 @@ export type Recording = {
   source?: Source
 }
 
-export type QueueItem = { recording_type?: RecordingType | null; reserved_seconds?: number | null; happened_on?: string; awaiting_speakers?: number; id: string; title: string; status: RecordingStatus; error: string | null; progress?: string | null; awaiting_person?: number; suggestion_count?: number }
+export type QueueItem = { source?:Source; recording_type?: RecordingType | null; reserved_seconds?: number | null; happened_on?: string; awaiting_speakers?: number; id: string; title: string; status: RecordingStatus; error: string | null; progress?: string | null; awaiting_person?: number; suggestion_count?: number }
 
 export type HomeData = {
+  onboarding?:{needsShortcut:boolean;needsRecording:boolean;assistantRecordingId:string|null}
+  hasReadyRecording?: boolean
   shortcutReady?: boolean
   trialVerified?: boolean
   xPostUrl?: string | null

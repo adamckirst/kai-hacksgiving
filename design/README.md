@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 141 states. The phone suite checks all public and judge
+`check.mjs` checks all 156 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -215,3 +215,17 @@ Copal approved the compact rows on 28 November: 30 px artwork, Voice Memos
 first, WhatsApp and Messages. Telegram leaves the selection; old source links
 retain guidance. Each popup ends with Set up the KAI shortcut for iOS, linking
 to Connections with its source preserved. The sharing heading is his exact copy.
+
+
+The final onboarding revision has two phone steps only. New verified entry
+opens shortcut setup; confirming the checkbox proceeds to sharing and hides
+completed setup. Try an example instead uses the invented Sora transcript
+without audio or recording time. Once the first audio starts, or the example
+is chosen, assistant setup is offered alongside progress/results. Later or
+I've connected it ends this offer persistently. Assistant-only Connections
+omits phone setup. Existing type/speaker selection and approval stay intact.
+
+The shortcut return has checking, empty-notebook and recoverable-error states.
+It opens a pending recording's type choice instead of presenting a fresh Files
+upload. The empty state points to this notebook's sharing setup; it never
+searches other notebooks. Returning from another app refreshes pending shares.

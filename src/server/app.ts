@@ -1,3 +1,4 @@
+import {onboardingState,finishOnboarding,addOnboardingExample} from './onboarding';
 import {mountAccount,cleanDeletedAudio} from './account';
 import {mountEmailEntry} from './email-entry';
 import {mountLogin,type LoginOptions} from './login';
@@ -62,10 +63,12 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.use((_req,_res,next)=>{void work();next();});
   app.get('/healthz', (_req,res) => res.json({status:'ok',commit:process.env.KAI_COMMIT ?? 'local',reading:!options.reader || options.reader===fakeReader ? 'fake':'connector'}));
   app.get('/api/access',(_req,res) => res.json({kind:res.locals.workspace === 'public' ? 'public' : 'judge',videoUrl:options.videoUrl || null,xPostUrl:xPost(options.xPostUrl),trialSeconds:(db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_seconds:number|null}).trial_seconds}));
+  app.post('/api/onboarding/example',(_req,res)=>{try{const id=addOnboardingExample(db,res.locals.workspace);res.json({id});void work();}catch(e){if(e instanceof ReadingError)res.status(e.status).json({error:e.message});else throw e;}});
+  app.post('/api/onboarding/finish',(_req,res)=>{try{finishOnboarding(db,res.locals.workspace);res.json({ok:true});}catch(e){if(e instanceof ReadingError)res.status(e.status).json({error:e.message});else throw e;}});
   app.get('/api/connect',(_req,res)=> {
     const row=db.prepare("SELECT upload_token,mcp_token,shortcut_ready FROM workspaces WHERE id=? AND kind='judge'").get(res.locals.workspace) as {upload_token:string;mcp_token:string;shortcut_ready:number}|undefined;
     if(!row){res.status(403).json({error:'Open your own copy to connect your phone.'});return;}
-    res.json({uploadPath:'/in/'+row.upload_token,mcpPath:'/mcp/'+row.mcp_token,shortcutReady:Boolean(row.shortcut_ready)});
+    res.json({uploadPath:'/in/'+row.upload_token,mcpPath:'/mcp/'+row.mcp_token,shortcutReady:Boolean(row.shortcut_ready),assistantRecordingId:onboardingState(db,res.locals.workspace).assistantRecordingId});
   });
   app.post('/api/connect/shortcut',(req,res)=>{
     if(typeof req.body?.ready!=='boolean'){res.status(400).json({error:'Choose whether your shortcut is set up.'});return;}
@@ -110,6 +113,8 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
   });
   app.get('/api/home',(_req,res) => res.json({
+    onboarding:onboardingState(db,res.locals.workspace),
+    hasReadyRecording:Boolean(db.prepare("SELECT 1 FROM conversations WHERE workspace_id=? AND source IN ('recording','shared') AND status='ready' LIMIT 1").get(res.locals.workspace)),
     shortcutReady:Boolean((db.prepare('SELECT shortcut_ready FROM workspaces WHERE id=?').get(res.locals.workspace) as {shortcut_ready:number}).shortcut_ready),
     trialVerified:Boolean((db.prepare('SELECT trial_verified FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_verified:number}).trial_verified),
     xPostUrl:xPost(options.xPostUrl),
@@ -131,7 +136,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
       else if(error instanceof SyntaxError) res.status(400).json({error:'The recording dates could not be read.'});else throw error;
     }
   });
-  app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.status,c.error,c.progress,c.awaiting_person,c.awaiting_speakers,c.recording_type,c.reserved_seconds,c.happened_on,
+  app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.source,c.status,c.error,c.progress,c.awaiting_person,c.awaiting_speakers,c.recording_type,c.reserved_seconds,c.happened_on,
     (SELECT count(*) FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed') AS suggestion_count
     FROM conversations c WHERE c.workspace_id=? AND (c.status IN ('waiting','listening','reading','failed')
       OR (c.status='ready' AND EXISTS(SELECT 1 FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed')))
@@ -172,7 +177,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     if(!row) {res.status(404).json({error:'Recording not found.'});return;}
     const suggestions=suggestionList(db,res.locals.workspace,req.params.id);
     const person=row.person_id ? db.prepare('SELECT id,name,company,role FROM people WHERE id=? AND workspace_id=?').get(row.person_id,res.locals.workspace) ?? null:null;
-    res.json({...row,utterances:JSON.parse(row.utterances),speaker_map:JSON.parse(row.speaker_map),person,suggestions});
+    res.json({...row,assistantOffer:onboardingState(db,res.locals.workspace).assistantRecordingId===req.params.id,utterances:JSON.parse(row.utterances),speaker_map:JSON.parse(row.speaker_map),person,suggestions});
   });
   app.get('/demo.mp4',(_req,res)=> {
     if(!options.videoFile){res.status(404).end();return;}

@@ -14,7 +14,7 @@ test('public trial joins the waitlist and opens an empty notebook at 375 px',asy
  await expect(page.getByRole('checkbox')).toBeVisible();await expect(page.getByRole('button',{name:'Agree and open notebook'})).toBeDisabled();await assertPhone(page);
  expect(kai.db.prepare('SELECT 1 FROM waitlist WHERE email=?').get(email)).toBeUndefined();
  await page.getByRole('checkbox').check();await page.getByRole('button',{name:'Agree and open notebook'}).click();
- await expect(page).toHaveURL(/\/home$/);await expect(page.getByText('Your notebook starts here')).toBeVisible();
+ await expect(page).toHaveURL(/\/connect\?next=onboarding$/);await expect(page.getByRole('heading',{name:'Set up your shortcut'})).toBeVisible();await page.getByRole('link',{name:'Back to Home'}).click();
  await expect(page.getByText('30 min 0 sec left')).toBeVisible();await assertPhone(page);
  await expect(page.getByText('Send Dana the pricing')).toHaveCount(0);
  const owner=kai.db.prepare('SELECT workspace_id FROM waitlist WHERE email=?').get(email) as {workspace_id:string};
@@ -47,7 +47,7 @@ test('Home card verifies first, cancels without a grant, and preserves input and
  await page.evaluate(()=>scrollTo(0,0));await expect(floating).toBeVisible();
  const next=randomUUID()+'@example.invalid';await page.getByLabel('Email',{exact:true}).fill(next);await action.click();await expect(dialog.getByRole('button',{name:'Verify email'})).toBeEnabled();
  await dialog.getByLabel('Verification code').fill(kai.codes.get(next)!);await dialog.getByRole('button',{name:'Verify email'}).click();await dialog.getByRole('checkbox').check();await dialog.getByRole('button',{name:'Agree and open notebook'}).click();
- await expect(page.getByText('Your notebook starts here')).toBeVisible();await expect(page.getByText('30 min 0 sec left')).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Set up your shortcut'})).toBeVisible();await page.getByRole('link',{name:'Back to Home'}).click();await expect(page.getByText('30 min 0 sec left')).toBeVisible();
 });
 
 test('Home card reopens a returning notebook without terms or changes to its recordings and time',async({page,kai})=>{

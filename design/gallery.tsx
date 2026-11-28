@@ -1,3 +1,5 @@
+import {AssistantOffer} from '../src/look/screens/AssistantOffer'
+import {ShareFirstRecording} from '../src/look/screens/ShareFirstRecording'
 import {Settings} from '../src/look/screens/Settings'
 import {TrialPopup} from '../src/look/screens/TrialPopup'
 import {Login} from '../src/look/screens/Login'
@@ -9,6 +11,7 @@ import { createRoot } from 'react-dom/client'
 import '../src/look/kai.css'
 import * as data from './fixtures'
 import { Opening } from '../src/look/screens/Opening'
+import {SharedUploadReturn} from '../src/look/screens/SharedUploadReturn'
 import {Library,Notifications} from '../src/look/screens/Library'
 import {Speakers} from '../src/look/screens/Speakers'
 import { Upload } from '../src/look/screens/Upload'
@@ -33,7 +36,7 @@ const today = data.TODAY
 const nothing = () => {}
 
 /** A recording you can really decide, so the buttons can be tried. */
-function LiveRecording({ first, readOnly = false, editing: firstEditing = null, error, confirmation }: { first: RecordingData; readOnly?: boolean; editing?: string | null; error?: string; confirmation?: string }) {
+function LiveRecording({ first, readOnly = false, editing: firstEditing = null, error, confirmation, assistant=false }: { assistant?:boolean; first: RecordingData; readOnly?: boolean; editing?: string | null; error?: string; confirmation?: string }) {
   const [recording, setRecording] = useState(first)
   const [editing, setEditing] = useState<string | null>(firstEditing)
   const decide = (id: string, decision: 'accept' | 'reject', edits?: Payload) =>
@@ -46,6 +49,7 @@ function LiveRecording({ first, readOnly = false, editing: firstEditing = null, 
   const left = recording.suggestions.some((s) => s.status === 'proposed')
   return (
     <Recording
+      assistantOffer={assistant?<AssistantOffer id="dana-call" onLater={nothing}/>:undefined}
       confirmation={confirmation}
       recording={recording}
       readOnly={readOnly}
@@ -107,6 +111,18 @@ const searchProps={query:'Dana',results:searchResults,readOnly:false,onQuery:not
 const taskExample={id:'pricing',text:'Send Dana the pricing',status:'open' as const,due_on:today,owner_name:null,person_name:'Dana Whitfield',person_id:'dana',quote:'I promised to send Dana the pricing.',conversation_id:'dana-call'}
 const taskProps={task:taskExample,readOnly:false,onDone:nothing,onRetry:nothing,back:'/search'}
 const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
+  'onboarding/assistant':{title:'First recording · assistant setup',screen:()=> <Connect assistantOnly canFinish onFinish={nothing} connection={data.connection} readOnly={false} onCopy={nothing}/>},
+  'onboarding/processing-assistant':{title:'First recording · assistant while processing',screen:()=> <LiveRecording first={data.recordings.reading} assistant/>},
+  'onboarding/example-ready':{title:'First recording · invented example',screen:()=> <LiveRecording first={{...data.recordings.ready,source:'sample'}} assistant/>},
+  'onboarding/home':{title:'First recording · welcome',screen:()=> <Home {...homeProps} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:1800,trialVerified:true,hasReadyRecording:false}} readOnly={false} onShortcutReady={nothing}/>},
+  'onboarding/share-next':{title:'First recording · setup confirmed',screen:()=> <Home {...homeProps} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:1800,trialVerified:true,hasReadyRecording:false,shortcutReady:true}} readOnly={false}/>},
+  'onboarding/waiting':{title:'First recording · identify speakers',screen:()=> <Home {...homeProps} home={{...data.home,todos:[],conversations:[],trialSeconds:1750,trialVerified:true,hasReadyRecording:false,shortcutReady:true}} queue={[{id:'first-audio',title:'New recording',status:'waiting',awaiting_speakers:1,error:null}]} readOnly={false}/>},
+  'onboarding/setup':{title:'First recording · shortcut setup',screen:()=> <Connect onboarding connection={data.connection} readOnly={false} back="/home" onCopy={nothing} onSetupDone={nothing}/>},
+  'onboarding/setup-copied':{title:'First recording · add shortcut',screen:()=> <Connect onboarding copied="upload" connection={data.connection} readOnly={false} back="/home" onCopy={nothing} onSetupDone={nothing}/>},
+  'onboarding/setup-ready':{title:'First recording · ready to share',screen:()=> <Connect onboarding connection={{...data.connection,shortcutReady:true}} readOnly={false} back="/home" onCopy={nothing} onSetupDone={nothing}/>},
+  'onboarding/share':{title:'First recording · choose an app',screen:()=> <ShareFirstRecording shortcutReady/>},
+  'onboarding/whatsapp':{title:'First recording · WhatsApp',screen:()=> <ShareFirstRecording shortcutReady initialSource="whatsapp"/>},
+  'onboarding/guide':{title:'First recording · sharing steps',screen:()=> <ShareFirstRecording shortcutReady initialGuide/>},
   search:{title:'Search · start',screen:()=> <Search {...searchProps} query="" results={null}/>},
   'search/results':{title:'Search · matches',screen:()=> <Search {...searchProps}/>},
   'search/empty':{title:'Search · no matches',screen:()=> <Search {...searchProps} results={{library:[],people:[],tasks:[],more:{library:false,people:false,tasks:false}}}/>},
@@ -185,6 +201,9 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'upload/new-person': { title: 'Upload · add a person', screen: () => <Upload people={data.people} readOnly={false} initialFile={new File(["Invented audio"],"Project update.m4a")} initialType="voice" presetPerson="new" onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/shared': { title: 'Upload · a WhatsApp voice note', screen: () => <Upload people={data.people} readOnly={false} incoming={{id:'shared',title:'New recording'}} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/loading': { title: 'Upload · opening', screen: () => <Upload people={null} readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/return-checking':{title:'Shared upload · checking',screen:()=> <SharedUploadReturn state="checking" onRetry={nothing}/>},
+  'upload/return-empty':{title:'Shared upload · no recording in this notebook',screen:()=> <SharedUploadReturn state="empty" onRetry={nothing}/>},
+  'upload/return-failed':{title:'Shared upload · check failed',screen:()=> <SharedUploadReturn state="failed" onRetry={nothing}/>},
   'upload/failed': { title: 'Upload · could not open', screen: () => <Upload people={null} readOnly={false} loadError="Your upload could not open. Try again." onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/save-failed': { title: 'Upload · could not start', screen: () => <Upload people={data.people} readOnly={false} incoming={{id:'shared',title:'New recording'}} error="KAI could not start. Try again." onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/public': { title: 'Upload · read-only', screen: () => <Upload people={null} readOnly onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
