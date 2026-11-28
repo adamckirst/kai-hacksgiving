@@ -1,9 +1,11 @@
+import {useOnboardingExample} from './Onboarding';
 import { useEffect,useState } from 'react';
 import {ShareFirstRecording} from './look/screens/ShareFirstRecording';
 import { Upload,type UploadSource } from './look/screens/Upload';
 import type { LinkedPerson,PersonChoice } from './look/types';
 import { useUpload } from './Upload';
 export function UploadPage({readOnly}:{readOnly:boolean}) {
+  const example=useOnboardingExample();
   const [setup,setSetup]=useState(false),[remaining,setRemaining]=useState<number|null>(null),[post,setPost]=useState<string|null>(null);
   const source=new URLSearchParams(location.search).get('source');
   const initialSource:UploadSource=source==='voice-memos' || source==='whatsapp' || source==='messages' || source==='telegram' ? source:'files';
@@ -32,6 +34,6 @@ export function UploadPage({readOnly}:{readOnly:boolean}) {
     try {const r=await fetch('/api/uploads/'+encodeURIComponent(incoming.id)+'/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(person)});const data=await r.json();if(!r.ok)throw new Error(data.error);location.assign('/recordings/'+encodeURIComponent(incoming.id));}
     catch(e){setError(e instanceof Error ? e.message:'KAI could not start. Try again.');setStarting(false);}
   }
-  if(new URLSearchParams(location.search).get('onboarding')==='1' && path==='new' && !readOnly && people && !loadError && remaining!==0) return <ShareFirstRecording shortcutReady={setup} initialSource={initialSource==='whatsapp' || initialSource==='messages'?initialSource:'voice-memos'}/>;
+  if(new URLSearchParams(location.search).get('onboarding')==='1' && path==='new' && !readOnly && people && !loadError && remaining!==0) return <ShareFirstRecording onExample={example.start} exampleBusy={example.busy} exampleError={example.error} shortcutReady={setup} initialSource={initialSource==='whatsapp' || initialSource==='messages'?initialSource:'voice-memos'}/>;
   return <Upload shortcutReady={setup} remainingSeconds={remaining} xPostUrl={post} initialSource={initialSource} people={people} incoming={incoming} readOnly={readOnly} presetPerson={new URLSearchParams(location.search).get('person') ?? undefined} busy={starting || upload.adding} error={error || upload.addError} loadError={loadError} onFiles={upload.onFiles} onStart={person=>void start(person)} onRetry={()=>location.reload()}/>;
 }

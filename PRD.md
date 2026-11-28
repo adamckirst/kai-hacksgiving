@@ -627,8 +627,8 @@ people, and tasks”, moving Connect out of the main tabs. He confirmed
   updates. New updates are visibly unread until their recording is opened.
   All reads and read-state changes are confined to the current notebook.
 - Connections is reached through a settings button. Home offers shortcut
-  setup through the first-use guide in §22 until the first audio recording
-  is ready.
+  setup through the two-step first-use guide and later assistant offer in
+  §22.
   The browser cannot inspect installed shortcuts; the state is a user
   confirmation or a successful share, not an installation claim.
 - Add recordings offers Voice Memos, WhatsApp and Files. Each app has an
@@ -1116,46 +1116,56 @@ new states. Both use the existing review, merge and deployment loop.
 
 ## 22 · First recording onboarding (Copal, 28 November)
 
-Copal requested a first-use guide prioritising shortcut setup and sharing
-from phone apps. He approved “Update the onboarding plan”, asked to see the
-design first, then said “I love it!” and “yes. now deploy”. He supplied the
-updated shared shortcut with the common /upload return page preset. This
-supersedes §14's setup-card dismissal rule for verified trial notebooks.
+Copal approved the initial design and deployment, then revised it: “there's
+only two steps. One is setting up the shortcut and the other one is sending
+the recording.” He approved updating this section with “1, and give them the
+option to not upload anything but still complete the flow with synthetic
+data like the screens you showed me”. This replaces the previous three-step
+and first-ready dismissal rules, and §14's earlier setup card.
 
-- A verified trial notebook with no ready audio recording opens Home with
-  “Welcome to your notebook”, “Start with a recording from your phone” and
-  three steps: Set up the KAI shortcut, Share one recording, See what KAI found.
-  Keep the guide until its first uploaded/shared audio is ready. A pasted
-  transcript, sample, checkbox, upload receipt or failed recording does not
-  complete it. Derive completion from this notebook's persisted recordings;
-  another notebook's progress cannot complete the guide. Existing ready
-  notebooks and the public/seeded invitation demo keep their normal Home.
-- The main action follows the current step. An explicit “I already have the
-  shortcut” confirmation saves the existing setup state; never infer that a
-  shortcut is installed by opening its link. A failed save stays recoverable.
-  Incoming recordings, speaker identification, processing and retry remain
-  accessible; their next action takes priority over starting another upload.
-- Shortcut setup copies the notebook's private receiving address once and
-  opens Copal's updated iCloud shortcut. Its public /upload return address
-  is preset; remove the extra finish/return-address task. Keep manual build
-  instructions in their disclosure, including the public return address for
-  people building their own shortcut. Public visitors see no private address.
-- Sharing uses compact rows in this order: Voice Memos, WhatsApp, Messages,
-  with the existing official artwork and sharing instructions. Voice Memos
-  stays manual; WhatsApp and Messages keep their approved launches. A real
-  sharing-steps control replaces the prototype's simulated return button.
-  Keep “Set up the KAI shortcut for iOS” available. Remove the generic
-  “If an app does not open” fallback paragraph Copal rejected.
-- Files remains available through “Choose a file instead”. Both entry paths
-  retain the same horizontal three-type selector and all §15 speaker rules.
-  No provider call occurs before the recording-type confirmation. After the
-  first ready audio, Home returns to tasks, actionable and recent recordings.
-  No new provider, email, quota or account behavior is introduced.
-- Checks: npm run check; gallery at 375 px including first Home, setup,
-  confirmed setup, sharing and waiting states; explicit setup confirmation
-  and failure recovery, reload, Files escape, incoming share pause, unchanged
-  horizontal type selector, and Home completion only for this notebook's
-  ready audio. Verify the deployed layout and isolated completion checks on
-  the Sprite with invented data and fake providers. Copal confirms installing
-  the updated shortcut and sharing an invented recording on his iPhone; mark
-  this operator check not run until confirmed.
+- After email proof and any required terms agreement, a new verified notebook
+  opens shortcut setup as its first screen. Existing notebooks retain their
+  normal destination and data. Phone onboarding has exactly two steps: set
+  up the shortcut, then send a recording. No third processing step is shown.
+- An explicit shortcut checkbox is saved to the notebook. Checking it moves
+  directly to sharing; the completed setup step stays hidden on Home across
+  reloads and browsers. Never infer installation from opening a shortcut link.
+  A failed save remains recoverable. Setup can still be opened deliberately
+  through sharing help or Settings. Files remains available.
+- Use Copal's updated iCloud shortcut, with its public /upload return already
+  preset. Copy only the notebook's private receiving address. Manual setup
+  remains a closed disclosure. Sharing has compact Voice Memos, WhatsApp and
+  Messages rows, the approved artwork, launches and instructions. Remove the
+  rejected generic app-launch fallback sentence. Keep the horizontal type
+  selector and all speaker choices before provider processing as in §15.
+- Offer “Try an example instead” from Home's first-use guide, shortcut setup
+  and sharing. This is an explicit alternative to providing audio or setting
+  up the phone shortcut. Use the existing invented Sora sample transcript,
+  clearly labelled as made-up content. KAI reads it using the existing queue
+  and reader; proposals require the same accept/edit/reject decisions. No
+  audio, duration charge, transcription or recording email. Reading limits
+  still apply. Repeated/concurrent taps reopen the same example, without new
+  rows or repeated provider work. Never mix in another notebook's content.
+- Only after the first accepted audio starts processing, or the user chooses
+  the example, offer assistant setup. Merely selecting a file, an upload
+  waiting for type choice, arbitrary pasted text, rejected uploads and public
+  browsing cannot trigger it. Speaker identification takes priority. The
+  offer appears with processing and on Home; if processing finishes quickly,
+  it may remain beside the result so it is not missed. Never block suggestions.
+- “Connect my assistant” opens the existing assistant instructions without
+  repeating phone setup. “I've connected it” or “Later” finishes onboarding
+  persistently for that notebook; neither is proof of a working MCP connection.
+  Keep Settings' Connections entry available afterwards. Existing notebooks
+  with recordings at migration do not receive this first-use offer again.
+- No new provider, key, connector, quota, email or spending allowance. Signup
+  still verifies first and requires terms before granting the notebook.
+- Checks: npm run check; gallery at 375 px covering both phone steps, sample
+  choice, assistant offer and assistant-only setup; new verified entry starts
+  setup; shortcut confirmation hides that step and survives reload; failures
+  recover; Files and incoming shares keep type/speaker choices; no assistant
+  offer before processing/example; invented example is isolated, idempotent,
+  uses no recording quota and requires acceptance; assistant dismissal and
+  completion survive restart and stay notebook-scoped. Verify deployed layout
+  and isolated cases on the Sprite with invented data and fake providers.
+  Copal confirms installing the updated shortcut and sharing invented audio
+  on iPhone; mark this operator check not run until confirmed.

@@ -1,3 +1,4 @@
+import {ExampleChoice} from './AssistantOffer'
 import {useState,type ReactNode} from 'react'
 import { Icon, type IconName } from '../icons'
 import type { Connection } from '../types'
@@ -64,9 +65,16 @@ export function Connect({
   setupBusy,
   back = "/settings",
   initialAssistant = "Claude",
+  assistantOnly = false,canFinish=false,onFinish,onExample,exampleBusy,exampleError,
   onboarding = false,
   shareHref = "/upload/new?onboarding=1",
 }: {
+  assistantOnly?:boolean
+  canFinish?:boolean
+  onFinish?:()=>void
+  onExample?:()=>void
+  exampleBusy?:boolean
+  exampleError?:string
   shareHref?:string
   onboarding?:boolean
   initialAssistant?: 'Claude' | 'ChatGPT' | 'Grok' | 'Cursor'
@@ -93,12 +101,12 @@ export function Connect({
             </button>
   )
   return (
-    <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':back==='/settings'?'Back to Settings':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
-      <header className="px-1">{onboarding && <p className="mb-3 text-base font-bold text-violet-700">Step 1 of 3</p>}<h1 className="text-[32px]/10 font-extrabold">{onboarding?'Set up your shortcut':'Connections'}</h1><p className="mt-2 text-base/7 text-zinc-600">{onboarding?'Do this once. Then send recordings straight to your notebook.':'Set up your phone or let an assistant read what you kept.'}</p></header>
+    <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':back==='/settings'?'Back to Settings':back.startsWith('/recordings/')?'Back to recording':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
+      <header className="px-1">{onboarding && <p className="mb-3 text-base font-bold text-violet-700">Step 1 of 2</p>}<h1 className="text-[32px]/10 font-extrabold">{assistantOnly?'Connect your assistant':onboarding?'Set up your shortcut':'Connections'}</h1><p className="mt-2 text-base/7 text-zinc-600">{assistantOnly?'Bring the people, notes and tasks you keep into your assistant.':onboarding?'Do this once. Then send recordings straight to your notebook.':'Set up your phone or let an assistant read what you kept.'}</p></header>
       {error && <Notice tone="error">{error}</Notice>}
 
 
-      <Card className="space-y-5 p-5">
+      {!assistantOnly && <Card className="space-y-5 p-5">
         {!onboarding && <Heading icon="share">Send to KAI from your phone</Heading>}
         {readOnly ? (
           <p className="text-base/7 font-medium text-zinc-700">
@@ -171,10 +179,11 @@ export function Connect({
             </>}
           </>
         )}
-      </Card>
+      </Card>}
 
       {onboarding && connection && !readOnly && setupCheckbox}
       {onboarding && ready && <Button variant="primary" wide href={shareHref}>Share my first recording</Button>}
+      {onboarding && !readOnly && <ExampleChoice onExample={onExample} busy={exampleBusy} error={exampleError}/>}
       {!onboarding && <Card className="space-y-5 p-5">
         <Heading icon="sparkle">Connect an assistant</Heading>
         <p className="text-base/7 font-medium text-zinc-700">
@@ -186,7 +195,7 @@ export function Connect({
           connection && (
             <>
               <Address label="Your assistant address" id="assistant-address" value={connection.assistantAddress} />
-              <Button variant={ready?"primary":"outline"} wide icon="copy" onClick={() => onCopy('assistant', connection.assistantAddress)}>
+              <Button variant={ready || assistantOnly?"primary":"outline"} wide icon="copy" onClick={() => onCopy('assistant', connection.assistantAddress)}>
                 Copy assistant address
               </Button>
               {feedback('assistant')}
@@ -198,6 +207,7 @@ export function Connect({
           )
         )}
       </Card>}
+      {assistantOnly && !readOnly && canFinish && <div className="space-y-2"><Button variant="outline" wide disabled={setupBusy} onClick={onFinish}>I’ve connected it</Button><Button variant="quiet" wide disabled={setupBusy} onClick={onFinish}>Later</Button></div>}
     </PushedPage>
   )
 }

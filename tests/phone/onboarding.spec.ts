@@ -2,7 +2,7 @@ import {test,expect} from './fixture';
 import {createJudge} from '../../src/server/access';
 import {assertPhone} from './usability';
 
-test('first-use guide confirms setup, returns shared audio to type choice, and finishes only after ready audio',async({page,context,kai})=>{
+test('two-step guide hides confirmed setup, returns audio to type choice and offers assistant setup after processing starts',async({page,context,kai})=>{
  const owner=createJudge(kai.db,false);
  kai.db.prepare('UPDATE workspaces SET trial_verified=1,trial_seconds=1800 WHERE id=?').run(owner.id);
  await context.addCookies([{name:'kai_session',value:owner.cookie,url:'http://127.0.0.1:18520'}]);
@@ -16,9 +16,8 @@ test('first-use guide confirms setup, returns shared audio to type choice, and f
  await page.getByRole('button',{name:'Copy your address',exact:true}).click();await expect(page.getByRole('status')).toHaveText('Copied.');await assertPhone(page);
  const fail=async(route:import('@playwright/test').Route)=>route.fulfill({status:500,json:{error:'Invented failure'}});
  await page.route('**/api/connect/shortcut',fail);await page.getByRole('checkbox').click();await expect(page.getByText('Your setup could not be saved. Try again.')).toBeVisible();await expect(page.getByRole('checkbox')).not.toBeChecked();
- await page.unroute('**/api/connect/shortcut',fail);await page.getByRole('checkbox').click();await expect(page.getByRole('checkbox')).toBeChecked();await assertPhone(page);
- await page.reload();await expect(page.getByRole('checkbox')).toBeChecked();
- await page.getByRole('link',{name:'Share my first recording'}).click();await expect(page.getByRole('heading',{name:'Share your first recording'})).toBeVisible();await assertPhone(page);
+ await page.unroute('**/api/connect/shortcut',fail);await page.getByRole('checkbox').click();await expect(page.getByRole('heading',{name:'Share your first recording'})).toBeVisible();await assertPhone(page);
+ await page.goto('/home');await expect(page.getByRole('heading',{name:'Set up the KAI shortcut',exact:true})).toHaveCount(0);await page.getByRole('link',{name:'Share my first recording'}).click();await expect(page.getByRole('heading',{name:'Share your first recording'})).toBeVisible();await assertPhone(page);
  await page.getByRole('button',{name:'Show Voice Memos steps'}).click();await expect(page.getByRole('heading',{name:'From Voice Memos',exact:true}).last()).toBeVisible();await page.getByRole('button',{name:'Dismiss instructions'}).click();
  await page.getByRole('button',{name:'WhatsApp',exact:true}).click();await expect(page.getByRole('link',{name:'Open WhatsApp'})).toHaveAttribute('href','whatsapp://app');
  await page.getByRole('link',{name:'Set up the KAI shortcut for iOS'}).click();await page.getByRole('link',{name:'Share my first recording'}).click();await expect(page.getByRole('button',{name:'WhatsApp',exact:true})).toHaveAttribute('aria-pressed','true');
@@ -28,7 +27,20 @@ test('first-use guide confirms setup, returns shared audio to type choice, and f
  const choices=await page.getByRole('group',{name:'Recording type'}).getByRole('button').all();
  const boxes=await Promise.all(choices.map(choice=>choice.boundingBox()));expect(boxes).toHaveLength(3);expect(new Set(boxes.map(b=>b!.y)).size).toBe(1);
  expect((kai.db.prepare("SELECT status FROM conversations WHERE id='onboarding-audio'").get() as {status:string}).status).toBe('waiting');
- await page.goto('/home');await expect(page.getByRole('region',{name:'Your first recording'})).toBeVisible();await expect(page.getByRole('link',{name:'Choose the recording type',exact:true})).toBeVisible();
+ await page.goto('/home');await expect(page.getByRole('region',{name:'Your first recording'})).toHaveCount(0);await expect(page.getByText('Choose the recording type to start')).toBeVisible();await expect(page.getByRole('link',{name:'Connect my assistant'})).toHaveCount(0);
  kai.db.prepare("UPDATE conversations SET status='ready',awaiting_person=0 WHERE id='onboarding-audio'").run();
  await page.reload();await expect(page.getByRole('heading',{name:'Home',exact:true})).toBeVisible();await expect(page.getByRole('region',{name:'Your first recording'})).toHaveCount(0);await assertPhone(page);
+});
+
+test('an invented example skips audio, reaches suggestions and assistant setup, and Later completes onboarding',async({page,context,kai})=>{
+ const owner=createJudge(kai.db,false);kai.db.prepare('UPDATE workspaces SET trial_verified=1,trial_seconds=1800 WHERE id=?').run(owner.id);
+ await context.addCookies([{name:'kai_session',value:owner.cookie,url:'http://127.0.0.1:18520'}]);
+ await page.route('**/api/connect',async r=>{const response=await r.fetch(),data=await response.json();await r.fulfill({json:{...data,uploadPath:'/in/layout-example',mcpPath:'/mcp/layout-example'}})});
+ await page.goto('/connect?next=onboarding');await page.getByRole('button',{name:'Try an example instead'}).click();await expect(page).toHaveURL(/\/recordings\//);
+ await expect(page.getByText('This example uses made-up people and events. You choose which suggestions to keep.')).toBeVisible();await expect(page.getByRole('link',{name:'Connect my assistant'})).toBeVisible();await assertPhone(page);
+ await page.getByRole('link',{name:'Connect my assistant'}).click();await expect(page.getByRole('heading',{name:'Connect your assistant',exact:true})).toBeVisible();await expect(page.getByRole('checkbox')).toHaveCount(0);await expect(page.getByRole('button',{name:'Copy assistant address'})).toBeVisible();await assertPhone(page);
+ await page.getByRole('button',{name:'Later',exact:true}).click();await expect(page).toHaveURL(/\/recordings\//);await expect(page.getByRole('link',{name:'Connect my assistant'})).toHaveCount(0);
+ await page.reload();await expect(page.getByRole('link',{name:'Connect my assistant'})).toHaveCount(0);
+ expect((kai.db.prepare('SELECT trial_seconds FROM workspaces WHERE id=?').get(owner.id) as {trial_seconds:number}).trial_seconds).toBe(1800);
+ await page.goto('/home');await expect(page.getByRole('heading',{name:'Home',exact:true})).toBeVisible();await expect(page.getByRole('region',{name:'Your first recording'})).toHaveCount(0);
 });

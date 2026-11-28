@@ -1,3 +1,4 @@
+import {AssistantOffer} from '../src/look/screens/AssistantOffer'
 import {ShareFirstRecording} from '../src/look/screens/ShareFirstRecording'
 import {Settings} from '../src/look/screens/Settings'
 import {TrialPopup} from '../src/look/screens/TrialPopup'
@@ -34,7 +35,7 @@ const today = data.TODAY
 const nothing = () => {}
 
 /** A recording you can really decide, so the buttons can be tried. */
-function LiveRecording({ first, readOnly = false, editing: firstEditing = null, error, confirmation }: { first: RecordingData; readOnly?: boolean; editing?: string | null; error?: string; confirmation?: string }) {
+function LiveRecording({ first, readOnly = false, editing: firstEditing = null, error, confirmation, assistant=false }: { assistant?:boolean; first: RecordingData; readOnly?: boolean; editing?: string | null; error?: string; confirmation?: string }) {
   const [recording, setRecording] = useState(first)
   const [editing, setEditing] = useState<string | null>(firstEditing)
   const decide = (id: string, decision: 'accept' | 'reject', edits?: Payload) =>
@@ -47,6 +48,7 @@ function LiveRecording({ first, readOnly = false, editing: firstEditing = null, 
   const left = recording.suggestions.some((s) => s.status === 'proposed')
   return (
     <Recording
+      assistantOffer={assistant?<AssistantOffer id="dana-call" onLater={nothing}/>:undefined}
       confirmation={confirmation}
       recording={recording}
       readOnly={readOnly}
@@ -108,6 +110,9 @@ const searchProps={query:'Dana',results:searchResults,readOnly:false,onQuery:not
 const taskExample={id:'pricing',text:'Send Dana the pricing',status:'open' as const,due_on:today,owner_name:null,person_name:'Dana Whitfield',person_id:'dana',quote:'I promised to send Dana the pricing.',conversation_id:'dana-call'}
 const taskProps={task:taskExample,readOnly:false,onDone:nothing,onRetry:nothing,back:'/search'}
 const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
+  'onboarding/assistant':{title:'First recording · assistant setup',screen:()=> <Connect assistantOnly canFinish onFinish={nothing} connection={data.connection} readOnly={false} onCopy={nothing}/>},
+  'onboarding/processing-assistant':{title:'First recording · assistant while processing',screen:()=> <LiveRecording first={data.recordings.reading} assistant/>},
+  'onboarding/example-ready':{title:'First recording · invented example',screen:()=> <LiveRecording first={{...data.recordings.ready,source:'sample'}} assistant/>},
   'onboarding/home':{title:'First recording · welcome',screen:()=> <Home {...homeProps} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:1800,trialVerified:true,hasReadyRecording:false}} readOnly={false} onShortcutReady={nothing}/>},
   'onboarding/share-next':{title:'First recording · setup confirmed',screen:()=> <Home {...homeProps} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:1800,trialVerified:true,hasReadyRecording:false,shortcutReady:true}} readOnly={false}/>},
   'onboarding/waiting':{title:'First recording · identify speakers',screen:()=> <Home {...homeProps} home={{...data.home,todos:[],conversations:[],trialSeconds:1750,trialVerified:true,hasReadyRecording:false,shortcutReady:true}} queue={[{id:'first-audio',title:'New recording',status:'waiting',awaiting_speakers:1,error:null}]} readOnly={false}/>},

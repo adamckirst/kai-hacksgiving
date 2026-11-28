@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 150 states. The phone suite checks all public and judge
+`check.mjs` checks all 153 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -217,11 +217,10 @@ retain guidance. Each popup ends with Set up the KAI shortcut for iOS, linking
 to Connections with its source preserved. The sharing heading is his exact copy.
 
 
-First-use trial Home follows the approved onboarding: shortcut setup, share
-one recording, then review. The guide persists until an uploaded/shared audio
-is ready. Setup uses one personal address and the updated public shortcut's
-preset return; the manual-build disclosure still contains that return URL.
-Sharing reuses compact app rows and real instructions, with Files available.
-The existing horizontal recording-type selector and speaker stages remain.
-The gallery includes welcome, confirmed setup, sharing, guidance and pending
-speaker states. Prototype simulation buttons are not product controls.
+The final onboarding revision has two phone steps only. New verified entry
+opens shortcut setup; confirming the checkbox proceeds to sharing and hides
+completed setup. Try an example instead uses the invented Sora transcript
+without audio or recording time. Once the first audio starts, or the example
+is chosen, assistant setup is offered alongside progress/results. Later or
+I've connected it ends this offer persistently. Assistant-only Connections
+omits phone setup. Existing type/speaker selection and approval stay intact.

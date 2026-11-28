@@ -1,3 +1,4 @@
+import {useOnboardingExample} from './Onboarding';
 import { useEffect,useState,useRef } from 'react';
 import { Home } from './look/screens/Home';
 import type { HomeData } from './look/types';
@@ -7,6 +8,8 @@ import { useQueue } from './Upload';
 export function HomeScreen({readOnly}:{readOnly:boolean}) {
   const [home,setHome]=useState<HomeData|null>(null),[error,setError]=useState('');
   const revision=useRef(0);
+  const example=useOnboardingExample();
+  async function finishOnboarding(){revision.current++;setSetupBusy(true);setError('');try{const r=await fetch('/api/onboarding/finish',{method:'POST'});if(!r.ok)throw Error();setHome(h=>h?.onboarding?{...h,onboarding:{...h.onboarding,assistantRecordingId:null}}:h)}catch{setError('Setup could not be saved. Try again.')}finally{revision.current++;setSetupBusy(false)}}
   const [setupBusy,setSetupBusy]=useState(false);
   const [pending,setPending]=useState<string[]>([]);
   const [pasteBusy,setPasteBusy]=useState(false),[pasteError,setPasteError]=useState('');
@@ -32,5 +35,5 @@ export function HomeScreen({readOnly}:{readOnly:boolean}) {
   const dates=home?.todos.map(t=>t.due_on).filter((d):d is string=>Boolean(d)) ?? [];
   const tomorrow=new Date(Date.now()+86400000).toISOString().slice(0,10);
   const due=dates.some(d=>d<today) ? 'overdue':dates.some(d=>d<=tomorrow) ? 'soon':undefined;
-  return <Home setupBusy={setupBusy} onShortcutReady={()=>void confirmShortcut()} onTick={id=>void finish(id)} pending={pending} home={home} queue={queue} samples={samples} readOnly={readOnly} today={today} due={due} loadError={error} pasteBusy={pasteBusy} pasteError={pasteError} onRead={(text,day)=>void read(text,day)} onSample={id=>void read('',today,id)} waitlist={<Waitlist/>}/>;
+  return <Home onAssistantLater={()=>void finishOnboarding()} onExample={example.start} exampleBusy={example.busy} exampleError={example.error} setupBusy={setupBusy} onShortcutReady={()=>void confirmShortcut()} onTick={id=>void finish(id)} pending={pending} home={home} queue={queue} samples={samples} readOnly={readOnly} today={today} due={due} loadError={error} pasteBusy={pasteBusy} pasteError={pasteError} onRead={(text,day)=>void read(text,day)} onSample={id=>void read('',today,id)} waitlist={<Waitlist/>}/>;
 }

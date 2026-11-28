@@ -1,3 +1,4 @@
+import {AssistantOffer} from './AssistantOffer'
 import {FirstRecording,firstRecordingAction} from './FirstRecording'
 import {DemoInfo,ProcessingInfo} from './DemoInfo'
 import { useState, type ReactNode } from 'react'
@@ -144,9 +145,15 @@ export function Home({
   onTick,
   pending = [],
   initialInfoOpen,
+  onAssistantLater,
+  onExample,exampleBusy,exampleError,
   onShortcutReady,
   setupBusy,
 }: {
+  onAssistantLater?:()=>void
+  onExample?:()=>void
+  exampleBusy?:boolean
+  exampleError?:string
   onShortcutReady?:()=>void
   setupBusy?:boolean
   initialInfoOpen?:boolean
@@ -171,7 +178,7 @@ export function Home({
 }) {
   const to = useHref()
   const [signupActive,setSignupActive]=useState(false)
-  const onboarding=Boolean(!readOnly && home?.trialVerified && home.trialSeconds!=null && home.hasReadyRecording===false)
+  const onboarding=Boolean(!readOnly && home?.trialVerified && home.trialSeconds!=null && (home.onboarding?.needsRecording ?? home.hasReadyRecording===false))
   const first=queue.find(item=>item.source!=='paste' && item.source!=='sample')
   const action=firstRecordingAction(Boolean(home?.shortcutReady),first)
   return (
@@ -184,8 +191,9 @@ export function Home({
       dock={readOnly ? <WhatIsKai hideTrial={signupActive}/> : onboarding ? <Button variant="primary" wide href={action.href}>{action.label}</Button> : <AddRecordings onFiles={onFiles} busy={adding} />}
     >
       {queue.length > 0 && <Queue items={queue} initialInfoOpen={initialInfoOpen} showInfo={Boolean(home?.trialVerified && queue.some(item=>['waiting','listening','reading'].includes(item.status) && !item.awaiting_person && !item.awaiting_speakers))} />}
-      {onboarding && <FirstRecording shortcutReady={Boolean(home?.shortcutReady)} item={first} onShortcutReady={onShortcutReady} busy={setupBusy}/>}
-      {home && !onboarding && !readOnly && !home.shortcutReady && home.hasReadyRecording!==true && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Send voice notes straight to KAI</h2><p className="text-base/7 text-zinc-600">Set up the iPhone shortcut once, then share from Voice Memos or WhatsApp.</p><Button variant="outline" href="/connect">Set up your phone</Button></Card>}
+      {!readOnly && home?.onboarding?.assistantRecordingId && <AssistantOffer id={home.onboarding.assistantRecordingId} onLater={onAssistantLater ?? (()=>{})} busy={setupBusy}/>}
+      {onboarding && <FirstRecording shortcutReady={Boolean(home?.shortcutReady)} item={first} onExample={onExample} exampleBusy={exampleBusy} exampleError={exampleError} onShortcutReady={onShortcutReady} busy={setupBusy}/>}
+      {home && !onboarding && !readOnly && !home.shortcutReady && home.hasReadyRecording!==true && (!home.onboarding || home.trialSeconds==null) && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Send voice notes straight to KAI</h2><p className="text-base/7 text-zinc-600">Set up the iPhone shortcut once, then share from Voice Memos or WhatsApp.</p><Button variant="outline" href="/connect">Set up your phone</Button></Card>}
       {home?.trialSeconds!=null && !home.trialVerified && <Card className="p-5"><p className="mb-3 text-base/7">Verify your email to continue your trial. Your notebook and remaining time are kept.</p><Button href="/try" variant="outline">Verify email</Button></Card>}
       {home?.trialSeconds===0 && home.xPostUrl && <Button href={home.xPostUrl} variant="outline">Show KAI some love</Button>}
       {home?.trialSeconds!=null && <DemoInfo seconds={home.trialSeconds}/>}
