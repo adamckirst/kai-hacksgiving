@@ -57,7 +57,7 @@ export const claudeReader:Reader=async(input,call,signal,observe)=> {
       if(event.type==='content_block_stop') {
         const block=blocks[event.index];
         if(block?.type==='tool_use') {
-          block.input=partials.has(event.index) ? JSON.parse(partials.get(event.index)!):(block.input ?? {});
+          block.input=partials.has(event.index) ? JSON.parse(partials.get(event.index)||'{}'):(block.input ?? {});
           lastTool=block.name!;
           const finishInput=block.input && typeof block.input==='object' && !Array.isArray(block.input) && Object.keys(block.input).length===0;
           const result:ToolResult=block.name==='finish_reading' ? (described && !turnFailed && finishInput ? {ok:true}:{ok:false,error:'Save a valid title and two-line summary, correct failed calls, then call finish_reading with no arguments.'}):call(block.name!,block.input);

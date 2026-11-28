@@ -10,8 +10,26 @@ const frame=(event:unknown)=>'data: '+JSON.stringify(event)+'\n\n';
 const describe={name:'describe_recording',input:{title:'Dana’s update',summary:'Dana received the pricing.\nThe security review is next.'}};
 const finish={name:'finish_reading',input:{}};
 function chunks(calls:{name:string;input:unknown}[],stop='tool_use',complete=true) {
- return calls.map((call,index)=>frame({type:'content_block_start',index,content_block:{type:'tool_use',id:'invented-'+index,...call}})+frame({type:'content_block_stop',index})).join('')+frame({type:'message_delta',delta:{stop_reason:stop}})+(complete?frame({type:'message_stop'}):'');
+ return calls.map((call,index)=>frame({type:'content_block_start',index,content_block:{type:'tool_use',id:'invented-'+index,...call}})+(call.name==='finish_reading'?frame({type:'content_block_delta',index,delta:{type:'input_json_delta',partial_json:''}}):'')+frame({type:'content_block_stop',index})).join('')+frame({type:'message_delta',delta:{stop_reason:stop}})+(complete?frame({type:'message_stop'}):'');
 }
+
+test('empty no-argument tool deltas finish a sample, while malformed nonempty JSON still fails',async(t)=>{
+ for(const partial of ['', '{']) {
+  const db=openDatabase();seed(db);seed(db,new Date(),'judge-empty-delta');let requests=0;
+  const mock=t.mock.method(globalThis,'fetch',async(url:unknown)=>{
+   if(String(url).endsWith('/list'))return Response.json(gateways);
+   requests++;
+   return new Response(chunks([describe,finish]).replace('"partial_json":""','"partial_json":'+JSON.stringify(partial)));
+  });
+  try {
+   const id=addReading(db,'judge-empty-delta',samples[0].text,'2026-11-28','sample');
+   await readConversation(db,id,claudeReader);
+   const row=db.prepare('SELECT status FROM conversations WHERE id=?').get(id) as {status:string};
+   assert.equal(row.status,partial===''?'ready':'failed');
+   assert.equal(requests,1);
+  } finally {db.close();mock.mock.restore()}
+ }
+});
 
 test('the advertised summary schema states the exact two-line shape enforced before saving',async(t)=>{
  let requests=0;
