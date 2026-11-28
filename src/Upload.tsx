@@ -1,3 +1,4 @@
+import {audioFileError} from './audio-file';
 import { useEffect,useRef,useState } from 'react';
 import type { QueueItem,PersonChoice } from './look/types';
 export function useUpload() {
@@ -5,8 +6,7 @@ export function useUpload() {
   const sending=useRef(false);
   async function send(files:File[],person?:PersonChoice) {
     if(!files.length || sending.current)return;
-    if(files.length!==1 || files.some(f=>f.size>10000000)){setError('Choose one recording, up to 10 MB.');return;}
-    if(files.some(f=>!f.size || !/\.(m4a|opus|ogg|mp3|wav)$/i.test(f.name))){setError('Choose an audio file: M4A, OPUS, OGG, MP3 or WAV.');return;}
+    const invalid=audioFileError(files);if(invalid){setError(invalid);return;}
     sending.current=true;setBusy(true);setError('');const body=new FormData();
     if(person)body.append('person',JSON.stringify(person));
     files.forEach(f=>body.append('recordings',f));body.append('dates',JSON.stringify(files.map(f=>f.lastModified)));

@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 128 states. The phone suite checks all public and judge
+`check.mjs` checks all 141 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -65,11 +65,12 @@ The dock at the foot of the screen holds it, except where noted.
 | Screen | Your own copy | Read-only copy |
 |---|---|---|
 | Welcome | "Try it yourself", in the page | "Try it yourself", with a quiet "Look around" |
-| Home, People, To-dos | "Add recordings": opens the upload page to choose a person, then files | "Try it yourself", to trial signup |
+| Home, People, To-dos | "Add recordings": opens App shelf, then Files and the recording type | "Try it yourself", to trial signup |
 | Recording | "Accept all · n"; "Try again" when it failed; no main action when all is decided (Copal’s request). Hidden while a suggestion is edited: "Save and accept" is then the one | "Back to Home" |
 | Person | "Review suggestions" when some wait; otherwise "Add recordings" | "Back to People" |
-| Upload | "Choose audio file", "Set up shortcut" or "Open WhatsApp" or "Choose saved audio"; "Let KAI read" for a shared recording | "Try it yourself" |
-| Connect | "Copy your address", in the first card | "Try it yourself" |
+| Upload | "Choose audio file" in the Files card, then "Let KAI read" or "Transcribe recording" after the type choice; the same choice for shared audio | "Try it yourself" |
+| Settings | No violet main action; outlined Sign out, plain Sign out everywhere, red Delete my account | Quiet Sign in |
+| Connect | "Copy your address", then "Copy assistant address" after phone setup | "Try it yourself" |
 
 ### What the look shows that the server does not send yet
 
@@ -173,7 +174,7 @@ The trial now includes 30 minutes total; files stay at 10 MB and must be under 3
 
 Demo imports accept one recording at a time. The Files picker, upload guidance and terms show the single-file limit; recording types and the existing queue are unchanged.
 
-Email sign-in has initial, code, busy, error and explicit notebook-switch states. Connections includes browser sign-out and confirmation states, including the invitation warning. The same notebook reopens with a fresh verified email code; signing in adds no trial time.
+Email sign-in has initial, code, busy, error and explicit notebook-switch states. Settings includes browser sign-out and deletion confirmation states, including the invitation warning. The same notebook reopens with a fresh verified email code; signing in adds no trial time.
 
 Sign-in keeps its email explanation short. The agreement includes its terms/privacy link in the label; its 20 px check retains a 44 px touch target on phones and desktop.
 
@@ -186,3 +187,31 @@ The public email card introduces both choices: try personal recordings with 30 m
 The public card, trial and sign-in share email, code and post-verification terms states. Returning owners with current terms go straight to their notebook without a repeated checkbox. Updated terms have their own full-page and popup states.
 
 Welcome follows recordings → personal knowledge → assistant access. It uses “never replayed,” describes finding people, ideas and next steps, and puts the 30-minute trial before the waitlist. Try it yourself is the single signup/sign-in entry; the separate Welcome sign-in link is removed.
+
+
+App shelf and Settings follow Copal’s selected prototypes (§21). Files is
+first, with “One audio file · up to 10 MB · under 30 minutes” inside that
+card. App sharing has WhatsApp, Messages and Telegram with tappable guidance,
+plus Voice Memos instructions and a Files fallback. Sharing setup returns to
+the selected source. Only after choosing a local file does the three-type
+selector appear; no upload starts before confirmation.
+
+The gear opens Settings. Its private account card shows the authenticated
+owner’s email with no Email verified badge or Sign in link. Sign out is
+outlined; Sign out everywhere is plain. Connections follows, then a red
+Delete my account action. Confirmation explains deletion, revocation and
+limited retention. Invitation and public states expose no address or delete
+action. Settings uses the narrow no-violet-main-action exception in §21;
+body type and all target sizes retain U6’s minimums.
+
+Copal’s App shelf refinements use official WhatsApp/Telegram SVG artwork and
+Apple’s Messages PNG (approved exception). Sharing help opens in a dismissible
+popup; Send to KAI links back to Connections. Messages keeps sms: and explains
+closing the composer before selecting a conversation. The shortcut checkbox
+persists its confirmation and collapses phone setup, making the assistant
+address the main action. Claude, ChatGPT, Grok and Cursor have separate guidance based on official documentation; actual client connections remain an operator check. Official help links accompany the steps.
+
+Copal approved the compact rows on 28 November: 30 px artwork, Voice Memos
+first, WhatsApp and Messages. Telegram leaves the selection; old source links
+retain guidance. Each popup ends with Set up the KAI shortcut for iOS, linking
+to Connections with its source preserved. The sharing heading is his exact copy.

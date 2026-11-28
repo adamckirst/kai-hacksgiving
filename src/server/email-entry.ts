@@ -1,3 +1,4 @@
+import {trialGrantCount,trialAlreadyClaimed} from './account';
 import express,{type Express,type Request} from 'express';
 import {createHmac,randomBytes,randomInt,randomUUID} from 'node:crypto';
 import {z} from 'zod';
@@ -38,8 +39,8 @@ export function mountEmailEntry(app:Express,db:KaiDatabase,options:TrialOptions)
    if(current!=='public' && (!allowed(current) || entry?.workspace_id!==current))return {error:'Sign out of this browser before opening another notebook.'};
    if(options.trialsPaused)return {error:'New trials are paused. You can still join the waitlist.'};
    if(network(req)!==row.ip_hash)return {error:'Return to the network where you requested this code, or request a new code.'};
-   if((db.prepare('SELECT count(*) n FROM waitlist WHERE verified_at IS NOT NULL').get() as {n:number}).n>=100)return {error:'All 100 trials have been claimed. You can still join the waitlist.'};
-   if(db.prepare('SELECT 1 FROM waitlist WHERE verified_at IS NOT NULL AND (email=? OR trial_ip=?)').get(row.email,row.ip_hash))return {error:'A trial has already been claimed for this email or network.'};
+   if(trialGrantCount(db)>=100)return {error:'All 100 trials have been claimed. You can still join the waitlist.'};
+   if(trialAlreadyClaimed(db,row.email,row.ip_hash))return {error:'A trial has already been claimed for this email or network. Deleting a notebook does not start another trial. You can still look around.'};
    if(!entry && (db.prepare('SELECT count(*) n FROM waitlist').get() as {n:number}).n>=2000)return {error:'The waitlist is full.'};
    if(!agree)return {next:'terms',audience:'new'};
    workspace=current==='public'?createJudge(db,false).id:current;

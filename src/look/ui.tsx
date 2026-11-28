@@ -88,6 +88,8 @@ const PILL = clsx(
 const VARIANT = {
   /** The screen's one action. Use it once per screen. */
   primary: 'bg-violet-600 text-white shadow-action hover:bg-violet-700 active:bg-violet-800',
+  danger: 'bg-rose-700 text-white hover:bg-rose-800',
+  dangerQuiet: 'text-rose-700 hover:bg-rose-50',
   soft: 'bg-violet-50 text-violet-700 hover:bg-violet-100',
   quiet: 'text-zinc-600 hover:bg-zinc-100',
   outline: 'bg-white text-zinc-800 ring-1 ring-zinc-200 hover:bg-zinc-50',
@@ -451,7 +453,7 @@ export function TabPage({
       <div className="sticky top-0 z-20 -mx-4 bg-gradient-to-b from-page from-70% to-page/0 px-4 pt-3 pb-4">
         <div className="mb-2 flex items-center justify-between gap-3 px-1">
           <span className="text-xl font-extrabold tracking-tight text-violet-700">KAI</span>
-          <div className="flex min-w-0 items-center gap-2">{readOnly && <span className="truncate text-base font-semibold text-zinc-500">{READ_ONLY}</span>}<RoundLink href="/connect" label="Connections" icon="settings"/></div>
+          <div className="flex min-w-0 items-center gap-2">{readOnly && <span className="truncate text-base font-semibold text-zinc-500">{READ_ONLY}</span>}<RoundLink href="/settings" label="Settings" icon="settings"/></div>
         </div>
         <Tabs current={current} due={due} />
       </div>

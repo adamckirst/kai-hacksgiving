@@ -1,3 +1,4 @@
+import {mountAccount,cleanDeletedAudio} from './account';
 import {mountEmailEntry} from './email-entry';
 import {mountLogin,type LoginOptions} from './login';
 import {quotaMailWorker,type SendQuota} from './quota-mail';
@@ -27,7 +28,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const quotaMail=quotaMailWorker(db,options.sendQuota,options.now);
   const mail=recordingMailWorker(db,options.sendReady,options.now);
   const queue=queueWorker(db,options.reader ?? fakeReader,options.transcriber ?? fakeTranscriber,()=>{void mail.kick();});
-  const work=()=>{void quotaMail.kick();void mail.kick();return queue.kick();};
+  const work=()=>{cleanDeletedAudio(db,options.audioDirectory ?? '.data/audio');void quotaMail.kick();void mail.kick();return queue.kick();};
   app.locals.queue={kick:work,stop:async()=>{await queue.stop();await mail.stop();await quotaMail.stop();}};void work();
   const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:1,fields:2,fieldSize:2048,parts:3}}).array('recordings',1);
   app.disable('x-powered-by');
@@ -49,6 +50,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     }
     next();
   });
+  mountAccount(app,db,{secureCookies:options.secureCookies,audioDirectory:options.audioDirectory ?? '.data/audio',cancel:queue.cancel});
   app.post('/api/access/start',(req,res) => {
     if (!options.judgeSecret || typeof req.body?.secret !== 'string' || !equalSecret(req.body.secret,options.judgeSecret)) {res.status(403).json({error:'This link could not be opened.'});return;}
     if (res.locals.workspace === 'public') {
@@ -178,7 +180,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   });
   app.use('/api', (_req,res) => res.status(404).json({error:'Not found'}));
   app.use(express.static(path.resolve('dist')));
-  app.get(['/', '/terms', '/login', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
+  app.get(['/', '/terms', '/login', '/try', '/home', '/search', '/library', '/notifications', '/upload', '/upload/:id', '/people', '/todos', '/todos/:id', '/connect', '/settings', '/recordings/:id', '/people/:id', '/operator'], (_req,res) => res.sendFile('index.html', {root:path.resolve('dist')}));
   app.use((err: unknown,_req:express.Request,res:express.Response,_next:express.NextFunction) => {
     if(err instanceof multer.MulterError) {res.status(400).json({error:'Choose one recording, up to 10 MB.'});return;}
     res.status(err && typeof err==='object' && 'status' in err && err.status===413 ? 413:err instanceof SyntaxError ? 400 : 500).json({error:'This request could not be completed.'});

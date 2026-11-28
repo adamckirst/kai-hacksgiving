@@ -26,7 +26,7 @@ export function reserveReading(db:KaiDatabase,workspace:string,now=new Date()) {
   const row=db.prepare('SELECT kind,reading_day,readings_today FROM workspaces WHERE id=?').get(workspace) as {kind:string;reading_day:string;readings_today:number}|undefined;
   if (!row || row.kind!=='judge') throw new ReadingError('This demo is read-only.',403);
   const count=row.reading_day===day ? row.readings_today : 0;
-  const total=(db.prepare('SELECT coalesce(sum(readings_today),0) AS n FROM workspaces WHERE reading_day=?').get(day) as {n:number}).n;
+  const total=(db.prepare('SELECT (SELECT coalesce(sum(readings_today),0) FROM workspaces WHERE reading_day=@day)+coalesce((SELECT readings FROM deleted_usage WHERE day=@day),0) AS n').get({day}) as {n:number}).n;
   if(count>=30 || total>=150) throw new ReadingError('KAI has reached today’s reading limit. Try tomorrow.',429);
   db.prepare('UPDATE workspaces SET reading_day=?,readings_today=? WHERE id=?').run(day,count+1,workspace);
 }
@@ -38,7 +38,7 @@ export function reserveRecording(db:KaiDatabase,workspace:string,now=new Date())
   const row=db.prepare('SELECT kind,recording_day,recordings_today FROM workspaces WHERE id=?').get(workspace) as {kind:string;recording_day:string;recordings_today:number}|undefined;
   if(!row || row.kind!=='judge') throw new ReadingError('This demo is read-only.',403);
   const count=row.recording_day===day ? row.recordings_today : 0;
-  const total=(db.prepare('SELECT coalesce(sum(recordings_today),0) AS n FROM workspaces WHERE recording_day=?').get(day) as {n:number}).n;
+  const total=(db.prepare('SELECT (SELECT coalesce(sum(recordings_today),0) FROM workspaces WHERE recording_day=@day)+coalesce((SELECT recordings FROM deleted_usage WHERE day=@day),0) AS n').get({day}) as {n:number}).n;
   if(count>=10 || total>=60) throw new ReadingError('KAI has reached today’s recording limit. Try tomorrow.',429);
   db.prepare('UPDATE workspaces SET recording_day=?,recordings_today=? WHERE id=?').run(day,count+1,workspace);
 }
@@ -63,7 +63,8 @@ export function retryReading(db:KaiDatabase,workspace:string,id:string) {
   })();
 }
 export async function readConversation(db:KaiDatabase,id:string,reader:Reader,signal?:AbortSignal) {
-  const row=db.prepare('SELECT workspace_id,text,happened_on,source,person_id,recording_type,utterances,speaker_map FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string;source:string;person_id:string|null;recording_type:string|null;utterances:string;speaker_map:string};
+  const row=db.prepare('SELECT workspace_id,text,happened_on,source,person_id,recording_type,utterances,speaker_map FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string;source:string;person_id:string|null;recording_type:string|null;utterances:string;speaker_map:string}|undefined;
+  if(!row)return;
   db.prepare("UPDATE conversations SET status='reading',error=NULL,progress=NULL,failure_code=NULL,tool_error_counts='{}' WHERE id=?").run(id);
   let described=false, calls=0;const readPeople=new Set<string>();
   const personExists=(person:string) => !!db.prepare('SELECT id FROM people WHERE workspace_id=? AND id=?').get(row.workspace_id,person) || !!db.prepare("SELECT id FROM suggestions WHERE workspace_id=? AND conversation_id=? AND kind='person' AND status='proposed' AND id=?").get(row.workspace_id,id,person);
@@ -73,6 +74,7 @@ export async function readConversation(db:KaiDatabase,id:string,reader:Reader,si
     const sender:ReadInput['sender']=person ? {kind:'person',person}:row.recording_type==='memo' || row.source==='sample' ? {kind:'owner'}:{kind:'unknown'};
     const handleTool=(name:string,input:unknown):ToolResult=> {
       signal?.throwIfAborted();
+      if(!db.prepare('SELECT 1 FROM conversations WHERE id=?').get(id))throw new Error('Recording removed.');
       if(++calls>50) throw new Error('Too many calls.');
       if(!(name in toolSchemas)) return {ok:false,error:'Unknown tool.'};
       const parsed=toolSchemas[name as ToolName].safeParse(input);

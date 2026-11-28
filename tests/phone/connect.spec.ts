@@ -6,7 +6,7 @@ test('Connect explains the shortcut at 375 px and copies an address without show
   const placeholder='/in/'+('layout-example-'.repeat(5));
   await page.route('**/api/connect',route=>route.fulfill({json:{uploadPath:placeholder,mcpPath:'/mcp/'+('layout-example-'.repeat(5))}}));
   await page.goto('/');await page.evaluate(value=>{history.replaceState(null,'',`/#judge=${value}`);location.reload();},kai.secret);
-  await page.getByRole('link',{name:'Try it yourself'}).click();await page.getByRole('link',{name:'Connections',exact:true}).click();
+  await page.getByRole('link',{name:'Try it yourself'}).click();await page.getByRole('link',{name:'Settings',exact:true}).click();await page.getByRole('link',{name:'Connections',exact:true}).click();
   await expect(page.getByRole('button',{name:'Copy your address',exact:true})).toBeEnabled();
   await expect(page.locator('ol[aria-label="Phone setup"] > li > h3')).toHaveText(['1. Copy your address','2. Add the iOS shortcut','3. Try it']);
   await expect(page.getByText('Show in Share Sheet',{exact:false})).toBeHidden();
@@ -36,4 +36,19 @@ test('Connect explains the shortcut at 375 px and copies an address without show
 test('public Connect has no private address or setup controls',async({page})=> {
   await page.goto('/connect');await expect(page.getByText('Read-only demo')).toBeVisible();
   await expect(page.getByLabel('Your private address')).toHaveCount(0);await expect(page.getByLabel('Your assistant address')).toHaveCount(0);await expect(page.getByRole('button',{name:'Copy your address'})).toHaveCount(0);await assertPhone(page);
+});
+
+
+test('shortcut checkbox persists, reveals assistant setup and keeps sharing return available',async({page,kai})=>{
+ await page.route('**/api/connect',async route=>{const r=await route.fetch();const data=await r.json();await route.fulfill({json:{...data,uploadPath:'/in/layout-example',mcpPath:'/mcp/layout-example'}})});
+ await page.goto('/');await page.evaluate(value=>{history.replaceState(null,'','/#judge='+value);location.reload()},kai.secret);
+ await page.getByRole('link',{name:'Try it yourself',exact:true}).click();await page.goto('/connect?next=messages');
+ const checkbox=page.getByRole('checkbox',{name:'I already have the shortcut set up'});
+ await checkbox.click();await expect(checkbox).toBeChecked();await expect(page.getByRole('button',{name:'Copy your address',exact:true})).toHaveCount(0);await assertPhone(page);
+ await page.reload();await expect(checkbox).toBeChecked();
+ for(const name of ['Claude','ChatGPT','Grok','Cursor']){await page.getByRole('button',{name,exact:true}).click();await expect(page.getByRole('region',{name:name+' setup'})).toBeVisible();await expect(page.getByRole('link',{name:name+'’s setup guide'})).toHaveAttribute('href',/^https:/);await assertPhone(page)}
+ await expect(page.getByRole('link',{name:'Cursor’s setup guide'})).toHaveAttribute('href','https://cursor.com/docs/mcp');
+ await checkbox.click();await expect(page.getByRole('button',{name:'Copy your address',exact:true})).toBeVisible();await page.reload();await expect(checkbox).not.toBeChecked();
+ await page.route('**/api/connect/shortcut',route=>route.fulfill({status:500,json:{error:'Invented failure'}}));await checkbox.click();await expect(page.getByText('Your setup could not be saved. Try again.')).toBeVisible();await expect(checkbox).not.toBeChecked();
+ await page.getByRole('link',{name:'Back to upload'}).click();await expect(page.getByRole('heading',{name:'From Messages'})).toBeVisible();
 });

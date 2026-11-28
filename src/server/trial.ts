@@ -1,3 +1,4 @@
+import {trialGrantCount,trialAlreadyClaimed} from './account';
 import {TERMS_VERSION} from '../terms';
 import express,{type Express,type Request} from 'express';
 import {createHmac,randomInt,randomUUID} from 'node:crypto';
@@ -26,7 +27,7 @@ export function mountTrial(app:Express,db:KaiDatabase,options:TrialOptions) {
   const normalized=value ? normalizeIp(value):null;
   return normalized ? digest('ip',normalized):null;
  }
- const grants=()=> (db.prepare('SELECT count(*) n FROM waitlist WHERE verified_at IS NOT NULL').get() as {n:number}).n;
+ const grants=()=>trialGrantCount(db);
  app.get('/api/trial',(_req,res)=>res.json({available:!options.trialsPaused && Boolean(options.sendCode) && grants()<100}));
  app.use('/api/trial',express.json({limit:'1kb'}),(req,res,next)=>{
   const origin=req.get('origin');
@@ -49,7 +50,7 @@ export function mountTrial(app:Express,db:KaiDatabase,options:TrialOptions) {
    if(grants()>=100)return 'full';
    // Do not disclose whether this address or network has claimed a trial.
    db.prepare('INSERT INTO trial_sends(id,ip_hash,email_hash,sent_at) VALUES (?,?,?,?)').run(id,network,digest('email',email),at);
-   const taken=db.prepare('SELECT 1 FROM waitlist WHERE verified_at IS NOT NULL AND (email=? OR trial_ip=?)').get(email,network);
+   const taken=trialAlreadyClaimed(db,email,network);
    if(taken)return 'existing';
    const pending=db.prepare('SELECT count(*) n FROM trial_challenges').get() as {n:number};
    if(pending.n>=100)return 'limited';
@@ -74,7 +75,7 @@ export function mountTrial(app:Express,db:KaiDatabase,options:TrialOptions) {
    db.prepare('UPDATE trial_challenges SET attempts=attempts+1 WHERE email=?').run(email);
    if(row.ip_hash!==network || !equalSecret(row.code_hash,digest('code',row.id+':'+code)))return {error:'Check the code and try again.'};
    if(grants()>=100)return {error:'All 100 trials have been claimed. You can still join the waitlist.'};
-   if(db.prepare('SELECT 1 FROM waitlist WHERE verified_at IS NOT NULL AND (email=? OR trial_ip=?)').get(email,network))return {error:'A trial has already been claimed for this email or network.'};
+   if(trialAlreadyClaimed(db,email,network))return {error:'A trial has already been claimed for this email or network. Deleting a notebook does not start another trial. You can still look around.'};
    const existing=db.prepare('SELECT workspace_id FROM waitlist WHERE email=?').get(email) as {workspace_id:string|null}|undefined;
    const current=workspaceFor(db,req);
    // Do not silently attach to another existing notebook; no recovery in this flow.

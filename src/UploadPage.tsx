@@ -5,7 +5,7 @@ import { useUpload } from './Upload';
 export function UploadPage({readOnly}:{readOnly:boolean}) {
   const [setup,setSetup]=useState(false),[remaining,setRemaining]=useState<number|null>(null),[post,setPost]=useState<string|null>(null);
   const source=new URLSearchParams(location.search).get('source');
-  const initialSource:UploadSource=source==='voice-memos' || source==='whatsapp' ? source:'files';
+  const initialSource:UploadSource=source==='voice-memos' || source==='whatsapp' || source==='messages' || source==='telegram' ? source:'files';
   const [people,setPeople]=useState<LinkedPerson[]|null>(null),[incoming,setIncoming]=useState<{id:string;title:string}|null>(null);
   const [loadError,setLoadError]=useState(''),[error,setError]=useState(''),[starting,setStarting]=useState(false);
   const upload=useUpload(),path=location.pathname.split('/')[2];

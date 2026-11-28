@@ -1,5 +1,4 @@
-import {Account} from './Account'
-import type { ReactNode } from 'react'
+import {useState,type ReactNode} from 'react'
 import { Icon, type IconName } from '../icons'
 import type { Connection } from '../types'
 import { Button, Card, FOCUS, Notice, PushedPage, WhatIsKai } from '../ui'
@@ -63,15 +62,11 @@ export function Connect({
   showAddress,
   onSetupDone,
   setupBusy,
-  back = "/home",
-  initialSignOut, accountRecoverable, accountBusy, accountError, onSignOut = () => {},
+  back = "/settings",
+  initialAssistant = "Claude",
 }: {
-  initialSignOut?:'here'|'everywhere'
-  accountRecoverable?:boolean
-  accountBusy?:boolean
-  accountError?:string
-  onSignOut?:(all:boolean)=>void
-  onSetupDone?: () => void
+  initialAssistant?: 'Claude' | 'ChatGPT' | 'Grok' | 'Cursor'
+  onSetupDone?: (ready:boolean) => void
   setupBusy?: boolean
   back?: string
   showManual?: boolean
@@ -84,12 +79,14 @@ export function Connect({
   copyError?: { at: 'upload' | 'home' | 'assistant'; text: string } | null
   onCopy: (which: 'upload' | 'home' | 'assistant', value: string) => void
 }) {
+  const [assistant,setAssistant]=useState(initialAssistant)
+  const ready=Boolean(connection?.shortcutReady)
   const feedback = (which: 'upload' | 'home' | 'assistant') => copyError?.at === which ? <Notice tone="error">{copyError.text}</Notice> : copied === which && <Notice tone="good">Copied.</Notice>
   return (
-    <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
+    <PushedPage back={back} backLabel={back==='/home' ? 'Back to Home':back==='/settings'?'Back to Settings':'Back to upload'} readOnly={readOnly} dock={readOnly ? <WhatIsKai /> : undefined}>
       <header className="px-1"><h1 className="text-[32px]/10 font-extrabold">Connections</h1><p className="mt-2 text-base/7 text-zinc-600">Set up your phone or let an assistant read what you kept.</p></header>
       {error && <Notice tone="error">{error}</Notice>}
-      <Account initialChoice={initialSignOut} readOnly={readOnly} recoverable={accountRecoverable} busy={accountBusy} error={accountError} onSignOut={onSignOut}/>
+
 
       <Card className="space-y-5 p-5">
         <Heading icon="share">Send to KAI from your phone</Heading>
@@ -104,6 +101,11 @@ export function Connect({
           </>
         ) : (
           <>
+            <button type="button" role="checkbox" aria-checked={ready} disabled={setupBusy || !onSetupDone} onClick={()=>onSetupDone?.(!ready)} className={`${FOCUS} flex min-h-11 w-full items-center gap-3 rounded-xl text-left text-base font-bold`}>
+              <span aria-hidden="true" className={`grid size-5 shrink-0 place-items-center rounded border-2 ${ready?'border-violet-600 bg-violet-600 text-white':'border-zinc-300 bg-white'}`}>{ready && <Icon name="check" className="size-4"/>}</span>
+              {setupBusy?'Saving…':'I already have the shortcut set up'}
+            </button>
+            {ready ? <p className="text-base/7 text-zinc-600">Your phone shortcut is set up. Connect an assistant below, or return to your recording.</p> : <>
             <p className="text-base/7 font-medium text-zinc-600">Set up once. Then share voice notes straight to KAI.</p>
             <ol aria-label="Phone setup" className="divide-y divide-zinc-100">
               <li className="space-y-3 pb-5">
@@ -155,11 +157,11 @@ export function Connect({
               <li className="space-y-3 pt-5">
                 <h3 className="text-lg font-extrabold">3. Try it</h3>
                 <p className="text-base/7 font-medium text-zinc-700">In WhatsApp, hold a voice note, then choose <B>Forward → Share → Send to KAI</B>. In Voice Memos, choose a recording, then <B>Share → Send to KAI</B>.</p>
-                <p className="text-base/7 font-medium text-zinc-700">KAI opens with the recording attached. Choose the person who sent it, or continue without a person, then tap <B>Let KAI read</B>.</p>
+                <p className="text-base/7 font-medium text-zinc-700">KAI opens with the recording attached. Choose <B>My memo</B>, <B>Someone else</B>, or <B>Multiple speakers</B>. For Someone else, choose the speaker before reading. For Multiple speakers, identify speakers after transcription.</p>
                 <p className="text-base/7 font-medium text-zinc-500">One file at a time, up to 10 MB and under 30 minutes.</p>
               </li>
             </ol>
-            {connection.shortcutReady ? <Notice tone="good">Your phone shortcut is set up.</Notice> : onSetupDone && <Button variant="outline" wide disabled={setupBusy} onClick={onSetupDone}>{setupBusy ? 'Saving…':'I’ve added the shortcut'}</Button>}
+            </>}
           </>
         )}
       </Card>
@@ -175,27 +177,34 @@ export function Connect({
           connection && (
             <>
               <Address label="Your assistant address" id="assistant-address" value={connection.assistantAddress} />
-              <Button variant="outline" wide icon="copy" onClick={() => onCopy('assistant', connection.assistantAddress)}>
+              <Button variant={ready?"primary":"outline"} wide icon="copy" onClick={() => onCopy('assistant', connection.assistantAddress)}>
                 Copy assistant address
               </Button>
               {feedback('assistant')}
-              <Steps>
-                {[
-                  <>
-                    In Claude, open Settings, then Connectors, then <B>Add custom connector</B>.
-                  </>,
-                  <>
-                    Name it <B>KAI</B> and paste your assistant address. Add and connect it.
-                  </>,
-                  <>
-                    Open a conversation, turn KAI on, and ask <B>What do I owe Dana this week?</B>
-                  </>,
-                ]}
-              </Steps>
+              <p className="text-base/7 text-zinc-500">Keep this address private: anyone with it can read your notebook.</p>
+              <fieldset className="space-y-3"><legend className="text-base font-bold">Choose your assistant</legend><div className="grid grid-cols-2 gap-2">{(['Claude','ChatGPT','Grok','Cursor'] as const).map(name=><button key={name} type="button" aria-pressed={assistant===name} onClick={()=>setAssistant(name)} className={`${FOCUS} min-h-11 rounded-xl border px-3 py-2 text-base font-bold ${assistant===name?'border-violet-400 bg-violet-50 text-violet-700':'border-zinc-200 text-zinc-600'}`}>{name}</button>)}</div></fieldset>
+              <AssistantSteps name={assistant}/>
+
             </>
           )
         )}
       </Card>
     </PushedPage>
   )
+}
+
+const assistantHelp={
+ Claude:'https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp',
+ ChatGPT:'https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt-beta',
+ Grok:'https://docs.x.ai/grok/connectors',
+ Cursor:'https://cursor.com/docs/mcp',
+}
+function AssistantSteps({name}:{name:keyof typeof assistantHelp}) {
+ const steps:Record<keyof typeof assistantHelp,ReactNode[]>={
+  Claude:[<>Open Claude’s <B>Customize → Connectors</B>, then <B>Add → Add custom connector</B>. Your workspace may need its owner to add it first.</>,<>Name it <B>KAI</B>, paste your assistant address and choose <B>No sign in</B> if asked. The private address already gives access.</>,<>Connect KAI, enable it in a conversation’s tool menu and ask <B>What tasks do I have in KAI?</B></>],
+  ChatGPT:[<>Use ChatGPT on the web. In <B>Settings → Apps → Advanced settings</B>, enable <B>Developer mode</B>. Availability depends on your plan and workspace permissions.</>,<>Under <B>Apps</B>, choose <B>Create</B>. Name it <B>KAI</B>, paste your assistant address and choose <B>No authentication</B>. Scan the tools and create the app.</>,<>Start a chat, select KAI from the apps menu and ask <B>What tasks do I have in KAI?</B></>],
+  Grok:[<>Open <B>grok.com/connectors</B>. Choose <B>New Connector → Custom</B>. A work account may need its admin to add it first.</>,<>Name it <B>KAI</B> and paste your assistant address as the server URL. No extra sign-in is needed for this private address.</>,<>Finish adding it, then ask Grok <B>What tasks do I have in KAI?</B></>],
+  Cursor:[<>Open Cursor’s <B>Customize</B> page and add a custom MCP server.</>,<>Use an HTTP server named <B>KAI</B> with your assistant address as its URL. Keep this private configuration out of shared projects.</>,<>Enable KAI’s tools in Agent, then ask <B>What tasks do I have in KAI?</B></>],
+ }
+ return <section aria-label={`${name} setup`} className="space-y-3"><Steps>{steps[name]}</Steps><a className={`${FOCUS} inline-flex min-h-11 items-center rounded-lg text-base font-bold text-violet-700 underline`} href={assistantHelp[name]} target="_blank" rel="noreferrer">{name}’s setup guide</a></section>
 }

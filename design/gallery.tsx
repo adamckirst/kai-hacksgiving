@@ -1,3 +1,4 @@
+import {Settings} from '../src/look/screens/Settings'
 import {TrialPopup} from '../src/look/screens/TrialPopup'
 import {Login} from '../src/look/screens/Login'
 import {Terms} from '../src/look/screens/Terms'
@@ -91,7 +92,8 @@ function LiveTodos({ view, readOnly = false, empty = false }: { view?: 'mine' | 
 
 function LiveConnect() {
   const [copied, setCopied] = useState<'upload' | 'home' | 'assistant' | null>(null)
-  return <Connect connection={data.connection} accountRecoverable readOnly={false} due="overdue" copied={copied} onCopy={(which) => setCopied(which)} onSetupDone={nothing} />
+  const [shortcutReady,setReady]=useState(false)
+  return <Connect connection={{...data.connection,shortcutReady}} readOnly={false} due="overdue" copied={copied} onCopy={(which) => setCopied(which)} onSetupDone={setReady} />
 }
 
 const homeProps = { home: data.home, samples: data.samples, today, due: 'overdue' as const, onFiles: nothing, onRead: nothing, onSample: nothing }
@@ -127,9 +129,9 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'recording/speakers-ready':{title:'Recording · speakers selected',screen:()=> <Speakers people={data.people} utterances={speakerPassages} initialChoices={{A:{kind:'owner'},B:{kind:'person',person_id:data.people[0].id}}} onSubmit={nothing}/>},
   'recording/speakers-new':{title:'Recording · new speaker',screen:()=> <Speakers people={data.people} utterances={speakerPassages} initialChoices={{A:{kind:'owner'},B:{kind:'new',person:{id:'invented',name:'Avery Fern',company:'',role:''}}}} onSubmit={nothing}/>},
   'recording/speakers-error':{title:'Recording · speakers not saved',screen:()=> <Speakers people={data.people} utterances={speakerPassages} error="The speakers could not be saved. Try again." onSubmit={nothing}/>},
-  'upload/memo':{title:'Upload · memo from me',screen:()=> <Upload people={data.people} initialType="memo" readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
-  'upload/voice':{title:'Upload · voice note',screen:()=> <Upload people={data.people} initialType="voice" readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
-  'upload/multiple':{title:'Upload · multiple speakers',screen:()=> <Upload people={data.people} initialType="multiple" readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
+  'upload/memo':{title:'Upload · memo from me',screen:()=> <Upload people={data.people} initialFile={new File(["Invented audio"],"Project update.m4a")} initialType="memo" readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
+  'upload/voice':{title:'Upload · voice note',screen:()=> <Upload people={data.people} initialFile={new File(["Invented audio"],"Project update.m4a")} initialType="voice" readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
+  'upload/multiple':{title:'Upload · multiple speakers',screen:()=> <Upload people={data.people} initialFile={new File(["Invented audio"],"Project update.m4a")} initialType="multiple" readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
   library:{title:'Library',screen:()=> <Library items={libraryItems} readOnly={false}/>},
   'library/empty':{title:'Library · empty',screen:()=> <Library items={[]} readOnly={false}/>},
   'library/loading':{title:'Library · loading',screen:()=> <Library items={null} readOnly={false}/>},
@@ -139,7 +141,12 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'notifications/empty':{title:'Notifications · empty',screen:()=> <Notifications items={[]} readOnly={false}/>},
   'notifications/loading':{title:'Notifications · loading',screen:()=> <Notifications items={null} readOnly={false}/>},
   'notifications/failed':{title:'Notifications · could not load',screen:()=> <Notifications items={null} readOnly={false} error="Your recordings could not load. Reload this page to try again."/>},
-  'connect/ready':{title:'Connections · phone set up',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} accountRecoverable readOnly={false} onCopy={nothing}/>},
+  'connect/chatgpt':{title:'Connections · ChatGPT',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="ChatGPT" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/grok':{title:'Connections · Grok',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="Grok" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/cursor':{title:'Connections · Cursor',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="Cursor" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/setup-saving':{title:'Connections · saving setup',screen:()=> <Connect connection={data.connection} setupBusy readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/setup-failed':{title:'Connections · setup failed',screen:()=> <Connect connection={data.connection} error="Your setup could not be saved. Try again." readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/ready':{title:'Connections · phone set up',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} readOnly={false} onCopy={nothing}/>},
   'home/connected':{title:'Home · phone set up',screen:()=> <Home {...homeProps} home={{...data.home,shortcutReady:true}} readOnly={false}/>},
 
   'try/code': {title:'Trial · verification code',screen:()=> <Trial stage="code" onRequest={nothing} onAgree={nothing} onVerify={nothing} onResend={nothing}/>},
@@ -175,7 +182,7 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   "upload/files-guide": {title:"Upload · files-guide",screen:()=> <Upload people={data.people} readOnly={false} initialGuide="files" onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
   "upload/quota-used": {title:"Upload · quota-used",screen:()=> <Upload people={data.people} readOnly={false} remainingSeconds={0} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
   "upload/shared-quota-used": {title:"Upload · shared-quota-used",screen:()=> <Upload people={data.people} readOnly={false} remainingSeconds={0} incoming={{id:"invented",title:"New recording"}} onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
-  'upload/new-person': { title: 'Upload · add a person', screen: () => <Upload people={data.people} readOnly={false} initialType="voice" presetPerson="new" onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/new-person': { title: 'Upload · add a person', screen: () => <Upload people={data.people} readOnly={false} initialFile={new File(["Invented audio"],"Project update.m4a")} initialType="voice" presetPerson="new" onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/shared': { title: 'Upload · a WhatsApp voice note', screen: () => <Upload people={data.people} readOnly={false} incoming={{id:'shared',title:'New recording'}} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/loading': { title: 'Upload · opening', screen: () => <Upload people={null} readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/failed': { title: 'Upload · could not open', screen: () => <Upload people={null} readOnly={false} loadError="Your upload could not open. Try again." onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
@@ -201,11 +208,11 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'person/failed': { title: 'Person · could not load', screen: () => <Person person={null} readOnly={false} today={today} error="This person could not load. Go to People and try again." onFiles={nothing} /> },
   'todos/failed': { title: 'To-dos · could not finish', screen: () => <Todos todos={data.todos} readOnly={false} today={today} error="This to-do could not be finished. Try ticking it again." onFiles={nothing} onTick={nothing} /> },
   'recording/edit-failed': { title: 'Recording · edit could not save', screen: () => <LiveRecording first={data.recordings.ready} editing="s3" error="Check the words and use a real date." /> },
-  'connect/manual': {title:'Connect · build shortcut manually',screen:()=> <Connect connection={data.connection} accountRecoverable readOnly={false} showManual onCopy={nothing}/>},
-  'connect/address': {title:'Connect · show private address',screen:()=> <Connect connection={data.connection} accountRecoverable readOnly={false} showAddress onCopy={nothing}/>},
+  'connect/manual': {title:'Connect · build shortcut manually',screen:()=> <Connect connection={data.connection} readOnly={false} showManual onCopy={nothing}/>},
+  'connect/address': {title:'Connect · show private address',screen:()=> <Connect connection={data.connection} readOnly={false} showAddress onCopy={nothing}/>},
   'connect/loading': { title: 'Connect · loading', screen: () => <Connect connection={null} readOnly={false} onCopy={nothing} /> },
   'connect/failed': { title: 'Connect · could not load', screen: () => <Connect connection={null} readOnly={false} error="Your address could not load. Reload this page to try again." onCopy={nothing} /> },
-  'connect/copy-failed': { title: 'Connect · copy unavailable', screen: () => <Connect connection={data.connection} accountRecoverable readOnly={false} copyError={{at:'assistant',text:'Touch and hold the address to copy it.'}} onCopy={nothing} /> },
+  'connect/copy-failed': { title: 'Connect · copy unavailable', screen: () => <Connect connection={data.connection} readOnly={false} copyError={{at:'assistant',text:'Touch and hold the address to copy it.'}} onCopy={nothing} /> },
   'waitlist/failed': { title: 'Waitlist · could not save', screen: () => <Home {...homeProps} readOnly waitlist={<Waitlist postUrl={null} error="Please wait an hour, then reload this page." onSubmit={nothing}/>} /> },
   'operator/failed': { title: 'Download · link needed', screen: () => <Operator count={null} error="Open your private download link to see the list." onDownload={nothing}/> },
   home: { title: 'Home', screen: () => <Home {...homeProps} readOnly={false} waitlist={<DemoWaitlist />} /> },
@@ -231,10 +238,18 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'todos/empty': { title: 'To-dos · nothing open', screen: () => <LiveTodos empty /> },
   'todos/public': { title: 'To-dos · read-only', screen: () => <LiveTodos readOnly /> },
   connect: { title: 'Connect', screen: () => <LiveConnect /> },
-  'connect/sign-out': {title:'Connections · sign out here',screen:()=> <Connect connection={data.connection} readOnly={false} accountRecoverable initialSignOut='here' onCopy={nothing}/>},
-  'connect/sign-out-all': {title:'Connections · sign out everywhere',screen:()=> <Connect connection={data.connection} readOnly={false} accountRecoverable initialSignOut='everywhere' onCopy={nothing}/>},
-  'connect/invitation': {title:'Connections · invitation access',screen:()=> <Connect connection={data.connection} readOnly={false} accountRecoverable={false} onCopy={nothing}/>},
-  'connect/sign-out-failed': {title:'Connections · sign out failed',screen:()=> <Connect connection={data.connection} readOnly={false} accountRecoverable initialSignOut='here' accountError='Could not sign out. Try again.' onCopy={nothing}/>},
+  settings: {title:'Settings · your account',screen:()=> <Settings account={{signedIn:true,email:'mara@example.invalid'}} onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'settings/public': {title:'Settings · signed out',screen:()=> <Settings account={{signedIn:false,email:null}} onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'settings/invitation': {title:'Settings · invitation',screen:()=> <Settings account={{signedIn:true,email:null}} onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'settings/loading': {title:'Settings · opening',screen:()=> <Settings account={null} onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'settings/failed': {title:'Settings · unavailable',screen:()=> <Settings account={null} error="Your account could not load. Try again." onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'settings/sign-out': {title:'Settings · sign out here',screen:()=> <Settings account={{signedIn:true,email:'mara@example.invalid'}} initialChoice="here" onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'settings/sign-out-all': {title:'Settings · sign out everywhere',screen:()=> <Settings account={{signedIn:true,email:'mara@example.invalid'}} initialChoice="everywhere" onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'settings/delete': {title:'Settings · delete confirmation',screen:()=> <Settings account={{signedIn:true,email:'mara@example.invalid'}} initialChoice="delete" onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'settings/delete-failed': {title:'Settings · delete failed',screen:()=> <Settings account={{signedIn:true,email:'mara@example.invalid'}} initialChoice="delete" error="Your account could not be deleted. Try again." onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'settings/deleting': {title:'Settings · deleting',screen:()=> <Settings account={{signedIn:true,email:'mara@example.invalid'}} initialChoice="delete" busy onSignOut={nothing} onDelete={nothing} onRetry={nothing}/>},
+  'upload/messages': {title:'Upload · Messages guidance',screen:()=> <Upload people={data.people} readOnly={false} initialSource="messages" shortcutReady onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
+  'upload/telegram': {title:'Upload · Telegram guidance',screen:()=> <Upload people={data.people} readOnly={false} initialSource="telegram" shortcutReady onFiles={nothing} onStart={nothing} onRetry={nothing}/>},
   'connect/public': { title: 'Connect · read-only', screen: () => <Connect connection={null} readOnly due="overdue" onCopy={nothing} /> },
   waitlist: { title: 'The waitlist card · signed up', screen: () => <Home {...homeProps} readOnly waitlist={<DemoWaitlist saved />} /> },
   operator: { title: 'Copal’s download page', screen: () => <Operator count={12} onDownload={nothing} /> },
