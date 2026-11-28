@@ -45,7 +45,7 @@ and callbacks. The old global `src/style.css` is removed. Stock Catalyst is
 unchanged, including the dialog used for the editing sheet.
 
 The gallery includes loading and failure states needed by the live app.
-`check.mjs` checks all 136 states. The phone suite checks all public and judge
+`check.mjs` checks all 141 states. The phone suite checks all public and judge
 routes, choosing a person before an upload, shared recordings waiting for that choice, Home checkboxes, decisions, editing, errors and quote
 highlighting. It checks the filled violet's resting, hover and active colours,
 and waits for finite layout transitions to settle through retried assertions.
@@ -70,7 +70,7 @@ The dock at the foot of the screen holds it, except where noted.
 | Person | "Review suggestions" when some wait; otherwise "Add recordings" | "Back to People" |
 | Upload | "Choose audio file" in the Files card, then "Let KAI read" or "Transcribe recording" after the type choice; the same choice for shared audio | "Try it yourself" |
 | Settings | No violet main action; outlined Sign out, plain Sign out everywhere, red Delete my account | Quiet Sign in |
-| Connect | "Copy your address", in the first card | "Try it yourself" |
+| Connect | "Copy your address", then "Copy assistant address" after phone setup | "Try it yourself" |
 
 ### What the look shows that the server does not send yet
 
@@ -203,3 +203,11 @@ Delete my account action. Confirmation explains deletion, revocation and
 limited retention. Invitation and public states expose no address or delete
 action. Settings uses the narrow no-violet-main-action exception in §21;
 body type and all target sizes retain U6’s minimums.
+
+Copal’s App shelf refinements use official WhatsApp/Telegram SVG artwork and
+Apple’s Messages PNG (approved exception). Sharing help opens in a dismissible
+popup; Send to KAI links back to Connections. Messages keeps sms: and explains
+closing the composer before selecting a conversation. The shortcut checkbox
+persists its confirmation and collapses phone setup, making the assistant
+address the main action. Claude, ChatGPT, Grok and Muse have separate guidance;
+Muse is explicitly unverified. Official help links accompany the steps.

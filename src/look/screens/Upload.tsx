@@ -3,12 +3,14 @@ import {RECORDING_NOTICE} from './DemoInfo'
 import { useState } from 'react'
 import type { LinkedPerson, PersonChoice,RecordingType } from '../types'
 import { Button, Card, Field, FOCUS, Notice, PushedPage, RecordingPicker, Segmented, WhatIsKai, TextLink, useHref } from '../ui'
-import {Icon,type IconName} from '../icons'
+import {Icon} from '../icons'
+import {Dialog,DialogTitle,DialogBody,DialogActions} from '../../catalyst/dialog'
 export type UploadSource='voice-memos'|'whatsapp'|'messages'|'telegram'|'files'
-const apps:{id:UploadSource;label:string;href:string;color:string}[]=[
- {id:'whatsapp',label:'WhatsApp',href:'whatsapp://app',color:'bg-emerald-600'},
- {id:'messages',label:'Messages',href:'sms:',color:'bg-green-600'},
- {id:'telegram',label:'Telegram',href:'tg://settings',color:'bg-sky-600'}
+const appImages={whatsapp:new URL('../brands/whatsapp.svg',import.meta.url).href,messages:new URL('../brands/messages.png',import.meta.url).href,telegram:new URL('../brands/telegram.svg',import.meta.url).href}
+const apps:{id:keyof typeof appImages;label:string;href:string}[]=[
+ {id:'whatsapp',label:'WhatsApp',href:'whatsapp://app'},
+ {id:'messages',label:'Messages',href:'sms:'},
+ {id:'telegram',label:'Telegram',href:'tg://settings'}
 ]
 const guides:Record<UploadSource,string[]>={
  'voice-memos':['Open Voice Memos from your Home Screen and choose a recording.','Tap More (…), then Share. If Options appears, choose Rendered audio.','Choose Send to KAI. Your browser opens so you can choose the recording type.','Or choose Save to Files, then use Choose audio file here.'],
@@ -63,13 +65,21 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
        </section>
        <section className="space-y-4"><div className="flex items-center justify-between gap-2"><h2 className="text-xl font-extrabold">Voice notes</h2><TextLink href={'/connect?next='+(guide&&guide!=='files'?guide:'whatsapp')}>{shortcutReady?'Sharing setup':'Set up sharing'}</TextLink></div>
         <div className="grid grid-cols-3 gap-2" aria-label="Share from an app">{apps.map(app=><div key={app.id} className="text-center">
-         <a className={`${FOCUS} flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl text-base font-bold`} href={shortcutReady?app.href:to('/connect?next='+app.id)} onClick={()=>setGuide(app.id)}><span className={`grid size-12 place-items-center rounded-2xl text-white ${app.color}`}><Icon name={app.id==='telegram'?'paperplane':app.id==='whatsapp'?'phonechat':'chat'}/></span>{app.label}</a>
-         <button className={`${FOCUS} mx-auto grid size-11 place-items-center rounded-full text-zinc-500`} aria-label={'How to add from '+app.label} aria-expanded={guide===app.id} onClick={()=>setGuide(guide===app.id?null:app.id)}><Icon name="info"/></button>
+         <a className={`${FOCUS} flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl text-base font-bold`} href={shortcutReady?app.href:to('/connect?next='+app.id)} onClick={()=>setGuide(app.id)}><img src={appImages[app.id]} alt="" width={48} height={48} className="size-12 object-contain"/>{app.label}</a>
+         <button className={`${FOCUS} mx-auto grid size-11 place-items-center rounded-full text-zinc-500`} aria-label={'How to add from '+app.label} aria-haspopup="dialog" aria-expanded={guide===app.id} onClick={()=>setGuide(guide===app.id?null:app.id)}><Icon name="info"/></button>
         </div>)}</div>
         <button className={`${FOCUS} flex min-h-16 w-full items-center gap-3 rounded-2xl px-1 text-left`} onClick={()=>setGuide(guide==='voice-memos'?null:'voice-memos')} aria-expanded={guide==='voice-memos'}><Icon name="mic"/><span className="flex-1"><span className="block text-base font-bold">Voice Memos</span><span className="text-base/7 text-zinc-500">How to share your recording</span></span><Icon name="right"/></button>
         <p className="text-base/7 text-zinc-500">{shortcutReady?'Your sharing shortcut is set up.':'Sharing from apps needs the Send to KAI shortcut.'}</p>
        </section>
-       {guide && <Card id="source-guide" className="space-y-3 p-5"><h2 className="text-lg font-extrabold">From {guide==='voice-memos'?'Voice Memos':guide==='files'?'Files':apps.find(a=>a.id===guide)!.label}</h2><ol className="list-decimal space-y-3 pl-5 text-base/7 text-zinc-600">{guides[guide].map(step=><li key={step}>{step}</li>)}</ol>{!shortcutReady && guide!=='files' && <Button variant="outline" href={'/connect?next='+guide}>Set up shortcut</Button>}<p className="text-base/7 text-zinc-500">If an app does not open, open it from your Home Screen. You can also save the recording to Files and choose it above.</p><Button variant="quiet" onClick={()=>setGuide(null)}>Dismiss instructions</Button></Card>}
+       <Dialog open={Boolean(guide)} onClose={()=>setGuide(null)} className="!rounded-[28px]">
+        <DialogTitle className="!text-xl !font-extrabold">From {guide==='voice-memos'?'Voice Memos':guide==='files'?'Files':apps.find(a=>a.id===guide)?.label}</DialogTitle>
+        <DialogBody className="space-y-4 !text-base/7">
+         <ol className="list-decimal space-y-3 pl-5">{guide && guides[guide].map((step,index)=><li key={index}>{step.split('Send to KAI').map((part,i)=><span key={i}>{i>0 && <a href={to('/connect?next='+guide)} className={`${FOCUS} inline-flex min-h-11 items-center rounded-lg font-bold text-violet-700 underline`}>Send to KAI</a>}{part}</span>)}</li>)}</ol>
+         {!shortcutReady && guide!=='files' && <Button variant="outline" href={'/connect?next='+guide}>Set up shortcut</Button>}
+         <p>If an app does not open, open it from your Home Screen. You can also save the recording to Files and choose it here.</p>
+        </DialogBody>
+        <DialogActions><Button variant="quiet" onClick={()=>setGuide(null)}>Dismiss instructions</Button></DialogActions>
+       </Dialog>
       </>}
       {file && !incoming && <Card className="space-y-2 p-5"><p className="text-base font-bold text-violet-700">Chosen from Files</p><h2 className="break-words text-lg font-extrabold">{file.name}</h2><p className="text-base/7 text-zinc-600">Ready to upload after you choose the recording type.</p><Button variant="quiet" disabled={busy} onClick={()=>{setFile(null);setFileError('')}}>Choose a different file</Button></Card>}
       {incoming && <Card className="p-5"><p className="text-base font-bold text-violet-700">Shared from your phone</p><h2 className="mt-1 text-lg font-extrabold">{incoming.title}</h2><p className="mt-2 text-base/7 font-medium text-zinc-600">Your recording is attached and waiting for you.</p></Card>}

@@ -92,7 +92,8 @@ function LiveTodos({ view, readOnly = false, empty = false }: { view?: 'mine' | 
 
 function LiveConnect() {
   const [copied, setCopied] = useState<'upload' | 'home' | 'assistant' | null>(null)
-  return <Connect connection={data.connection} readOnly={false} due="overdue" copied={copied} onCopy={(which) => setCopied(which)} onSetupDone={nothing} />
+  const [shortcutReady,setReady]=useState(false)
+  return <Connect connection={{...data.connection,shortcutReady}} readOnly={false} due="overdue" copied={copied} onCopy={(which) => setCopied(which)} onSetupDone={setReady} />
 }
 
 const homeProps = { home: data.home, samples: data.samples, today, due: 'overdue' as const, onFiles: nothing, onRead: nothing, onSample: nothing }
@@ -140,6 +141,11 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'notifications/empty':{title:'Notifications · empty',screen:()=> <Notifications items={[]} readOnly={false}/>},
   'notifications/loading':{title:'Notifications · loading',screen:()=> <Notifications items={null} readOnly={false}/>},
   'notifications/failed':{title:'Notifications · could not load',screen:()=> <Notifications items={null} readOnly={false} error="Your recordings could not load. Reload this page to try again."/>},
+  'connect/chatgpt':{title:'Connections · ChatGPT',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="ChatGPT" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/grok':{title:'Connections · Grok',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="Grok" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/muse':{title:'Connections · Muse',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} initialAssistant="Muse" readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/setup-saving':{title:'Connections · saving setup',screen:()=> <Connect connection={data.connection} setupBusy readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
+  'connect/setup-failed':{title:'Connections · setup failed',screen:()=> <Connect connection={data.connection} error="Your setup could not be saved. Try again." readOnly={false} onCopy={nothing} onSetupDone={nothing}/>},
   'connect/ready':{title:'Connections · phone set up',screen:()=> <Connect connection={{...data.connection,shortcutReady:true}} readOnly={false} onCopy={nothing}/>},
   'home/connected':{title:'Home · phone set up',screen:()=> <Home {...homeProps} home={{...data.home,shortcutReady:true}} readOnly={false}/>},
 
