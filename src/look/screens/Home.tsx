@@ -1,3 +1,4 @@
+import {FirstRecording,firstRecordingAction} from './FirstRecording'
 import {DemoInfo,ProcessingInfo} from './DemoInfo'
 import { useState, type ReactNode } from 'react'
 import { Icon } from '../icons'
@@ -143,7 +144,11 @@ export function Home({
   onTick,
   pending = [],
   initialInfoOpen,
+  onShortcutReady,
+  setupBusy,
 }: {
+  onShortcutReady?:()=>void
+  setupBusy?:boolean
   initialInfoOpen?:boolean
   home: HomeData | null
   queue?: QueueItem[]
@@ -166,25 +171,29 @@ export function Home({
 }) {
   const to = useHref()
   const [signupActive,setSignupActive]=useState(false)
+  const onboarding=Boolean(!readOnly && home?.trialVerified && home.trialSeconds!=null && home.hasReadyRecording===false)
+  const first=queue.find(item=>item.source!=='paste' && item.source!=='sample')
+  const action=firstRecordingAction(Boolean(home?.shortcutReady),first)
   return (
     <SignupCardContext.Provider value={{enabled:readOnly,active:signupActive,setActive:setSignupActive}}><TabPage
       current="/home"
-      title="Home"
-      subtitle="Share a recording in. KAI finds the people, the notes and the promises."
+      title={onboarding?"Welcome to your notebook":"Home"}
+      subtitle={onboarding?"Start with a recording from your phone.":"Share a recording in. KAI finds the people, the notes and the promises."}
       readOnly={readOnly}
       due={due}
-      dock={readOnly ? <WhatIsKai hideTrial={signupActive}/> : <AddRecordings onFiles={onFiles} busy={adding} />}
+      dock={readOnly ? <WhatIsKai hideTrial={signupActive}/> : onboarding ? <Button variant="primary" wide href={action.href}>{action.label}</Button> : <AddRecordings onFiles={onFiles} busy={adding} />}
     >
       {queue.length > 0 && <Queue items={queue} initialInfoOpen={initialInfoOpen} showInfo={Boolean(home?.trialVerified && queue.some(item=>['waiting','listening','reading'].includes(item.status) && !item.awaiting_person && !item.awaiting_speakers))} />}
-      {home && !readOnly && !home.shortcutReady && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Send voice notes straight to KAI</h2><p className="text-base/7 text-zinc-600">Set up the iPhone shortcut once, then share from Voice Memos or WhatsApp.</p><Button variant="outline" href="/connect">Set up your phone</Button></Card>}
+      {onboarding && <FirstRecording shortcutReady={Boolean(home?.shortcutReady)} item={first} onShortcutReady={onShortcutReady} busy={setupBusy}/>}
+      {home && !onboarding && !readOnly && !home.shortcutReady && home.hasReadyRecording!==true && <Card className="space-y-3 p-5"><h2 className="text-xl font-extrabold">Send voice notes straight to KAI</h2><p className="text-base/7 text-zinc-600">Set up the iPhone shortcut once, then share from Voice Memos or WhatsApp.</p><Button variant="outline" href="/connect">Set up your phone</Button></Card>}
       {home?.trialSeconds!=null && !home.trialVerified && <Card className="p-5"><p className="mb-3 text-base/7">Verify your email to continue your trial. Your notebook and remaining time are kept.</p><Button href="/try" variant="outline">Verify email</Button></Card>}
       {home?.trialSeconds===0 && home.xPostUrl && <Button href={home.xPostUrl} variant="outline">Show KAI some love</Button>}
       {home?.trialSeconds!=null && <DemoInfo seconds={home.trialSeconds}/>}
-      {home && !readOnly && home.conversations.length===0 && <Card className="p-5"><h2 className="text-xl font-extrabold">Your notebook starts here</h2><p className="mt-2 text-base/7 text-zinc-600">Add a recording. KAI will find the people, notes and to-dos for you to review.</p></Card>}
+      {home && !onboarding && !readOnly && home.conversations.length===0 && <Card className="p-5"><h2 className="text-xl font-extrabold">Your notebook starts here</h2><p className="mt-2 text-base/7 text-zinc-600">Add a recording. KAI will find the people, notes and to-dos for you to review.</p></Card>}
       {addError && <Notice tone="error">{addError}</Notice>}
       {loadError && <Notice tone="error">{loadError}</Notice>}
       {!home && !loadError && <Notice>Loading your notebook…</Notice>}
-      {home && (
+      {home && (!onboarding || home.todos.length>0) && (
         <section aria-label="My tasks">
           <SectionLabel action={<TextLink href="/todos">All tasks</TextLink>}>My tasks</SectionLabel>
           {home.todos.length ? <Rows>
@@ -200,9 +209,9 @@ export function Home({
           </Rows> : <Card className="p-5 text-base font-medium text-zinc-600">No open to-dos. You’re caught up.</Card>}
         </section>
       )}
-      {!readOnly && !home?.hasRecordings && <Paste samples={samples} busy={pasteBusy} error={pasteError} open={pasteOpen} today={today} onRead={onRead} onSample={onSample} />}
+      {!onboarding && !readOnly && !home?.hasRecordings && <Paste samples={samples} busy={pasteBusy} error={pasteError} open={pasteOpen} today={today} onRead={onRead} onSample={onSample} />}
 
-      {home && (
+      {home && (!onboarding || home.conversations.some(r=>!queue.some(q=>q.id===r.id))) && (
         <>
           <div>
             <SectionLabel action={<TextLink href="/library">Open library</TextLink>}>Recent recordings</SectionLabel>
@@ -222,7 +231,7 @@ export function Home({
           </div>
         </>
       )}
-      {waitlist}
+      {!onboarding && waitlist}
     </TabPage></SignupCardContext.Provider>
   )
 }

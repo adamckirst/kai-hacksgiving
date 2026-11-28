@@ -1,3 +1,4 @@
+import {ShareFirstRecording} from '../src/look/screens/ShareFirstRecording'
 import {Settings} from '../src/look/screens/Settings'
 import {TrialPopup} from '../src/look/screens/TrialPopup'
 import {Login} from '../src/look/screens/Login'
@@ -107,6 +108,15 @@ const searchProps={query:'Dana',results:searchResults,readOnly:false,onQuery:not
 const taskExample={id:'pricing',text:'Send Dana the pricing',status:'open' as const,due_on:today,owner_name:null,person_name:'Dana Whitfield',person_id:'dana',quote:'I promised to send Dana the pricing.',conversation_id:'dana-call'}
 const taskProps={task:taskExample,readOnly:false,onDone:nothing,onRetry:nothing,back:'/search'}
 const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
+  'onboarding/home':{title:'First recording · welcome',screen:()=> <Home {...homeProps} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:1800,trialVerified:true,hasReadyRecording:false}} readOnly={false} onShortcutReady={nothing}/>},
+  'onboarding/share-next':{title:'First recording · setup confirmed',screen:()=> <Home {...homeProps} home={{...data.home,todos:[],conversations:[],peopleCount:0,trialSeconds:1800,trialVerified:true,hasReadyRecording:false,shortcutReady:true}} readOnly={false}/>},
+  'onboarding/waiting':{title:'First recording · identify speakers',screen:()=> <Home {...homeProps} home={{...data.home,todos:[],conversations:[],trialSeconds:1750,trialVerified:true,hasReadyRecording:false,shortcutReady:true}} queue={[{id:'first-audio',title:'New recording',status:'waiting',awaiting_speakers:1,error:null}]} readOnly={false}/>},
+  'onboarding/setup':{title:'First recording · shortcut setup',screen:()=> <Connect onboarding connection={data.connection} readOnly={false} back="/home" onCopy={nothing} onSetupDone={nothing}/>},
+  'onboarding/setup-copied':{title:'First recording · add shortcut',screen:()=> <Connect onboarding copied="upload" connection={data.connection} readOnly={false} back="/home" onCopy={nothing} onSetupDone={nothing}/>},
+  'onboarding/setup-ready':{title:'First recording · ready to share',screen:()=> <Connect onboarding connection={{...data.connection,shortcutReady:true}} readOnly={false} back="/home" onCopy={nothing} onSetupDone={nothing}/>},
+  'onboarding/share':{title:'First recording · choose an app',screen:()=> <ShareFirstRecording shortcutReady/>},
+  'onboarding/whatsapp':{title:'First recording · WhatsApp',screen:()=> <ShareFirstRecording shortcutReady initialSource="whatsapp"/>},
+  'onboarding/guide':{title:'First recording · sharing steps',screen:()=> <ShareFirstRecording shortcutReady initialGuide/>},
   search:{title:'Search · start',screen:()=> <Search {...searchProps} query="" results={null}/>},
   'search/results':{title:'Search · matches',screen:()=> <Search {...searchProps}/>},
   'search/empty':{title:'Search · no matches',screen:()=> <Search {...searchProps} results={{library:[],people:[],tasks:[],more:{library:false,people:false,tasks:false}}}/>},

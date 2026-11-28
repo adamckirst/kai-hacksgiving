@@ -110,6 +110,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
     catch(error){if(error instanceof ReadingError)res.status(error.status).json({error:error.message});else throw error;}
   });
   app.get('/api/home',(_req,res) => res.json({
+    hasReadyRecording:Boolean(db.prepare("SELECT 1 FROM conversations WHERE workspace_id=? AND source IN ('recording','shared') AND status='ready' LIMIT 1").get(res.locals.workspace)),
     shortcutReady:Boolean((db.prepare('SELECT shortcut_ready FROM workspaces WHERE id=?').get(res.locals.workspace) as {shortcut_ready:number}).shortcut_ready),
     trialVerified:Boolean((db.prepare('SELECT trial_verified FROM workspaces WHERE id=?').get(res.locals.workspace) as {trial_verified:number}).trial_verified),
     xPostUrl:xPost(options.xPostUrl),
@@ -131,7 +132,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
       else if(error instanceof SyntaxError) res.status(400).json({error:'The recording dates could not be read.'});else throw error;
     }
   });
-  app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.status,c.error,c.progress,c.awaiting_person,c.awaiting_speakers,c.recording_type,c.reserved_seconds,c.happened_on,
+  app.get('/api/queue',(_req,res)=>res.json(db.prepare(`SELECT c.id,c.title,c.source,c.status,c.error,c.progress,c.awaiting_person,c.awaiting_speakers,c.recording_type,c.reserved_seconds,c.happened_on,
     (SELECT count(*) FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed') AS suggestion_count
     FROM conversations c WHERE c.workspace_id=? AND (c.status IN ('waiting','listening','reading','failed')
       OR (c.status='ready' AND EXISTS(SELECT 1 FROM suggestions s WHERE s.workspace_id=c.workspace_id AND s.conversation_id=c.id AND s.status='proposed')))

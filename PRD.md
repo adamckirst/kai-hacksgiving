@@ -627,7 +627,8 @@ people, and tasks”, moving Connect out of the main tabs. He confirmed
   updates. New updates are visibly unread until their recording is opened.
   All reads and read-state changes are confined to the current notebook.
 - Connections is reached through a settings button. Home offers shortcut
-  setup until the person marks it done or KAI receives a shared recording.
+  setup through the first-use guide in §22 until the first audio recording
+  is ready.
   The browser cannot inspect installed shortcuts; the state is a user
   confirmation or a successful share, not an installation claim.
 - Add recordings offers Voice Memos, WhatsApp and Files. Each app has an
@@ -1111,3 +1112,50 @@ new states. Both use the existing review, merge and deployment loop.
   the Sprite with invented data and fake providers. Never delete or inspect
   a real tester's account to prove this check. Copal checks app launches and
   sharing on his iPhone; list each launch as not run until confirmed.
+
+
+## 22 · First recording onboarding (Copal, 28 November)
+
+Copal requested a first-use guide prioritising shortcut setup and sharing
+from phone apps. He approved “Update the onboarding plan”, asked to see the
+design first, then said “I love it!” and “yes. now deploy”. He supplied the
+updated shared shortcut with the common /upload return page preset. This
+supersedes §14's setup-card dismissal rule for verified trial notebooks.
+
+- A verified trial notebook with no ready audio recording opens Home with
+  “Welcome to your notebook”, “Start with a recording from your phone” and
+  three steps: Set up the KAI shortcut, Share one recording, See what KAI found.
+  Keep the guide until its first uploaded/shared audio is ready. A pasted
+  transcript, sample, checkbox, upload receipt or failed recording does not
+  complete it. Derive completion from this notebook's persisted recordings;
+  another notebook's progress cannot complete the guide. Existing ready
+  notebooks and the public/seeded invitation demo keep their normal Home.
+- The main action follows the current step. An explicit “I already have the
+  shortcut” confirmation saves the existing setup state; never infer that a
+  shortcut is installed by opening its link. A failed save stays recoverable.
+  Incoming recordings, speaker identification, processing and retry remain
+  accessible; their next action takes priority over starting another upload.
+- Shortcut setup copies the notebook's private receiving address once and
+  opens Copal's updated iCloud shortcut. Its public /upload return address
+  is preset; remove the extra finish/return-address task. Keep manual build
+  instructions in their disclosure, including the public return address for
+  people building their own shortcut. Public visitors see no private address.
+- Sharing uses compact rows in this order: Voice Memos, WhatsApp, Messages,
+  with the existing official artwork and sharing instructions. Voice Memos
+  stays manual; WhatsApp and Messages keep their approved launches. A real
+  sharing-steps control replaces the prototype's simulated return button.
+  Keep “Set up the KAI shortcut for iOS” available. Remove the generic
+  “If an app does not open” fallback paragraph Copal rejected.
+- Files remains available through “Choose a file instead”. Both entry paths
+  retain the same horizontal three-type selector and all §15 speaker rules.
+  No provider call occurs before the recording-type confirmation. After the
+  first ready audio, Home returns to tasks, actionable and recent recordings.
+  No new provider, email, quota or account behavior is introduced.
+- Checks: npm run check; gallery at 375 px including first Home, setup,
+  confirmed setup, sharing and waiting states; explicit setup confirmation
+  and failure recovery, reload, Files escape, incoming share pause, unchanged
+  horizontal type selector, and Home completion only for this notebook's
+  ready audio. Verify the deployed layout and isolated completion checks on
+  the Sprite with invented data and fake providers. Copal confirms installing
+  the updated shortcut and sharing an invented recording on his iPhone; mark
+  this operator check not run until confirmed.

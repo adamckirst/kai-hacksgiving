@@ -6,13 +6,13 @@ import { Button, Card, Field, FOCUS, Notice, PushedPage, RecordingPicker, Segmen
 import {Icon} from '../icons'
 import {Dialog,DialogTitle,DialogBody,DialogActions} from '../../catalyst/dialog'
 export type UploadSource='voice-memos'|'whatsapp'|'messages'|'telegram'|'files'
-const appImages={whatsapp:new URL('../brands/whatsapp.svg',import.meta.url).href,messages:new URL('../brands/messages.png',import.meta.url).href,'voice-memos':new URL('../brands/voice-memos.png',import.meta.url).href}
-const apps:{id:keyof typeof appImages;label:string;href:string}[]=[
+export const appImages={whatsapp:new URL('../brands/whatsapp.svg',import.meta.url).href,messages:new URL('../brands/messages.png',import.meta.url).href,'voice-memos':new URL('../brands/voice-memos.png',import.meta.url).href}
+export const apps:{id:keyof typeof appImages;label:string;href:string}[]=[
  {id:'voice-memos',label:'Voice Memos',href:''},
  {id:'whatsapp',label:'WhatsApp',href:'whatsapp://app'},
  {id:'messages',label:'Messages',href:'sms:'}
 ]
-const guides:Record<UploadSource,string[]>={
+export const guides:Record<UploadSource,string[]>={
  'voice-memos':['Open Voice Memos from your Home Screen and choose a recording.','Tap More (…), then Share. If Options appears, choose Rendered audio.','Choose Send to KAI. Your browser opens so you can choose the recording type.','Or choose Save to Files, then use Choose audio file here.'],
  whatsapp:['Open the conversation and hold the voice note, then tap Forward.','Tap Share, then Send to KAI.','Return to KAI and choose who sent it before transcription.'],
  messages:['Open Messages and the conversation with your recording. If a new message opens, close it first.','Touch and hold the audio. Choose Save to Voice Memos if offered, then share it from Voice Memos through Send to KAI.','If sharing is unavailable, save the audio to Files and choose it here.'],
@@ -75,7 +75,6 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
         <DialogTitle className="!text-xl !font-extrabold">From {guide==='voice-memos'?'Voice Memos':guide==='files'?'Files':guide==='telegram'?'Telegram':apps.find(a=>a.id===guide)?.label}</DialogTitle>
         <DialogBody className="space-y-4 !text-base/7">
          <ol className="list-decimal space-y-3 pl-5">{guide && guides[guide].map((step,index)=><li key={index}>{step.split('Send to KAI').map((part,i)=><span key={i}>{i>0 && <a href={to('/connect?next='+guide)} className={`${FOCUS} inline-flex min-h-11 items-center rounded-lg font-bold text-violet-700 underline`}>Send to KAI</a>}{part}</span>)}</li>)}</ol>
-         <p>If an app does not open, open it from your Home Screen. You can also save the recording to Files and choose it here.</p>
          <TextLink href={'/connect?next='+(guide==='files'?'voice-memos':guide)}>Set up the KAI shortcut for iOS</TextLink>
         </DialogBody>
         <DialogActions><Button variant="quiet" onClick={()=>setGuide(null)}>Dismiss instructions</Button></DialogActions>
