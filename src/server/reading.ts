@@ -1,4 +1,6 @@
 import {ReaderFailure} from './reader-failure';
+import {getProcessingMetrics,markProcessing,observeProcessing,timeProcessing} from './processing-metrics';
+import type {ProcessingObserver} from './processing-metrics';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { KaiDatabase } from './db';
@@ -8,7 +10,7 @@ const words=z.string().trim().min(1).max(500);
 export const toolSchemas={
   get_person:z.object({person_id:words}),
   propose_done:z.object({person_id:words,todo_id:words,quote:words,text:words.optional()}),
-  describe_recording:z.object({title:words.max(100),summary:words.max(500).refine(s=>s.split('\n').length===2 && s.split('\n').every(line=>line.trim()),'Use two lines.')}),
+  describe_recording:z.object({title:words.max(100),summary:words.max(500).regex(/^[^\r\n]*\S[^\r\n]*\r?\n[^\r\n]*\S[^\r\n]*$/, 'Use exactly two nonempty lines separated by one newline.').describe('Exactly two short, nonempty lines separated by one newline; no blank or third line.')}),
   propose_person:z.object({name:words.max(100),company:words.max(100),role:words.max(100),quote:words}),
   propose_note:z.object({person_id:words,text:words,quote:words}),
   propose_todo:z.object({person_id:words.nullable(),owner_person_id:words.nullable(),text:words,due_on:realDate.nullable(),quote:words}),
@@ -16,7 +18,7 @@ export const toolSchemas={
 export type ToolName=keyof typeof toolSchemas;
 export type ToolResult={ok:boolean;id?:string;error?:string;person?:NonNullable<ReturnType<typeof personPage>>};
 export type ReadInput={speakers?:Record<string,{kind:'owner'}|{kind:'person';person:{id:string;name:string;company:string;role:string}}>;utterances?:{speaker:string;text:string;start:number;end:number}[];sender?:{kind:'person'|'owner'|'unknown';person?:{id:string;name:string;company:string;role:string}};text:string;happened_on:string;people:{id:string;name:string;company:string;role:string}[]};
-export type Reader=(input:ReadInput,call:(name:string,input:unknown)=>ToolResult,signal?:AbortSignal)=>Promise<void>;
+export type Reader=(input:ReadInput,call:(name:string,input:unknown)=>ToolResult,signal?:AbortSignal,observe?:ProcessingObserver)=>Promise<void>;
 export class ReadingError extends Error {constructor(message:string,public status=400){super(message);}}
 export function reserveReading(db:KaiDatabase,workspace:string,now=new Date()) {
   const verification=db.prepare('SELECT trial_seconds,trial_verified,trial_ended FROM workspaces WHERE id=?').get(workspace) as {trial_seconds:number|null;trial_verified:number;trial_ended:number}|undefined;
@@ -49,6 +51,7 @@ export function addReading(db:KaiDatabase,workspace:string,text:string,day:strin
     const id=randomUUID();
     db.prepare('INSERT INTO conversations (id,workspace_id,title,summary,source,text,happened_on,status) VALUES (?,?,?,?,?,?,?,?)').run(id,workspace,'New conversation','',source,text,day,'waiting');
     db.prepare('UPDATE conversations SET happened_at=? WHERE id=?').run(Date.parse(day),id);
+    markProcessing(db,id,{receivedAt:Date.now(),requestedAt:Date.now()});
     return id;
   })();
 }
@@ -60,12 +63,16 @@ export function retryReading(db:KaiDatabase,workspace:string,id:string) {
     reserveReading(db,workspace);if(row.audio_path && !row.transcribed) reserveRecording(db,workspace);
     db.prepare("DELETE FROM suggestions WHERE conversation_id=? AND workspace_id=? AND status='proposed'").run(id,workspace);
     db.prepare("UPDATE conversations SET status='waiting',error=NULL,progress=NULL,notification_seen_status=NULL,attempts=0 WHERE id=? AND workspace_id=?").run(id,workspace);
+    // A manual retry starts a new measurement; automatic retries accumulate.
+    const receivedAt=getProcessingMetrics(db,id)?.receivedAt;
+    db.prepare('UPDATE conversations SET processing_metrics=? WHERE id=?').run(JSON.stringify({receivedAt,requestedAt:Date.now()}),id);
   })();
 }
 export async function readConversation(db:KaiDatabase,id:string,reader:Reader,signal?:AbortSignal) {
   const row=db.prepare('SELECT workspace_id,text,happened_on,source,person_id,recording_type,utterances,speaker_map FROM conversations WHERE id=?').get(id) as {workspace_id:string;text:string;happened_on:string;source:string;person_id:string|null;recording_type:string|null;utterances:string;speaker_map:string}|undefined;
   if(!row)return;
   db.prepare("UPDATE conversations SET status='reading',error=NULL,progress=NULL,failure_code=NULL,tool_error_counts='{}' WHERE id=?").run(id);
+  const finishReading=timeProcessing(db,id,'readingMs');
   let described=false, calls=0;const readPeople=new Set<string>();
   const personExists=(person:string) => !!db.prepare('SELECT id FROM people WHERE workspace_id=? AND id=?').get(row.workspace_id,person) || !!db.prepare("SELECT id FROM suggestions WHERE workspace_id=? AND conversation_id=? AND kind='person' AND status='proposed' AND id=?").get(row.workspace_id,id,person);
   try {
@@ -112,6 +119,7 @@ export async function readConversation(db:KaiDatabase,id:string,reader:Reader,si
       if(existing) return {ok:true,id:existing.id};
       const suggestion=randomUUID();
       db.prepare("INSERT INTO suggestions VALUES (?,?,?,?,?,?,'proposed')").run(suggestion,row.workspace_id,id,name.slice('propose_'.length),JSON.stringify(payload),quote);
+      if(!getProcessingMetrics(db,id)?.firstSuggestionAt)markProcessing(db,id,{firstSuggestionAt:Date.now()});
       return {ok:true,id:suggestion};
     };
     const errors:Record<string,number>={};
@@ -125,14 +133,17 @@ export async function readConversation(db:KaiDatabase,id:string,reader:Reader,si
         db.prepare('UPDATE conversations SET tool_error_counts=? WHERE id=?').run(JSON.stringify(errors),id);
       }
       return result;
-    },signal);
+    },signal,observeProcessing(db,id));
     signal?.throwIfAborted();
     if(!described) throw new ReaderFailure('missing_summary');
     db.prepare("UPDATE conversations SET status='ready' WHERE id=?").run(id);
+    markProcessing(db,id,{readyAt:Date.now()});
   } catch(error) {
     const code=signal?.aborted ? 'reading_timeout':error instanceof ReaderFailure ? error.code:error instanceof SyntaxError ? 'invalid_response':'reading_failed';
     db.prepare('UPDATE conversations SET failure_code=? WHERE id=?').run(code,id);
     if(signal?.aborted) return;
     db.prepare("UPDATE conversations SET status='failed',error='KAI could not finish reading. Try again.' WHERE id=?").run(id);
+  }finally{
+    finishReading();
   }
 }

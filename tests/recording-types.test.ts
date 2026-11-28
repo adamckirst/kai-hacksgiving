@@ -61,7 +61,7 @@ test('AssemblyAI requests speaker labels only for multiple-speaker recordings an
   return Response.json({status:'completed',audio_duration:2,text:'I will send the notes.',utterances:[{speaker:'A',text:'I will send the notes.',start:0,end:2000}]});
  };
  try{
-  assert.equal(await assemblyTranscriber(testTone(),new AbortController().signal,2,false),'I will send the notes.');
+  const single=await assemblyTranscriber(testTone(),new AbortController().signal,2,false);assert.equal(typeof single,'object');if(typeof single==='object'){assert.equal(single.text,'I will send the notes.');assert.deepEqual(single.utterances,[]);await single.cleanup;}
   const result=await assemblyTranscriber(testTone(),new AbortController().signal,2,true);assert.equal(typeof result,'object');
   assert.equal(Object.hasOwn(requests[0],'speaker_labels'),false);assert.equal(requests[1].speaker_labels,true);
   assert.ok(requests.every(r=>r.audio_end_at===2000 && r.speech_models[0]==='assemblyai-stt-3-7'));

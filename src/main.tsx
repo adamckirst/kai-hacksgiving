@@ -18,8 +18,9 @@ import {LibraryScreen} from './Library';
 import {NotebookStatusProvider} from './look/ui';
 import { ConnectScreen } from './Connect';
 import { Operator,Waitlist } from './Waitlist';
+import {visiblePoll} from './visible-poll';
 const downloadSecret=location.pathname==='/operator' ? new URLSearchParams(location.hash.slice(1)).get('download'):null;
-type Access = {kind:'public'|'judge';videoUrl:string|null};
+type Access = {kind:'public'|'judge';videoUrl:string|null;trialSeconds?:number|null;xPostUrl?:string|null};
 async function openAccess(): Promise<Access> {
   const secret = new URLSearchParams(location.hash.slice(1)).get('judge');
   if (location.hash) history.replaceState(null,'',location.pathname);
@@ -66,7 +67,7 @@ function App() {
 function Notebook({access}:{access:Access}) {
   const readOnly=access.kind==='public',route=location.pathname;
   const [unread,setUnread]=useState(0);
-  useEffect(()=>{if(readOnly)return;let alive=true;async function refresh(){try{const r=await fetch('/api/notifications');if(r.ok){const data=await r.json();if(alive)setUnread(data.unread)}}catch{}}void refresh();const timer=setInterval(()=>void refresh(),5000);return()=>{alive=false;clearInterval(timer)}},[readOnly]);
+  useEffect(()=>{if(readOnly)return;let alive=true;const poll=visiblePoll(async signal=>{try{const r=await fetch('/api/notifications/count',{signal});if(r.ok){const data=await r.json();if(alive)setUnread(data.unread)}}catch{}},5000);return()=>{alive=false;poll.stop()}},[readOnly]);
   function screen() {
     if(route==='/settings')return <SettingsScreen/>;
     if(route==='/search')return <SearchScreen readOnly={readOnly}/>;
@@ -74,7 +75,7 @@ function Notebook({access}:{access:Access}) {
     if(route==='/library')return <LibraryScreen readOnly={readOnly}/>;
     if(route==='/notifications')return <LibraryScreen readOnly={readOnly} notifications/>;
   if(route==='/try')return <Waitlist trial/>;
-  if(route==='/upload' || route.startsWith('/upload/'))return <UploadPage readOnly={readOnly}/>;
+  if(route==='/upload' || route.startsWith('/upload/'))return <UploadPage readOnly={readOnly} trialSeconds={access.trialSeconds} xPostUrl={access.xPostUrl}/>;
   if(route==='/home')return <HomeScreen readOnly={readOnly}/>;
   if(route==='/people')return <PeopleScreen readOnly={readOnly}/>;
   if(route.startsWith('/people/'))return <PersonScreen readOnly={readOnly}/>;

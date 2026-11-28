@@ -4,8 +4,29 @@ export function gatewayUrl(value:string,provider:string) {
   if (url.origin !== 'https://api.sprites.dev' || url.username || url.password || url.search || url.hash || !new RegExp(`^/v1/gateway/${provider}/[a-zA-Z0-9_-]+/?$`).test(url.pathname)) throw new Error('Invalid connector gateway address.');
   return url.href.replace(/\/$/,'');
 }
-export async function discoverGateways() {
-  const response=await fetch('https://api.sprites.dev/v1/gateway/list',{signal:AbortSignal.timeout(15000)});
+type Gateways=Readonly<{anthropic:string;assemblyai:string}>;
+type Discovery={transport:typeof fetch;value?:Gateways;expiresAt:number;pending?:Promise<Gateways>};
+let discovery:Discovery|undefined;
+const discoveryLifetime=5*60*1000;
+// Connection addresses remain in this process only. Never cache discovery errors
+// or replay provider POSTs: a refresh must not duplicate billable work.
+export function invalidateGateways(base?:string) {
+  if(!base || (discovery?.value && Object.values(discovery.value).includes(base)))discovery=undefined;
+}
+export function discoverGateways():Promise<Gateways> {
+  const transport=globalThis.fetch;
+  if(discovery?.transport===transport) {
+    if(discovery.pending)return discovery.pending;
+    if(discovery.value && discovery.expiresAt>Date.now())return Promise.resolve(discovery.value);
+  }
+  const current:Discovery={transport,expiresAt:0};discovery=current;
+  current.pending=readGateways(transport).then(value=>{
+    current.value=value;current.expiresAt=Date.now()+discoveryLifetime;current.pending=undefined;return value;
+  },error=>{if(discovery===current)discovery=undefined;throw error;});
+  return current.pending;
+}
+async function readGateways(transport:typeof fetch):Promise<Gateways> {
+  const response=await transport('https://api.sprites.dev/v1/gateway/list',{signal:AbortSignal.timeout(15000)});
   if (!response.ok) throw new Error(`Gateway discovery refused (${response.status}). Run inside kai.`);
   const found:Record<string,string[]>={anthropic:[],assemblyai:[]};
   function visit(value:unknown) {
@@ -16,11 +37,14 @@ export async function discoverGateways() {
   }
   visit(await response.json());
   for (const provider of Object.keys(found)) if (found[provider].length !== 1) throw new Error(`Expected one accessible ${provider} connector; found ${found[provider].length}.`);
-  return {anthropic:found.anthropic[0],assemblyai:found.assemblyai[0]};
+  return Object.freeze({anthropic:found.anthropic[0],assemblyai:found.assemblyai[0]});
 }
 export async function gatewayRequest(base:string,endpoint:string,init:RequestInit={}) {
   const response=await fetch(base+endpoint,{...init,redirect:'error',signal:init.signal ? AbortSignal.any([init.signal,AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000)});
-  if (!response.ok) throw new Error(`Connector request failed (${response.status}).`);
+  if (!response.ok) {
+    if([401,403,404].includes(response.status))invalidateGateways(base);
+    throw new Error(`Connector request failed (${response.status}).`);
+  }
   return response.json();
 }
 export function testTone() {

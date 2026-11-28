@@ -1,6 +1,8 @@
 import {MAX_AUDIO_SECONDS,MAX_AUDIO_TEXT} from '../limits';
+import {getProcessingMetrics,markProcessing,timeProcessing} from './processing-metrics';
 import {queueQuotaEmail} from './quota-mail';
 import { randomUUID } from 'node:crypto';
+import {setTimeout as wait} from 'node:timers/promises';
 import { mkdirSync, writeFileSync, unlinkSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { parseBuffer } from 'music-metadata';
@@ -12,7 +14,7 @@ import { discoverGateways, gatewayRequest } from './gateway';
 export const maxAudioBytes=10_000_000;
 export type AudioInput={name:string;buffer:Buffer;date:number};
 export type Utterance={speaker:string;text:string;start:number;end:number};
-export type Transcript={text:string;utterances:Utterance[]};
+export type Transcript={text:string;utterances:Utterance[];cleanup?:Promise<void>};
 export type Transcriber=(audio:Buffer,signal:AbortSignal,reservedSeconds?:number,multiple?:boolean)=>Promise<string|Transcript>;
 export const fakeTranscriber:Transcriber=async(_audio,_signal,_seconds,multiple)=>multiple ? {text:samples[0].text,utterances:[{speaker:'A',text:samples[0].text.split('\n')[0],start:0,end:1000},{speaker:'B',text:samples[0].text.split('\n').slice(1).join('\n') || 'Thanks.',start:1000,end:2000}]}:samples[0].text;
 export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[],directory:string,source:'recording'|'shared'='recording',options:{person?:unknown;awaitingPerson?:boolean}={}) {
@@ -44,6 +46,7 @@ export async function addAudio(db:KaiDatabase,workspace:string,files:AudioInput[
       writeFileSync(audioPath,file.buffer,{mode:0o600,flag:'wx'});written.push(audioPath);
       db.prepare('INSERT INTO conversations (id,workspace_id,title,summary,source,text,happened_on,status,audio_path,happened_at,batch_id,awaiting_person,reserved_on) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(id,workspace,'New recording','',source,'',new Date(file.date).toISOString().slice(0,10),'waiting',audioPath,file.date,batch,options.awaitingPerson ? 1:0,new Date().toISOString().slice(0,10));
       db.prepare('UPDATE conversations SET reserved_seconds=? WHERE id=?').run(durations.get(file),id);
+      markProcessing(db,id,{receivedAt:Date.now(),...(options.awaitingPerson?{}:{requestedAt:Date.now()})});
       db.prepare('UPDATE conversations SET notify_ready=1 WHERE id=? AND EXISTS (SELECT 1 FROM waitlist WHERE workspace_id=? AND verified_at IS NOT NULL)').run(id,workspace);
       if(options.person!==undefined)configureRecording(db,workspace,id,options.person);
       return id;
@@ -66,6 +69,17 @@ export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=
   const uploaded=await gatewayRequest(assemblyai,'/v2/upload',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:new Uint8Array(audio),signal});
   const job=await gatewayRequest(assemblyai,'/v2/transcript',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio_url:uploaded.upload_url,speech_models:['assemblyai-stt-3-7'],audio_start_from:0,audio_end_at:reservedSeconds*1000,...(multiple ? {speaker_labels:true}:{})}),signal});
   if(typeof job.id!=='string' || !/^[a-zA-Z0-9-]+$/.test(job.id)) throw new Error('Listening could not start.');
+  let handedOff=false;
+  async function cleanup(){
+    // No upstream body or address is logged, and failures never become unhandled.
+    try {await gatewayRequest(assemblyai,`/v2/transcript/${job.id}`,{method:'DELETE'});} catch {console.error('Provider transcript cleanup failed.');}
+  }
+  function finish(text:string,utterances:Utterance[]):Transcript {
+    handedOff=true;
+    // Persist the validated words and start reading while this same job's remote
+    // cleanup runs. The queue awaits cleanup before moving to another job.
+    return {text,utterances,cleanup:cleanup()};
+  }
   try {
     for(;;) {
       signal.throwIfAborted();
@@ -83,16 +97,15 @@ export const assemblyTranscriber:Transcriber=async(audio,signal,reservedSeconds=
             return {speaker:u.speaker,text:u.text,start:u.start,end:u.end};
           });
           if(new Set(clean.map(u=>u.speaker)).size>20 || clean.reduce((n,u)=>n+u.text.length,0)>MAX_AUDIO_TEXT*2)throw new ListeningFailure('speaker_limit');
-          return {text:result.text,utterances:clean};
+          return finish(result.text,clean);
         }
-        return result.text;
+        return finish(result.text,[]);
       }
       if(result.status==='error') throw new ListeningFailure('listening_provider_error');
-      await new Promise(resolve=>setTimeout(resolve,1000));
+      await wait(1000,undefined,{signal});
     }
   } finally {
-    // Remove the provider's transcript as well; never log its body.
-    try {await gatewayRequest(assemblyai,`/v2/transcript/${job.id}`,{method:'DELETE'});} catch {console.error('Provider transcript cleanup failed.');}
+    if(!handedOff)await cleanup();
   }
 };
 type Job={recording_type:string|null;id:string;workspace_id:string;audio_path:string|null;status:string;attempts:number;text:string;transcribed:number;reserved_seconds:number|null};
@@ -100,7 +113,9 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
   let active:Promise<void>|undefined,stopped=false,again=false;
   const controller=new AbortController();
   let running:{workspace:string;controller:AbortController}|undefined;
-  function retryInterrupted(job:Job) {
+  function retryInterrupted(job:Job,reason:'timeout'|'restart'='timeout') {
+    const metrics=getProcessingMetrics(db,job.id);
+    markProcessing(db,job.id,{interruptions:(metrics?.interruptions??0)+1,lastInterruption:reason});
     if(job.attempts>=2) {db.prepare("UPDATE conversations SET status='failed',error='KAI could not finish. Try again.' WHERE id=?").run(job.id);return;}
     try {db.transaction(()=> {
       reserveReading(db,job.workspace_id);if(job.audio_path && !job.transcribed) reserveRecording(db,job.workspace_id);
@@ -113,7 +128,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
     db.prepare("UPDATE conversations SET audio_path=NULL,status='waiting',progress='Choose who is speaking' WHERE id=?").run(row.id);
   }
   // One server owns this database. A new process means these leases were interrupted.
-  for(const job of db.prepare("SELECT * FROM conversations WHERE status IN ('listening','reading')").all() as Job[]) retryInterrupted(job);
+  for(const job of db.prepare("SELECT * FROM conversations WHERE status IN ('listening','reading')").all() as Job[]) retryInterrupted(job,'restart');
   function kick() {
     if(stopped)return active ?? Promise.resolve();
     if(active){again=true;return active;}
@@ -125,13 +140,20 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
         const jobController=new AbortController();running={workspace:job.workspace_id,controller:jobController};
         const signal=AbortSignal.any([controller.signal,jobController.signal,AbortSignal.timeout(Math.max(120000,Math.min(600000,(job.reserved_seconds??0)*1000)))]);
         db.prepare('UPDATE conversations SET attempts=attempts+1 WHERE id=?').run(job.id);
+        const metrics=getProcessingMetrics(db,job.id),started=Date.now();
+        markProcessing(db,job.id,{startedAt:metrics?.startedAt??started,...(!metrics?.startedAt && metrics?.requestedAt?{queueMs:Math.max(0,started-metrics.requestedAt)}:{})});
+        let cleanup:Promise<void>|undefined;
         try {
           if(job.audio_path && !job.transcribed) {
             db.prepare("UPDATE conversations SET status='listening' WHERE id=?").run(job.id);
             const audio=readFileSync(job.audio_path);
             // Older waiting recordings were charged by the same metadata parser.
             const seconds=job.reserved_seconds ?? Math.ceil((await parseBuffer(audio,undefined,{duration:true,skipCovers:true})).format.duration ?? 0);
-            const transcript=await transcribe(audio,signal,seconds,job.recording_type==='multiple');signal.throwIfAborted();
+            const finishListening=timeProcessing(db,job.id,'listeningMs');
+            let transcript:string|Transcript;
+            try{transcript=await transcribe(audio,signal,seconds,job.recording_type==='multiple');}finally{finishListening();}
+            cleanup=typeof transcript==='string'?undefined:transcript.cleanup;
+            signal.throwIfAborted();
             const words=typeof transcript==='string' ? transcript:transcript.text;
             const utterances=typeof transcript==='string' ? []:transcript.utterances;
             if(job.recording_type==='multiple' && !utterances.length)throw new ListeningFailure('speakers_missing');
@@ -145,7 +167,7 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
           }
           const pending=db.prepare('SELECT awaiting_speakers FROM conversations WHERE id=?').get(job.id) as {awaiting_speakers:number}|undefined;
           if(!pending)continue;
-          if(pending.awaiting_speakers){db.prepare("UPDATE conversations SET status='waiting',progress='Choose who is speaking' WHERE id=?").run(job.id);continue;}
+          if(pending.awaiting_speakers){db.prepare("UPDATE conversations SET status='waiting',progress='Choose who is speaking' WHERE id=?").run(job.id);markProcessing(db,job.id,{speakerWaitStartedAt:Date.now()});continue;}
           await readConversation(db,job.id,reader,signal);
           onReady();
           if(signal.aborted && !stopped && db.prepare('SELECT 1 FROM conversations WHERE id=?').get(job.id)) retryInterrupted(db.prepare('SELECT * FROM conversations WHERE id=?').get(job.id) as Job);
@@ -159,6 +181,10 @@ export function queueWorker(db:KaiDatabase,reader:Reader,transcribe:Transcriber,
           if(signal.aborted) retryInterrupted(db.prepare('SELECT * FROM conversations WHERE id=?').get(job.id) as Job);
           else db.prepare("UPDATE conversations SET status='failed',error='KAI could not listen to this recording. Try again.' WHERE id=?").run(job.id);
           if((db.prepare('SELECT status FROM conversations WHERE id=?').get(job.id) as {status:string}).status==='failed')onReady();
+        }finally{
+          await cleanup;
+          const status=db.prepare('SELECT status FROM conversations WHERE id=?').get(job.id) as {status:string}|undefined;
+          if(status && ['ready','failed'].includes(status.status))markProcessing(db,job.id,{finishedAt:Date.now()});
         }
       }
     })().finally(()=>{active=undefined;if(again && !stopped){again=false;return kick();}});
