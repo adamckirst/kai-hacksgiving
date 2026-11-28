@@ -11,6 +11,7 @@ import { createRoot } from 'react-dom/client'
 import '../src/look/kai.css'
 import * as data from './fixtures'
 import { Opening } from '../src/look/screens/Opening'
+import {SharedUploadReturn} from '../src/look/screens/SharedUploadReturn'
 import {Library,Notifications} from '../src/look/screens/Library'
 import {Speakers} from '../src/look/screens/Speakers'
 import { Upload } from '../src/look/screens/Upload'
@@ -200,6 +201,9 @@ const STATES: Record<string, { title: string; screen: () => ReactNode }> = {
   'upload/new-person': { title: 'Upload · add a person', screen: () => <Upload people={data.people} readOnly={false} initialFile={new File(["Invented audio"],"Project update.m4a")} initialType="voice" presetPerson="new" onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/shared': { title: 'Upload · a WhatsApp voice note', screen: () => <Upload people={data.people} readOnly={false} incoming={{id:'shared',title:'New recording'}} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/loading': { title: 'Upload · opening', screen: () => <Upload people={null} readOnly={false} onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
+  'upload/return-checking':{title:'Shared upload · checking',screen:()=> <SharedUploadReturn state="checking" onRetry={nothing}/>},
+  'upload/return-empty':{title:'Shared upload · no recording in this notebook',screen:()=> <SharedUploadReturn state="empty" onRetry={nothing}/>},
+  'upload/return-failed':{title:'Shared upload · check failed',screen:()=> <SharedUploadReturn state="failed" onRetry={nothing}/>},
   'upload/failed': { title: 'Upload · could not open', screen: () => <Upload people={null} readOnly={false} loadError="Your upload could not open. Try again." onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/save-failed': { title: 'Upload · could not start', screen: () => <Upload people={data.people} readOnly={false} incoming={{id:'shared',title:'New recording'}} error="KAI could not start. Try again." onFiles={nothing} onStart={nothing} onRetry={nothing}/> },
   'upload/public': { title: 'Upload · read-only', screen: () => <Upload people={null} readOnly onFiles={nothing} onStart={nothing} onRetry={nothing}/> },

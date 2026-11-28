@@ -21,7 +21,8 @@ export const guides:Record<UploadSource,string[]>={
 }
 const timeLeft=(seconds:number)=>`${Math.floor(seconds/60)} min ${seconds%60} sec`
 
-export function Upload({ people, incoming, readOnly, presetPerson, busy, error, loadError, onFiles, onStart, onRetry, shortcutReady=false, remainingSeconds, xPostUrl, initialSource='files', initialGuide, initialType, initialFile }: {
+export function Upload({ people, incoming, readOnly, presetPerson, busy, error, loadError, onFiles, onStart, onRetry, onLocalFileChange, shortcutReady=false, remainingSeconds, xPostUrl, initialSource='files', initialGuide, initialType, initialFile }: {
+  onLocalFileChange?: (chosen:boolean)=>void
   initialFile?:File
   initialType?:RecordingType
   shortcutReady?: boolean
@@ -44,7 +45,7 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
   const [guide,setGuide]=useState<UploadSource|null>(initialGuide ?? (initialSource==='files'?null:initialSource))
   const [file,setFile]=useState<File|null>(initialFile??null),[fileError,setFileError]=useState('')
   const attached=Boolean(incoming || file)
-  function chooseFiles(files:File[]){const invalid=audioFileError(files);setFileError(invalid);if(!invalid){setFile(files[0]);setGuide(null)}}
+  function chooseFiles(files:File[]){const invalid=audioFileError(files);setFileError(invalid);if(!invalid){setFile(files[0]);setGuide(null);onLocalFileChange?.(true)}}
   const exhausted=remainingSeconds===0 && !incoming
   const [recordingType,setRecordingType]=useState<RecordingType|undefined>(initialType)
   const [selected,setSelected]=useState(presetPerson ?? '')
@@ -80,7 +81,7 @@ export function Upload({ people, incoming, readOnly, presetPerson, busy, error, 
         <DialogActions><Button variant="quiet" onClick={()=>setGuide(null)}>Dismiss instructions</Button></DialogActions>
        </Dialog>
       </>}
-      {file && !incoming && <Card className="space-y-2 p-5"><p className="text-base font-bold text-violet-700">Chosen from Files</p><h2 className="break-words text-lg font-extrabold">{file.name}</h2><p className="text-base/7 text-zinc-600">Ready to upload after you choose the recording type.</p><Button variant="quiet" disabled={busy} onClick={()=>{setFile(null);setFileError('')}}>Choose a different file</Button></Card>}
+      {file && !incoming && <Card className="space-y-2 p-5"><p className="text-base font-bold text-violet-700">Chosen from Files</p><h2 className="break-words text-lg font-extrabold">{file.name}</h2><p className="text-base/7 text-zinc-600">Ready to upload after you choose the recording type.</p><Button variant="quiet" disabled={busy} onClick={()=>{setFile(null);setFileError('');onLocalFileChange?.(false)}}>Choose a different file</Button></Card>}
       {incoming && <Card className="p-5"><p className="text-base font-bold text-violet-700">Shared from your phone</p><h2 className="mt-1 text-lg font-extrabold">{incoming.title}</h2><p className="mt-2 text-base/7 font-medium text-zinc-600">Your recording is attached and waiting for you.</p></Card>}
       {attached && <Card className="space-y-4 p-4"><h2 className="px-1 text-lg font-extrabold">What kind of recording?</h2>
         <fieldset disabled={busy}><Segmented<RecordingType|''> label="Recording type" value={recordingType ?? ''} onChange={value=>setRecordingType(value || undefined)} items={[{key:'memo',label:'My memo'},{key:'voice',label:'Someone else'},{key:'multiple',label:'Multiple speakers'}]}/></fieldset>

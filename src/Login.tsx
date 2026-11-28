@@ -2,7 +2,7 @@ import {useEffect,useState} from 'react';
 import {Login} from './look/screens/Login';
 import {useEmailEntry} from './EmailEntry';
 export function loginDestination(value:string|null) {
- return value && /^(?:\/home|\/upload\/new|\/recordings\/[a-f0-9-]{36})$/.test(value)?value:'/home';
+ return value && /^(?:\/home|\/upload(?:\/new|\/[a-f0-9-]{36})?|\/recordings\/[a-f0-9-]{36})$/.test(value)?value:'/home';
 }
 export function LoginScreen({signedIn}:{signedIn:boolean}) {
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[recoverable,setRecoverable]=useState<boolean>();
