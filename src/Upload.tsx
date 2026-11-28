@@ -1,6 +1,7 @@
 import {audioFileError} from './audio-file';
 import { useEffect,useRef,useState } from 'react';
 import type { QueueItem,PersonChoice } from './look/types';
+import {visiblePoll} from './visible-poll';
 export function useUpload() {
   const [error,setError]=useState(''),[busy,setBusy]=useState(false);
   const sending=useRef(false);
@@ -18,7 +19,7 @@ export function useUpload() {
 export function useQueue(enabled:boolean) {
   const [items,setItems]=useState<QueueItem[]>([]);
   useEffect(()=>{if(!enabled)return;let alive=true;
-    async function refresh(){try{const response=await fetch('/api/queue');const data=await response.json();if(response.ok && alive)setItems(data);}catch{}}
-    void refresh();const timer=setInterval(()=>void refresh(),1000);return()=>{alive=false;clearInterval(timer);};
+    const poll=visiblePoll(async signal=>{try{const response=await fetch('/api/queue',{signal});const data=await response.json();if(response.ok && alive)setItems(data);}catch{}},1000);
+    return()=>{alive=false;poll.stop();};
   },[enabled]);return items;
 }

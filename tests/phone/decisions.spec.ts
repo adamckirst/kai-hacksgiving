@@ -43,6 +43,8 @@ test('a delayed poll cannot put an accepted suggestion back on screen',async({pa
     if(route.request().method()!=='GET' || held){await route.continue();return;}
     held=true;const response=await route.fetch();const old=await response.json();delayed();await released;await route.fulfill({json:old});
   });
+  // Finished recordings refresh on focus instead of transferring their words every second.
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await arrived;
   await page.getByRole('button',{name:/^Accept all/}).click();await expect(page.getByText('Accepted',{exact:true})).toHaveCount(3);
   const delivered=page.waitForResponse(async response=>response.request().method()==='GET' && response.url().includes('/api/readings/') && (await response.json()).suggestions?.some((s:{status:string})=>s.status==='proposed'));

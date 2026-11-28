@@ -20,14 +20,14 @@ test('choose a new person before upload; their page keeps the recording after re
 });
 
 test('WhatsApp handoff waits for person choice and resumes the attached recording',async({page,kai})=> {
-  await login(page,kai.secret);
-  // An interrupted navigation must not mark the attachment as already opened.
-  let interrupted=false,resolveInterrupted!:()=>void;const interruptedNavigation=new Promise<void>(resolve=>{resolveInterrupted=resolve;});await page.route('**/upload/*',async route=>{if(!interrupted){interrupted=true;await route.fulfill({status:503,contentType:'text/html',body:'<p>Upload temporarily unavailable</p>'});resolveInterrupted();}else await route.continue();});
+  await login(page,kai.secret);await page.goto('/upload/new');await expect(page.getByRole('heading',{name:'Choose a recording from Files'})).toBeVisible();
+  // A failed attachment read during the in-place return must not mark it as opened.
+  let interrupted=false,resolveInterrupted!:()=>void;const interruptedRead=new Promise<void>(resolve=>{resolveInterrupted=resolve;});await page.route('**/api/readings/*',async route=>{if(!interrupted){interrupted=true;await route.fulfill({status:503,json:{error:'Invented unavailable attachment'}});resolveInterrupted();}else await route.continue();});
   const response=await page.request.get('/api/connect');const {uploadPath}=await response.json();
   const posted=await page.request.post(uploadPath,{multipart:{recordings:{name:'invented.wav',mimeType:'audio/wav',buffer:testTone()},date:new Date(Date.now()-1000).toISOString()}});
   expect(posted.status()).toBe(202);const {ids}=await posted.json();
   const before=await page.request.get('/api/readings/'+ids[0]);expect((await before.json()).awaiting_person).toBe(1);
-  await interruptedNavigation;await expect(page.getByText('Upload temporarily unavailable',{exact:true})).toBeVisible();await page.goto('/home');await expect(page).toHaveURL(new RegExp('/upload/'+ids[0]),{timeout:10000});expect(interrupted).toBe(true);
+  await interruptedRead;await expect(page.getByText('Your upload could not open. Try again.',{exact:true})).toBeVisible();expect(await page.evaluate(id=>sessionStorage.getItem('kai-upload-'+id),ids[0])).toBeNull();await page.goto('/home');await expect(page).toHaveURL(new RegExp('/upload/'+ids[0]),{timeout:10000});expect(interrupted).toBe(true);
   await expect(page.getByText('Your recording is attached and waiting for you.')).toBeVisible();await assertPhone(page);await photograph(page,'upload-shared');
   const people=await (await page.request.get('/api/people')).json();
   await page.getByRole('button',{name:/^Someone else/}).click();await page.getByLabel('Who is speaking?').selectOption(people.find((p:any)=>p.name==='Dana Whitfield').id);

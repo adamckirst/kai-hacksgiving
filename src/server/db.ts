@@ -115,6 +115,7 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   if(!columns.some(c=>c.name==='trial_verified'))db.exec('ALTER TABLE workspaces ADD COLUMN trial_verified INTEGER NOT NULL DEFAULT 0');
   if(!waitlist.some(c=>c.name==='verified_at'))db.exec('ALTER TABLE waitlist ADD COLUMN verified_at TEXT; ALTER TABLE waitlist ADD COLUMN trial_ip TEXT; CREATE UNIQUE INDEX waitlist_trial_ip ON waitlist(trial_ip) WHERE trial_ip IS NOT NULL');
   const conversations=db.prepare('PRAGMA table_info(conversations)').all() as {name:string}[];
+  if(!conversations.some(c=>c.name==='processing_metrics'))db.exec("ALTER TABLE conversations ADD COLUMN processing_metrics TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(processing_metrics))");
   if(!conversations.some(c=>c.name==='audio_path')) db.exec("ALTER TABLE conversations ADD COLUMN audio_path TEXT; ALTER TABLE conversations ADD COLUMN happened_at INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0; ALTER TABLE conversations ADD COLUMN transcribed INTEGER NOT NULL DEFAULT 0;");
   if(!conversations.some(c=>c.name==='recording_type'))db.exec("ALTER TABLE conversations ADD COLUMN recording_type TEXT; ALTER TABLE conversations ADD COLUMN utterances TEXT NOT NULL DEFAULT '[]'; ALTER TABLE conversations ADD COLUMN speaker_map TEXT NOT NULL DEFAULT '{}'; ALTER TABLE conversations ADD COLUMN awaiting_speakers INTEGER NOT NULL DEFAULT 0");
   if(!conversations.some(c=>c.name==='batch_id')) db.exec('ALTER TABLE conversations ADD COLUMN batch_id TEXT');
@@ -133,6 +134,16 @@ export function openDatabase(path:string|Buffer = ':memory:') {
   // Older deployed steps can seed a new copy after this column already exists.
   // Fill only missing links on the two known seed rows; preserve all user decisions.
   db.exec("UPDATE todos SET person_id=CASE WHEN workspace_id='public' THEN 'dana' ELSE workspace_id||':dana' END WHERE person_id IS NULL AND id=CASE WHEN workspace_id='public' THEN 'pricing' ELSE workspace_id||':pricing' END; UPDATE todos SET person_id=owner_person_id WHERE person_id IS NULL AND id=CASE WHEN workspace_id='public' THEN 'trial' ELSE workspace_id||':trial' END;");
+  // Polling and per-person counts should read matching rows, not each notebook's history.
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS conversations_ready_to_process ON conversations(status,awaiting_person,awaiting_speakers,happened_at);
+    CREATE INDEX IF NOT EXISTS conversations_waiting_choice ON conversations(workspace_id) WHERE awaiting_person=1;
+    CREATE INDEX IF NOT EXISTS suggestions_by_recording ON suggestions(workspace_id,conversation_id,status);
+    CREATE INDEX IF NOT EXISTS suggestions_pending_person ON suggestions(workspace_id,json_extract(payload,'$.person_id')) WHERE status='proposed';
+    CREATE INDEX IF NOT EXISTS todos_by_subject ON todos(workspace_id,person_id,status,due_on);
+    CREATE INDEX IF NOT EXISTS todos_by_owner ON todos(workspace_id,owner_person_id,status,due_on);
+    CREATE INDEX IF NOT EXISTS notes_by_person ON notes(workspace_id,person_id);
+  `);
   })();
   return db;
 }

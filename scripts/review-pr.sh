@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/review-pr.sh <pr>
 #
-# A fresh, read-only review of one pull request by Claude Fable 5.2, posted
+# A fresh, read-only review of one pull request by Claude Opus 5.5, posted
 # on the PR as a comment that names the model that answered.
 #
 # Exit 0: zero blockers.  1: one or more.  2: no review came back.
@@ -10,7 +10,7 @@
 # sandbox: the claude CLI needs the network and a writable ~/.claude.
 set -uo pipefail
 
-MODEL=claude-fable-5-2
+MODEL=claude-opus-5-5
 FALLBACK=claude-opus-5-5
 EFFORT=high
 

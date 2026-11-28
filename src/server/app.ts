@@ -1,3 +1,5 @@
+import {markProcessing} from './processing-metrics';
+import {serveAssets} from './static-assets';
 import {onboardingState,finishOnboarding,addOnboardingExample} from './onboarding';
 import {mountAccount,cleanDeletedAudio} from './account';
 import {mountEmailEntry} from './email-entry';
@@ -34,6 +36,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:maxAudioBytes,files:1,fields:2,fieldSize:2048,parts:3}}).array('recordings',1);
   app.disable('x-powered-by');
   app.use((_req,res,next) => {res.set({'Referrer-Policy':'no-referrer','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});next();});
+  app.use('/assets',serveAssets());
   mountSharing(app,db,upload,options.audioDirectory ?? '.data/audio',work);
   mountMcp(app,db);
   mountTrial(app,db,options);
@@ -83,6 +86,10 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
   app.get('/api/notifications',(_req,res)=>{
     const items=res.locals.workspace==='public' ? []:recordings(res.locals.workspace).filter(r=>['ready','failed'].includes(r.status));
     res.json({items,unread:items.filter(r=>!r.seen).length});
+  });
+  app.get('/api/notifications/count',(_req,res)=>{
+    const row=res.locals.workspace==='public'?{unread:0}:db.prepare("SELECT count(*) AS unread FROM conversations WHERE workspace_id=? AND status IN ('ready','failed') AND notification_seen_status IS NOT status").get(res.locals.workspace);
+    res.json(row);
   });
   app.post('/api/notifications/:id/seen',(req,res)=>{
     if(!['ready','failed'].includes(req.body?.status)){res.status(400).json({error:'Open a finished recording to read its update.'});return;}
@@ -165,6 +172,7 @@ export function createApp(db: KaiDatabase, options: AppOptions = {}) {
         const day=new Date().toISOString().slice(0,10);
         if(row.reserved_on && row.reserved_on!==day) {reserveRecording(db,res.locals.workspace);reserveReading(db,res.locals.workspace);}
         configureRecording(db,res.locals.workspace,req.params.id,req.body);
+        markProcessing(db,req.params.id,{requestedAt:Date.now()});
         db.prepare('UPDATE conversations SET awaiting_person=0,reserved_on=? WHERE id=? AND workspace_id=?').run(day,req.params.id,res.locals.workspace);
       })();
       res.json({id:req.params.id});void work();

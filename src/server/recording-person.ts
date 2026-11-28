@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import {getProcessingMetrics,markProcessing} from './processing-metrics';
 import type { KaiDatabase } from './db';
 import { ReadingError,reserveReading } from './reading';
 const personFields={name:z.string().trim().min(1).max(120),company:z.string().trim().max(200),role:z.string().trim().max(120)};
@@ -70,5 +71,7 @@ export function identifySpeakers(db:KaiDatabase,workspace:string,recording:strin
     db.prepare('UPDATE conversations SET reserved_on=? WHERE id=?').run(day,recording);
     // A meeting has several speakers, not one recording-level sender.
     db.prepare("UPDATE conversations SET person_id=NULL,speaker_map=?,awaiting_speakers=0,status='waiting',progress=NULL,attempts=0 WHERE id=? AND workspace_id=?").run(JSON.stringify(mapping),recording,workspace);
+    const timing=getProcessingMetrics(db,recording);
+    if(timing?.speakerWaitStartedAt)markProcessing(db,recording,{speakerWaitMs:(timing.speakerWaitMs??0)+Math.max(0,Date.now()-timing.speakerWaitStartedAt)});
   })();
 }

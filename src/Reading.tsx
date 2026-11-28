@@ -5,32 +5,36 @@ import type { Recording,Payload } from './look/types';
 import {Speakers} from './look/screens/Speakers';
 import type {LinkedPerson,SpeakerChoice} from './look/types';
 import { Waitlist } from './Waitlist';
+import {visiblePoll} from './visible-poll';
 export function RecordingScreen({readOnly=false}:{readOnly?:boolean}) {
   const [confirmation,setConfirmation]=useState<{text:string;at:number}|null>(null);
   useEffect(()=>{if(!confirmation)return;const timer=setTimeout(()=>setConfirmation(null),4000);return()=>clearTimeout(timer)},[confirmation]);
   const [people,setPeople]=useState<LinkedPerson[]|null>(null);
   const id=location.pathname.split('/').pop();
   const revision=useRef(0),deciding=useRef(false);
+  const polling=useRef<ReturnType<typeof visiblePoll>|null>(null);
   const [recording,setRecording]=useState<Recording|null>(null),[error,setError]=useState(''),[actionError,setActionError]=useState('');
   useEffect(()=> {
-    let alive=true;
-    async function refresh() {
+    let alive=true,interval=1000;
+    async function refresh(signal:AbortSignal) {
       if(deciding.current)return;const started=revision.current;
-      try {const response=await fetch('/api/readings/'+id);if(!response.ok) throw new Error();const data=await response.json();if(alive && !deciding.current && started===revision.current) {setRecording(data);setError('');}}
+      try {const response=await fetch('/api/readings/'+id,{signal});if(!response.ok) throw new Error();const data=await response.json();if(alive && !deciding.current && started===revision.current) {setRecording(data);setError('');interval=['ready','failed'].includes(data.status)||data.awaiting_speakers?15000:1000;}}
       catch {if(alive && !deciding.current && started===revision.current) setError('This recording could not load. Go to Home and try again.');}
     }
-    void refresh();const timer=setInterval(()=>void refresh(),1000);return()=>{alive=false;clearInterval(timer);};
+    const poll=visiblePoll(refresh,()=>interval);polling.current=poll;
+    return()=>{alive=false;polling.current=null;poll.stop();};
   },[id]);
   useEffect(()=>{if(readOnly || !recording || !['ready','failed'].includes(recording.status))return;void fetch('/api/notifications/'+id+'/seen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:recording.status})}).catch(()=>{});},[id,readOnly,recording?.status]);
   useEffect(()=>{if(!recording?.awaiting_speakers)return;let alive=true;fetch('/api/people').then(r=>{if(!r.ok)throw new Error();return r.json()}).then(p=>{if(alive)setPeople(p)}).catch(()=>{if(alive)setActionError('People could not load. Reload this page to try again.')});return()=>{alive=false}},[recording?.awaiting_speakers]);
-  async function identify(choices:Record<string,SpeakerChoice>){setBusy(true);setActionError('');deciding.current=true;revision.current++;try{const r=await fetch('/api/readings/'+id+'/speakers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(choices)});const data=await r.json();if(!r.ok)throw new Error(data.error);const refreshed=await fetch('/api/readings/'+id);if(!refreshed.ok)throw new Error('Saved. Reload to continue.');setRecording(await refreshed.json());}catch(e){setActionError(e instanceof Error ? e.message:'The speakers could not be saved.');}finally{revision.current++;deciding.current=false;setBusy(false)}}
+  async function identify(choices:Record<string,SpeakerChoice>){setBusy(true);setActionError('');deciding.current=true;revision.current++;try{const r=await fetch('/api/readings/'+id+'/speakers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(choices)});const data=await r.json();if(!r.ok)throw new Error(data.error);const refreshed=await fetch('/api/readings/'+id);if(!refreshed.ok)throw new Error('Saved. Reload to continue.');setRecording(await refreshed.json());}catch(e){setActionError(e instanceof Error ? e.message:'The speakers could not be saved.');}finally{revision.current++;deciding.current=false;setBusy(false);void polling.current?.refresh()}}
   async function finishOnboarding(){deciding.current=true;revision.current++;setBusy(true);setActionError('');try{const r=await fetch('/api/onboarding/finish',{method:'POST'});if(!r.ok)throw Error();setRecording(value=>value?{...value,assistantOffer:false}:value)}catch{setActionError('Setup could not be saved. Try again.')}finally{revision.current++;deciding.current=false;setBusy(false)}}
   async function retry() {
-    setActionError('');
+    if(deciding.current)return;deciding.current=true;revision.current++;setBusy(true);setActionError('');
     try {
       const response=await fetch('/api/readings/'+id+'/retry',{method:'POST'});
       if(!response.ok) {const data=await response.json();setActionError(data.error);}
     } catch {setActionError('KAI could not start again. Try once more.');}
+    finally{revision.current++;deciding.current=false;setBusy(false);void polling.current?.refresh();}
   }
   const [editing,setEditing]=useState<string|null>(null),[busy,setBusy]=useState(false);
   async function decision(suggestion:string,choice:'accept'|'reject',edits?:Payload) {

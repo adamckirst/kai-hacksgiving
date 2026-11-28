@@ -10,6 +10,7 @@ for(const path of ['/upload','/upload/new?onboarding=1','/upload/new']) {
   const owner=createJudge(kai.db,false);
   await context.addCookies([{name:'kai_session',value:owner.cookie,url:'http://127.0.0.1:18520'}]);
   const {uploadPath}=await(await page.request.get('/api/connect')).json();
+  let documents=0,accesses=0;page.on('request',request=>{if(request.resourceType()==='document')documents++;if(new URL(request.url()).pathname==='/api/access')accesses++;});
   await page.goto(path);
   if(path==='/upload')await expect(page.getByRole('heading',{name:'No recording waiting here'})).toBeVisible();
   else await expect(page.getByRole('heading',{name:path.includes('onboarding')?'Share your first recording':'Choose a recording from Files'})).toBeVisible();
@@ -19,6 +20,7 @@ for(const path of ['/upload','/upload/new?onboarding=1','/upload/new']) {
   await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
   await expect(page).toHaveURL(new RegExp('/upload/'+ids[0]+'$'));
   await expect(page.getByRole('heading',{name:'What kind of recording?'})).toBeVisible();
+  expect(documents).toBe(1);expect(accesses).toBe(1);
   await expect(page.getByRole('button',{name:'Let KAI read',exact:true})).toBeDisabled();await assertPhone(page);
   const recording=await(await page.request.get('/api/readings/'+ids[0])).json();expect(recording.awaiting_person).toBe(1);expect(recording.status).toBe('waiting');expect(recording.text).toBe('');
  });
