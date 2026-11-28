@@ -1000,18 +1000,32 @@ demo ends. These rules supersede §14's source layout and direct gear-to-
 Connections route, and the blanket email-response restrictions in §§12,
 18 and 20 only for the authenticated owner's account response below.
 
+On 28 November Copal approved the compact-row revision: “without telegram”,
+“Start with voice memos”, and “Great. Deploy that”. He then approved
+“Update the PRD to match (Recommended)”. The revised source list and popup
+setup link below replace the earlier three-app shelf.
+
 ### Add recordings
 
 - Use the selected App shelf layout in KAI's existing look. Files is first,
   with Choose audio file as the main action. Its description is exactly
   “One audio file · up to 10 MB · under 30 minutes”, replacing “Your own
   memo, a voice note or a meeting.” Do not repeat that limits line below.
-- Show app sharing separately from local Files. Offer WhatsApp, Messages
-  and Telegram under voice notes, with sharing instructions and app links
-  where supported. Voice Memos gives sharing instructions and a Files
-  fallback, not the Safari-rejected launch address. Keep guidance accessible
-  by tap and keyboard; screenshots may be placeholders until Copal supplies
-  them. Do not imply that a browser can inspect installed apps or shortcuts.
+- Show app sharing separately from local Files in compact rows with 30 px
+  official app artwork: Voice Memos first, then WhatsApp and Messages.
+  Use the heading “or share from any of your apps, for example:”. Do not
+  offer Telegram in this list; existing Telegram source links may retain
+  their guidance. Use official SVG artwork where available and Apple's
+  official PNG artwork for its apps.
+- Each row has accessible sharing help in a dismissible popup. Beneath its
+  instructions, always show “Set up the KAI shortcut for iOS”, linking to
+  Connections and preserving the selected source for the return to Upload.
+  Keep the inline Send to KAI setup link too. Guidance works by tap and
+  keyboard. Voice Memos gives manual sharing instructions and a Files
+  fallback, not the Safari-rejected launch address. WhatsApp keeps its app
+  link; Messages keeps its current composition launch, as Copal chose,
+  with guidance to close the draft and open the intended conversation.
+  Do not imply that a browser can inspect installed apps or shortcuts.
 - Make phone-sharing setup available here through Connections. If setup is
   incomplete, guide the person there before sharing. Return to the selected
   source afterwards. If setup is already confirmed or a share has succeeded,
